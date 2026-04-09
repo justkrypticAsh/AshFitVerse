@@ -1,5 +1,3 @@
-# AshFitVerse
-The elite MERN stack fitness architecture. Integrated with JWT security, real-time analytics, and a high-performance Apple-inspired UI. Empowering the next generation of athletes.
 # 🚀 ASHFIT<span style="color: #ff4d00">VERSE</span> | Elite Fitness Protocol
 
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-orange?style=for-the-badge)
