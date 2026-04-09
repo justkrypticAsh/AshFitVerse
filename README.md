@@ -48,7 +48,7 @@ The system is built with a "Security-First" mindset:
 
 ### 1. Clone the Repository
 bash
-git clone [https://github.com/YOUR_USERNAME/AshFitVerse.git](https://github.com/YOUR_USERNAME/AshFitVerse.git)
+git clone [https://github.com/YOUR_USERNAME/AshFitVerse.git](https://github.com/justkrypticAsh/AshFitVerse.git)
 cd AshFitVerse
 2. Backend Setup
 
