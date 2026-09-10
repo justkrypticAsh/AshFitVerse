@@ -1,28 +1,26 @@
-// ─────────────────────────────────────────────────────────────
 // src/theme.js — ASHFITVERSE DESIGN SYSTEM
-// Apple-level: Inter font, neutral palette, refined glassmorphism
-// No BG images — dynamic gradient backgrounds only
-// ─────────────────────────────────────────────────────────────
+// Premium Apple-level UI Layout: Inter font, neutral palette, dynamic glassmorphism
+// Core Support: Warm cream light mode palette, responsive structural layouts & animations
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const FONT_URL =
   "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap";
 
-// Inter is the closest web font to SF Pro — used by Apple, Linear, Vercel, Notion
+// Inter is the closest web font to SF Pro — used by Apple, Linear, and Vercel
 export const FONT = {
   display: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
   body:    "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
-// ── Dark palette — Apple-inspired ─────────────────────────
-// Reference: Apple.com dark, Linear, Vercel dashboard
+// ── Dark Palette — Apple-inspired (Frosted Slate & visionOS Core) ──────────
 export const DARK = {
   // Backgrounds
-  bg:               "#0a0a0a",          // Pure near-black like Apple
+  bg:               "#0a0a0a",          // Pure near-black
   bgSecondary:      "#111111",
   bgTertiary:       "#1a1a1a",
-  sidebar:          "rgba(10,10,10,0.95)",
+  sidebar:          "rgba(7,8,15,0.95)",
 
-  // Glass layers — Apple frosted glass
+  // Glass layers
   glass:            "rgba(255,255,255,0.040)",
   glassMid:         "rgba(255,255,255,0.065)",
   glassHover:       "rgba(255,255,255,0.085)",
@@ -30,81 +28,78 @@ export const DARK = {
   glassBorderHover: "rgba(255,255,255,0.180)",
   glassBorderActive:"rgba(99,102,241,0.50)",
 
-  // Text — Apple's exact text hierarchy
+  // Text Hierarchy
   text:             "#f5f5f7",          // Apple headline white
   textSub:          "rgba(245,245,247,0.55)",
   textMuted:        "rgba(245,245,247,0.30)",
   textFaint:        "rgba(245,245,247,0.15)",
 
-  // Primary accent — Apple Blue
-  accent:           "#0a84ff",          // Apple's iOS blue (exact)
+  // Accents & Signals
+  accent:           "#0a84ff",          // iOS Blue
   accentHover:      "#409cff",
   accentSoft:       "rgba(10,132,255,0.12)",
   accentGlow:       "rgba(10,132,255,0.22)",
   accentGlowStrong: "rgba(10,132,255,0.45)",
 
-  // Semantic colours — Apple HIG
-  green:            "#30d158",          // Apple green (exact)
+  green:            "#30d158",          // Apple Green
   greenSoft:        "rgba(48,209,88,0.12)",
   greenGlow:        "rgba(48,209,88,0.20)",
 
-  purple:           "#bf5af2",          // Apple purple (exact)
+  purple:           "#bf5af2",          // Apple Purple
   purpleSoft:       "rgba(191,90,242,0.12)",
   purpleGlow:       "rgba(191,90,242,0.20)",
 
-  orange:           "#ff9f0a",          // Apple orange (exact)
+  orange:           "#ff9f0a",          // Apple Orange
   orangeSoft:       "rgba(255,159,10,0.12)",
   orangeGlow:       "rgba(255,159,10,0.20)",
 
-  pink:             "#ff375f",          // Apple pink/red
+  pink:             "#ff375f",          // Apple Pink
   pinkSoft:         "rgba(255,55,95,0.12)",
   pinkGlow:         "rgba(255,55,95,0.20)",
 
-  teal:             "#5ac8fa",          // Apple teal
+  teal:             "#5ac8fa",          
   tealSoft:         "rgba(90,200,250,0.12)",
 
-  gold:             "#ffd60a",          // Apple yellow
+  gold:             "#ffd60a",          
   goldSoft:         "rgba(255,214,10,0.12)",
 
-  red:              "#ff453a",          // Apple red (exact)
+  red:              "#ff453a",          
   redSoft:          "rgba(255,69,58,0.10)",
 
-  // UI surface colours
   divider:          "rgba(255,255,255,0.07)",
   shadow:           "rgba(0,0,0,0.50)",
   shadowStrong:     "rgba(0,0,0,0.80)",
 };
 
-// ── Light palette — Apple-inspired ────────────────────────
+// ── Light Palette — Custom Premium Warm Cream ──────────────────────────────
 export const LIGHT = {
-  // Backgrounds
-  bg:               "#ffffff",
-  bgSecondary:      "#f5f5f7",          // Apple's exact light gray
-  bgTertiary:       "#e8e8ed",
-  sidebar:          "rgba(255,255,255,0.96)",
+  // Backgrounds (Synced exactly with dashboard canvas specs)
+  bg:               "#F5F0E8",          // Warm cream canvas
+  bgSecondary:      "#EDE7D9",          // Deep cream surface
+  bgTertiary:       "#E3DAC9",
+  sidebar:          "rgba(250,246,238,0.95)",
 
   // Glass layers
-  glass:            "rgba(255,255,255,0.72)",
-  glassMid:         "rgba(255,255,255,0.88)",
+  glass:            "linear-gradient(160deg, rgba(255,252,245,0.82) 0%, rgba(255,248,235,0.60) 100%)",
+  glassMid:         "linear-gradient(160deg, rgba(255,255,255,0.85) 0%, rgba(255,252,245,0.70) 100%)",
   glassHover:       "rgba(255,255,255,1.00)",
-  glassBorder:      "rgba(0,0,0,0.08)",
-  glassBorderHover: "rgba(10,132,255,0.28)",
-  glassBorderActive:"rgba(10,132,255,0.55)",
+  glassBorder:      "rgba(180,160,130,0.18)",
+  glassBorderHover: "rgba(180,160,130,0.38)",
+  glassBorderActive:"rgba(0,102,204,0.55)",
 
-  // Text
-  text:             "#1d1d1f",          // Apple's exact dark text
-  textSub:          "rgba(29,29,31,0.55)",
-  textMuted:        "rgba(29,29,31,0.35)",
-  textFaint:        "rgba(29,29,31,0.15)",
+  // Text Hierarchy
+  text:             "#1d1d1f",          // Apple dark gray
+  textSub:          "rgba(29,29,31,0.65)",
+  textMuted:        "rgba(29,29,31,0.45)",
+  textFaint:        "rgba(29,29,31,0.20)",
 
-  // Primary accent
-  accent:           "#0066cc",          // Apple blue — light mode variant
+  // Accents & Signals
+  accent:           "#0066cc",          
   accentHover:      "#0077ed",
   accentSoft:       "rgba(0,102,204,0.08)",
   accentGlow:       "rgba(0,102,204,0.15)",
   accentGlowStrong: "rgba(0,102,204,0.35)",
 
-  // Semantic
   green:            "#28a745",
   greenSoft:        "rgba(40,167,69,0.09)",
   greenGlow:        "rgba(40,167,69,0.16)",
@@ -130,60 +125,68 @@ export const LIGHT = {
   red:              "#d32f2f",
   redSoft:          "rgba(211,47,47,0.07)",
 
-  divider:          "rgba(0,0,0,0.08)",
-  shadow:           "rgba(0,0,0,0.12)",
-  shadowStrong:     "rgba(0,0,0,0.25)",
+  divider:          "rgba(180,160,130,0.18)",
+  shadow:           "rgba(0,0,0,0.06)",
+  shadowStrong:     "rgba(0,0,0,0.14)",
 };
 
 export const getTheme = (dark) => (dark ? DARK : LIGHT);
 
-// ── BG Images — REMOVED ────────────────────────────────────
-// Using dynamic gradient backgrounds instead of Unsplash images
-// Each page gets its own subtle gradient via generatePageBG()
-export const BG_IMAGES = {}; // kept for backwards compat, not used
+// Kept empty for modular backwards compatibility constraints
+export const BG_IMAGES = {}; 
 
-// ── Dynamic background generator ──────────────────────────
-// Returns inline style for a section's background
+// ── Dynamic Canvas Background Generator ────────────────────────────────────
 export const generatePageBG = (T, dark, variant = "default") => {
+  const currentBg = dark ? DARK.bg : LIGHT.bg;
   const bgs = {
     default: dark
       ? `radial-gradient(ellipse 80% 50% at 20% -10%, rgba(10,132,255,0.08) 0%, transparent 60%),
          radial-gradient(ellipse 60% 40% at 80% 110%, rgba(191,90,242,0.06) 0%, transparent 60%),
-         ${T.bg}`
+         ${currentBg}`
       : `radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,102,204,0.06) 0%, transparent 60%),
-         radial-gradient(ellipse 60% 40% at 80% 110%, rgba(123,45,190,0.04) 0%, transparent 60%),
-         ${T.bg}`,
+         radial-gradient(ellipse 60% 40% at 80% 110%, rgba(180,150,100,0.06) 0%, transparent 60%),
+         ${currentBg}`,
 
     female: dark
       ? `radial-gradient(ellipse 70% 50% at 10% -5%, rgba(255,55,95,0.08) 0%, transparent 60%),
          radial-gradient(ellipse 50% 40% at 90% 100%, rgba(191,90,242,0.06) 0%, transparent 60%),
-         ${T.bg}`
-      : `radial-gradient(ellipse 70% 50% at 10% -5%, rgba(232,23,58,0.05) 0%, transparent 60%),
-         ${T.bg}`,
+         ${currentBg}`
+      : `radial-gradient(ellipse 70% 50% at 10% -5%, rgba(232,23,58,0.06) 0%, transparent 60%),
+         ${currentBg}`,
 
     male: dark
       ? `radial-gradient(ellipse 70% 50% at 10% -5%, rgba(10,132,255,0.09) 0%, transparent 60%),
          radial-gradient(ellipse 50% 40% at 90% 100%, rgba(48,209,88,0.05) 0%, transparent 60%),
-         ${T.bg}`
+         ${currentBg}`
       : `radial-gradient(ellipse 70% 50% at 10% -5%, rgba(0,102,204,0.06) 0%, transparent 60%),
-         ${T.bg}`,
+         ${currentBg}`,
 
     wellness: dark
       ? `radial-gradient(ellipse 70% 50% at 50% -10%, rgba(48,209,88,0.07) 0%, transparent 60%),
-         ${T.bg}`
+         ${currentBg}`
       : `radial-gradient(ellipse 70% 50% at 50% -10%, rgba(40,167,69,0.05) 0%, transparent 60%),
-         ${T.bg}`,
+         ${currentBg}`,
 
     shop: dark
       ? `radial-gradient(ellipse 70% 50% at 80% -10%, rgba(255,159,10,0.07) 0%, transparent 60%),
-         ${T.bg}`
-      : `${T.bg}`,
+         ${currentBg}`
+      : `${currentBg}`,
   };
   return bgs[variant] || bgs.default;
 };
 
-// ── Master CSS generator ───────────────────────────────────
-export const generateCSS = (T, dark) => `
+// ── Master CSS Generator (Migrates Dashboard Specs to All Subpages) ───────
+export const generateCSS = (T, dark) => {
+  const BG = dark ? DARK.bg : LIGHT.bg;
+  const SIDEBAR_BG = dark ? "rgba(7,8,15,0.95)" : LIGHT.sidebar;
+  const GLASS_BG = dark
+    ? "linear-gradient(160deg,rgba(255,255,255,0.09) 0%,rgba(255,255,255,0.04) 100%)"
+    : LIGHT.glass;
+  const GLASS_BORDER = dark ? DARK.glassBorder : LIGHT.glassBorder;
+  const GLASS_BORDER_H = dark ? DARK.glassBorderHover : LIGHT.glassBorderHover;
+  const GLASS_INNER_TOP = dark ? "rgba(255,255,255,0.18)" : "rgba(255,252,245,0.90)";
+
+  return `
   @import url('${FONT_URL}');
 
   *, *::before, *::after {
@@ -192,26 +195,20 @@ export const generateCSS = (T, dark) => `
     padding: 0;
   }
 
-  /* Apple-style scrollbar — ultra thin */
+  /* Thin premium scrollbar alignment */
   ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: ${T.glassBorder};
+    background: ${GLASS_BORDER};
     border-radius: 99px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: ${T.glassBorderHover};
-  }
+  ::-webkit-scrollbar-thumb:hover { background: ${GLASS_BORDER_H}; }
 
-  ::selection {
-    background: ${T.accent};
-    color: #fff;
-  }
-
+  ::selection { background: ${T.accent}; color: #fff; }
   html { scroll-behavior: smooth; }
 
   body {
-    background: ${T.bg};
+    background: ${BG};
     font-family: ${FONT.body};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -219,622 +216,142 @@ export const generateCSS = (T, dark) => `
     color: ${T.text};
   }
 
-  /* ──────────────────────────────
-     AMBIENT ORBS
-     Subtle, not distracting
-  ────────────────────────────── */
-  .orb {
-    position: fixed;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 0;
-    will-change: transform;
-  }
+  /* ── Master Ambient Orbs Setup ── */
+  .orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform; }
   .orb-1 {
-    top: -25%; left: -15%;
-    width: 900px; height: 900px;
-    background: radial-gradient(circle,
-      ${dark ? "rgba(10,132,255,0.07)" : "rgba(0,102,204,0.05)"} 0%,
-      transparent 65%);
-    animation: orbFloat1 28s ease-in-out infinite;
+    top: -25%; left: -15%; width: 900px; height: 900px;
+    background: radial-gradient(circle, ${dark ? "rgba(10,132,255,0.07)" : "rgba(180,150,100,0.10)"} 0%, transparent 65%);
+    animation: orbMFloat1 28s ease-in-out infinite;
   }
   .orb-2 {
-    bottom: -25%; right: -15%;
-    width: 800px; height: 800px;
-    background: radial-gradient(circle,
-      ${dark ? "rgba(191,90,242,0.06)" : "rgba(123,45,190,0.04)"} 0%,
-      transparent 65%);
-    animation: orbFloat2 35s ease-in-out infinite;
+    bottom: -25%; right: -15%; width: 800px; height: 800px;
+    background: radial-gradient(circle, ${dark ? "rgba(191,90,242,0.06)" : "rgba(167,139,250,0.05)"} 0%, transparent 65%);
+    animation: orbMFloat2 35s ease-in-out infinite;
   }
   .orb-3 {
-    top: 35%; left: 30%;
-    width: 600px; height: 600px;
-    background: radial-gradient(circle,
-      ${dark ? "rgba(48,209,88,0.04)" : "rgba(40,167,69,0.03)"} 0%,
-      transparent 65%);
-    animation: orbFloat3 22s ease-in-out infinite;
+    top: 35%; left: 30%; width: 600px; height: 600px;
+    background: radial-gradient(circle, ${dark ? "rgba(48,209,88,0.04)" : "rgba(40,167,69,0.03)"} 0%, transparent 65%);
+    animation: orbMFloat3 22s ease-in-out infinite;
   }
 
-  @keyframes orbFloat1 {
-    0%, 100% { transform: translate(0, 0); }
-    33%       { transform: translate(40px, -35px); }
-    66%       { transform: translate(-20px, 40px); }
-  }
-  @keyframes orbFloat2 {
-    0%, 100% { transform: translate(0, 0); }
-    50%       { transform: translate(-50px, -40px); }
-  }
-  @keyframes orbFloat3 {
-    0%, 100% { transform: translate(0, 0); }
-    50%       { transform: translate(35px, -30px); }
-  }
+  @keyframes orbMFloat1 { 0%,100%{transform:translate(0,0);} 33%{transform:translate(40px,-35px);} 66%{transform:translate(-20px,40px);} }
+  @keyframes orbMFloat2 { 0%,100%{transform:translate(0,0);} 50%{transform:translate(-50px,-40px);} }
+  @keyframes orbMFloat3 { 0%,100%{transform:translate(0,0);} 50%{transform:translate(35px,-30px);} }
 
-  /* ──────────────────────────────
-     LIQUID GLASS — Apple visionOS style
-     Frosted, specular highlight, depth
-  ────────────────────────────── */
-  .glass-card {
-    background: linear-gradient(145deg, ${T.glassMid} 0%, ${T.glass} 100%);
-    border: 1px solid ${T.glassBorder};
+  /* ── Unified Liquid Glass Cards ── */
+  .glass-card, .gc, .composer, .post-card, .mem-card, .ch-card, .chat-win, .side-card, .stat-card {
+    background: ${GLASS_BG};
+    border: 1px solid ${GLASS_BORDER};
+    backdrop-filter: blur(40px) saturate(180%) brightness(${dark ? "1.04" : "1.02"});
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(${dark ? "1.04" : "1.02"});
     border-radius: 20px;
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    box-shadow:
-      inset 0 1px 0 ${dark ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.85)"},
-      inset 0 -1px 0 ${dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"},
-      0 4px 24px ${T.shadow};
-    transition:
-      border-color 0.2s ease,
-      box-shadow   0.25s ease,
-      transform    0.2s ease;
+    padding: 20px;
     position: relative;
     overflow: hidden;
-  }
-  .glass-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(135deg,
-      ${dark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.55)"} 0%,
-      transparent 45%);
-    pointer-events: none;
-  }
-  .glass-card:hover {
-    border-color: ${T.glassBorderHover};
     box-shadow:
-      inset 0 1px 0 ${dark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.95)"},
-      inset 0 -1px 0 ${dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"},
-      0 12px 40px ${T.shadow};
+      inset 0 1.5px 0 ${GLASS_INNER_TOP},
+      inset 0 -1px 0 rgba(0,0,0,${dark ? "0.06" : "0.04"}),
+      0 4px 24px ${T.shadow};
+    transition: border-color 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s, transform 0.2s;
+  }
+  .glass-card::before, .gc::before, .composer::before, .post-card::before, .mem-card::before, .ch-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,${dark ? "0.06" : "0.55"}) 0%, transparent 45%);
+  }
+  .glass-card:hover, .gc:hover, .post-card:hover, .mem-card:hover, .ch-card:hover {
+    border-color: ${GLASS_BORDER_H};
+    box-shadow: inset 0 1px 0 ${dark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.95)"}, 0 12px 40px ${T.shadowStrong};
     transform: translateY(-2px);
   }
 
-  /* ──────────────────────────────
-     TYPOGRAPHY — Inter / SF Pro
-  ────────────────────────────── */
-  .t-display {
-    font-family: ${FONT.display};
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.05;
-    color: ${T.text};
-  }
-  .t-headline {
-    font-family: ${FONT.display};
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.018em;
-    color: ${T.text};
-  }
-  .t-title {
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.010em;
-    color: ${T.text};
-  }
-  .t-body {
-    font-size: 15px;
-    font-weight: 400;
-    letter-spacing: -0.006em;
-    color: ${T.textSub};
-    line-height: 1.6;
-  }
-  .t-caption {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.002em;
-    color: ${T.textMuted};
-  }
-  .t-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: ${T.textMuted};
-  }
-
-  /* Gradient text */
-  .t-gradient {
-    background: linear-gradient(135deg, ${T.accent}, ${T.purple});
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* ──────────────────────────────
-     BUTTONS — Apple HIG compliant
-  ────────────────────────────── */
-
-  /* Primary — liquid glass blue, white text always */
-  .btn-primary {
-    height: 50px;
-    padding: 0 28px;
-    border-radius: 13px;
-    border: 1px solid ${dark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)"};
-    background: linear-gradient(145deg, ${T.accentHover} 0%, ${T.accent} 100%);
-    color: #ffffff;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: ${FONT.body};
-    letter-spacing: -0.01em;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    position: relative;
-    overflow: hidden;
+  /* ── Apple Control Centre Style Popups & Dropdowns ── */
+  .cc-popup, .notif-panel {
+    background: ${dark ? "rgba(24,24,28,0.85)" : "rgba(250,246,238,0.82)"};
+    border: 1px solid ${dark ? "rgba(255,255,255,0.14)" : "rgba(180,155,120,0.22)"};
+    border-radius: 26px;
+    backdrop-filter: blur(80px) saturate(220%);
+    -webkit-backdrop-filter: blur(80px) saturate(220%);
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.35),
-      inset 0 -1px 0 rgba(0,0,0,0.12),
-      0 4px 16px ${T.accentGlow};
+      inset 0 1.5px 0 ${dark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.70)"},
+      0 16px 48px ${T.shadowStrong};
+    animation: masterCCIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both;
   }
-  .btn-primary:hover {
-    transform: scale(1.02);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.4),
-      inset 0 -1px 0 rgba(0,0,0,0.12),
-      0 6px 24px ${T.accentGlowStrong};
+  @keyframes masterCCIn { from{opacity:0;transform:scale(0.92) translateY(-8px);filter:blur(4px);} to{opacity:1;transform:scale(1) translateY(0);filter:blur(0);} }
+
+  /* ── Typography Framework ── */
+  .t-display { font-family: ${FONT.display}; font-weight: 800; letter-spacing: -0.025em; color: ${T.text}; }
+  .t-headline { font-family: ${FONT.display}; font-size: 22px; font-weight: 700; letter-spacing: -0.018em; color: ${T.text}; }
+  .t-title { font-size: 17px; font-weight: 600; color: ${T.text}; }
+  .t-body { font-size: 14.5px; font-weight: 400; color: ${T.textSub}; line-height: 1.6; }
+  .t-caption { font-size: 12px; color: ${T.textMuted}; }
+  .t-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: ${T.textMuted}; }
+  .t-gradient { background: linear-gradient(135deg, ${T.accent}, ${T.purple}); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  /* ── Section Dividers ── */
+  .sec-div { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+  .sec-div-line { flex: 1; height: 1px; background: ${GLASS_BORDER}; }
+  .sec-div-txt { font-size: 9px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: ${T.textMuted}; }
+
+  /* ── Premium Buttons ── */
+  .btn-primary, .post-btn, .pro-btn, .comment-send, .chat-send {
+    height: 46px; padding: 0 24px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, ${T.accent}, ${T.purple}); color: #ffffff;
+    font-size: 14px; font-weight: 700; font-family: ${FONT.body}; cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 4px 14px ${T.accentGlow}, inset 0 1px 0 rgba(255,255,255,0.25);
   }
-  .btn-primary:active {
-    transform: scale(0.98);
-    transition-duration: 0.08s;
+  .btn-primary:hover, .post-btn:hover, .pro-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px ${T.accentGlowStrong}; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-secondary, .act-btn, .chat-back, .comm-cta {
+    height: 44px; padding: 0 20px; border-radius: 11px; border: 1px solid ${GLASS_BORDER};
+    background: transparent; color: ${T.textSub}; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.18s ease; font-family: ${FONT.body};
   }
-  .btn-primary:disabled {
-    opacity: 0.40;
-    cursor: not-allowed;
-    transform: none;
+  .btn-secondary:hover, .act-btn:hover, .comm-cta:hover { border-color: ${T.accent}40; color: ${T.accent}; background: ${T.accentSoft}; }
+
+  /* ── Standard Inputs ── */
+  .input-field, .comp-inp, .comment-inp, .chat-inp, .cm-search input {
+    background: ${dark ? "rgba(255,255,255,0.045)" : "rgba(0,0,0,0.04)"};
+    border: 1px solid ${GLASS_BORDER}; border-radius: 12px; padding: 12px 16px;
+    font-size: 14.5px; color: ${T.text}; outline: none; transition: all 0.2s ease;
+  }
+  .input-field:focus, .comp-inp:focus, .comment-inp:focus { border-color: ${T.accent}50; box-shadow: 0 0 0 3px ${T.accentGlow}; }
+
+  /* ── Master Sidebar System ── */
+  .sidebar, .cm-sb {
+    width: 252px; min-height: 100vh; background: ${SIDEBAR_BG}; border-right: 1px solid ${GLASS_BORDER};
+    display: flex; flex-direction: column; padding: 24px 12px 20px; flex-shrink: 0; position: sticky; top: 0;
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); transition: background 0.5s;
   }
 
-  /* Secondary — liquid glass frosted, theme-aware text */
-  .btn-secondary {
-    height: 50px;
-    padding: 0 28px;
-    border-radius: 13px;
-    border: 1px solid ${T.glassBorder};
-    background: linear-gradient(145deg, ${T.glassMid} 0%, ${T.glass} 100%);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    color: ${T.text};
-    font-size: 15px;
-    font-weight: 600;
-    font-family: ${FONT.body};
-    letter-spacing: -0.01em;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow:
-      inset 0 1px 0 ${dark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.8)"},
-      0 2px 12px ${T.shadow};
+  /* ── Universal Quick Actions Grid ── */
+  .qa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .qa-pill {
+    padding: 15px 10px 12px; border-radius: 18px; border: 1px solid ${GLASS_BORDER}; background: ${GLASS_BG};
+    cursor: pointer; font-family: ${FONT.body}; font-size: 11px; font-weight: 700; color: ${T.textSub}; text-align: center;
+    transition: all 0.32s cubic-bezier(0.34,1.56,0.64,1); box-shadow: inset 0 1.5px 0 ${GLASS_INNER_TOP};
   }
-  .btn-secondary:hover {
-    border-color: ${T.glassBorderHover};
-    transform: scale(1.02);
-    box-shadow:
-      inset 0 1px 0 ${dark ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.9)"},
-      0 4px 18px ${T.shadow};
-  }
-  .btn-secondary:active { transform: scale(0.98); }
+  .qa-pill:hover { border-color: ${T.accent}50; color: ${T.accent}; transform: translateY(-5px); box-shadow: 0 14px 32px ${T.accentGlow}35; }
 
-  /* Ghost — liquid glass outline, theme-aware text */
-  .btn-ghost {
-    height: 44px;
-    padding: 0 20px;
-    border-radius: 11px;
-    border: 1px solid ${T.glassBorder};
-    background: ${dark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.5)"};
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    color: ${T.text};
-    font-size: 14px;
-    font-weight: 500;
-    font-family: ${FONT.body};
-    cursor: pointer;
-    transition: all 0.15s ease;
+  /* ── Premium Pills/Badges ── */
+  .pill, .sb-badge, .cm-tab-badge, .post-tag {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 99px; font-size: 11px; font-weight: 700;
   }
-  .btn-ghost:hover {
-    border-color: ${T.glassBorderHover};
-    background: ${T.glass};
-    transform: scale(1.02);
-  }
-  .btn-ghost:active { transform: scale(0.98); }
+  .pill-blue, .active, .dm-unread { background: ${T.accentSoft}; color: ${T.accent}; border: 1px solid ${T.accent}25; }
+  .pill-green { background: ${T.greenSoft}; color: ${T.green}; }
+  .pill-orange { background: ${T.orangeSoft}; color: ${T.orange}; }
+  .pill-pink { background: ${T.pinkSoft}; color: ${T.pink}; }
 
-  /* Destructive — liquid glass red, always readable */
-  .btn-destructive {
-    height: 44px;
-    padding: 0 20px;
-    border-radius: 11px;
-    border: 1px solid ${dark ? "rgba(255,69,58,0.30)" : "rgba(211,47,47,0.25)"};
-    background: linear-gradient(145deg, ${dark ? "rgba(255,69,58,0.16)" : "rgba(211,47,47,0.10)"} 0%, ${T.redSoft} 100%);
-    backdrop-filter: blur(16px);
-    color: ${T.red};
-    font-size: 14px;
-    font-weight: 600;
-    font-family: ${FONT.body};
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-  .btn-destructive:hover {
-    background: ${dark ? "rgba(255,69,58,0.22)" : "rgba(211,47,47,0.16)"};
-    border-color: ${T.red}60;
-    transform: scale(1.02);
-  }
-  .btn-destructive:active { transform: scale(0.98); }
+  /* ── Smooth Animations ── */
+  @keyframes masterFadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
+  .anim-fade-up { animation: masterFadeUp 0.45s cubic-bezier(0.25, 1, 0.5, 1) both; }
+  
+  .skel { background: ${dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}; border-radius: 9px; animation: masterPulse 1.4s ease infinite; }
+  @keyframes masterPulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
-  /* ──────────────────────────────
-     INPUTS — Apple style
-  ────────────────────────────── */
-  .input-field {
-    width: 100%;
-    height: 52px;
-    background: ${dark ? "rgba(255,255,255,0.045)" : T.bgSecondary};
-    border: 1px solid ${T.glassBorder};
-    border-radius: 12px;
-    padding: 0 16px;
-    font-size: 15px;
-    font-family: ${FONT.body};
-    font-weight: 400;
-    color: ${T.text};
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-    letter-spacing: -0.006em;
-  }
-  .input-field::placeholder {
-    color: ${T.textMuted};
-    font-weight: 400;
-  }
-  .input-field:focus {
-    border-color: ${T.accent};
-    background: ${dark ? "rgba(10,132,255,0.06)" : "rgba(0,102,204,0.04)"};
-    box-shadow: 0 0 0 3px ${T.accentGlow};
-  }
-  .input-field:hover:not(:focus) {
-    border-color: ${T.glassBorderHover};
-  }
-
-  /* ──────────────────────────────
-     THEME TOGGLE
-  ────────────────────────────── */
-  .theme-toggle {
-    width: 52px;
-    height: 28px;
-    border-radius: 99px;
-    border: 1px solid ${T.glassBorder};
-    background: ${dark ? "rgba(255,255,255,0.07)" : T.bgSecondary};
-    cursor: pointer;
-    position: relative;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-  }
-  .theme-toggle:hover {
-    border-color: ${T.glassBorderHover};
-  }
-  .toggle-thumb {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: ${T.accent};
-    position: absolute;
-    top: 3px;
-    left: ${dark ? "27px" : "3px"};
-    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-  }
-
-  /* ──────────────────────────────
-     NAVIGATION / HEADER
-  ────────────────────────────── */
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 32px;
-    border-bottom: 1px solid ${T.glassBorder};
-    background: ${dark
-      ? "rgba(10,10,10,0.85)"
-      : "rgba(255,255,255,0.85)"};
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .logo-text {
-    font-family: ${FONT.display};
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: ${T.text};
-  }
-  .logo-text span { color: ${T.accent}; }
-
-  .back-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 10px;
-    border: 1px solid ${T.glassBorder};
-    background: transparent;
-    color: ${T.textSub};
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-family: ${FONT.body};
-    letter-spacing: -0.006em;
-  }
-  .back-btn:hover {
-    color: ${T.accent};
-    border-color: ${T.accentGlow};
-    background: ${T.accentSoft};
-  }
-
-  /* ──────────────────────────────
-     SIDEBAR
-  ────────────────────────────── */
-  .sidebar {
-    width: 248px;
-    min-height: 100vh;
-    background: ${dark
-      ? "rgba(10,10,10,0.96)"
-      : "rgba(255,255,255,0.96)"};
-    border-right: 1px solid ${T.glassBorder};
-    display: flex;
-    flex-direction: column;
-    padding: 24px 12px 20px;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 20;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: ${T.textSub};
-    transition: all 0.15s ease;
-    margin-bottom: 1px;
-    letter-spacing: -0.006em;
-    border: 1px solid transparent;
-  }
-  .nav-item:hover {
-    color: ${T.text};
-    background: ${T.glass};
-    border-color: ${T.glassBorder};
-  }
-  .nav-item.active {
-    background: ${T.accentSoft};
-    color: ${T.accent};
-    border-color: ${T.accent}20;
-    font-weight: 600;
-  }
-
-  /* ──────────────────────────────
-     PROGRESS BARS
-  ────────────────────────────── */
-  .prog-track {
-    height: 4px;
-    background: ${dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"};
-    border-radius: 99px;
-    overflow: hidden;
-  }
-  .prog-fill {
-    height: 100%;
-    border-radius: 99px;
-    transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* ──────────────────────────────
-     STAT CARDS
-  ────────────────────────────── */
-  .stat-number {
-    font-family: ${FONT.display};
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.03em;
-    color: ${T.text};
-  }
-
-  /* ──────────────────────────────
-     DIVIDER
-  ────────────────────────────── */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .divider-line {
-    flex: 1;
-    height: 1px;
-    background: ${T.glassBorder};
-  }
-  .divider-text {
-    font-size: 12px;
-    color: ${T.textMuted};
-    font-weight: 500;
-    letter-spacing: 0.02em;
-  }
-
-  /* ──────────────────────────────
-     PILLS / BADGES
-  ────────────────────────────── */
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    border-radius: 99px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: -0.002em;
-  }
-  .pill-blue   { background: ${T.accentSoft};  color: ${T.accent}; }
-  .pill-green  { background: ${T.greenSoft};   color: ${T.green};  }
-  .pill-purple { background: ${T.purpleSoft};  color: ${T.purple}; }
-  .pill-orange { background: ${T.orangeSoft};  color: ${T.orange}; }
-  .pill-pink   { background: ${T.pinkSoft};    color: ${T.pink};   }
-  .pill-red    { background: ${T.redSoft};     color: ${T.red};    }
-
-  /* ──────────────────────────────
-     LIVE DOT
-  ────────────────────────────── */
-  .live-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: ${T.green};
-    animation: livePulse 2s ease-in-out infinite;
-  }
-  @keyframes livePulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.5; transform: scale(0.85); }
-  }
-
-  /* ──────────────────────────────
-     CHART TOOLTIP
-  ────────────────────────────── */
-  .chart-tooltip {
-    background: ${dark ? "rgba(18,18,18,0.97)" : "rgba(255,255,255,0.98)"};
-    border: 1px solid ${T.glassBorder};
-    border-radius: 14px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: ${T.text};
-    backdrop-filter: blur(24px);
-    box-shadow: 0 8px 32px ${T.shadow};
-  }
-
-  /* ──────────────────────────────
-     SECTION LABEL / TITLE
-  ────────────────────────────── */
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: ${T.textMuted};
-  }
-  .section-title {
-    font-family: ${FONT.display};
-    font-size: 18px;
-    font-weight: 700;
-    color: ${T.text};
-    letter-spacing: -0.015em;
-    margin-bottom: 14px;
-  }
-
-  /* ──────────────────────────────
-     LOGOUT BUTTON
-  ────────────────────────────── */
-  .logout-btn {
-    width: 100%;
-    padding: 11px;
-    border-radius: 11px;
-    border: 1px solid ${T.redSoft};
-    background: ${T.redSoft};
-    color: ${T.red};
-    font-size: 13px;
-    font-weight: 600;
-    font-family: ${FONT.body};
-    cursor: pointer;
-    transition: all 0.15s ease;
-    letter-spacing: -0.006em;
-    margin-top: auto;
-  }
-  .logout-btn:hover {
-    background: ${dark ? "rgba(255,69,58,0.16)" : "rgba(211,47,47,0.10)"};
-    border-color: ${T.red}45;
-  }
-
-  /* ──────────────────────────────
-     ANIMATIONS — Apple-style
-     Fast, purposeful, tight easing
-  ────────────────────────────── */
-
-  /* Page entrance — subtle, not dramatic */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes fadeDown {
-    from { opacity: 0; transform: translateY(-12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.94) translateY(8px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  @keyframes slideRight {
-    from { opacity: 0; transform: translateX(-16px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes countUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes floatY {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-8px); }
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Utility animation classes */
-  .anim-fade-up  { animation: fadeUp  0.40s cubic-bezier(0.4, 0, 0.2, 1) both; }
-  .anim-fade-in  { animation: fadeIn  0.30s ease both; }
-  .anim-scale-in { animation: scaleIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both; }
-  .anim-float    { animation: floatY  3.5s ease-in-out infinite; }
-
-  /* Stagger delays — tighter than before */
-  .d-1  { animation-delay: 0.04s; }
-  .d-2  { animation-delay: 0.08s; }
-  .d-3  { animation-delay: 0.12s; }
-  .d-4  { animation-delay: 0.16s; }
-  .d-5  { animation-delay: 0.20s; }
-  .d-6  { animation-delay: 0.24s; }
-  .d-7  { animation-delay: 0.28s; }
-  .d-8  { animation-delay: 0.32s; }
-  .d-9  { animation-delay: 0.36s; }
-  .d-10 { animation-delay: 0.40s; }
-
-  /* ──────────────────────────────
-     RESPONSIVE
-  ────────────────────────────── */
-  @media (max-width: 768px) {
-    .page-header { padding: 12px 16px; }
-    .sidebar { display: none; }
-  }
-`;
+  /* Responsive layout maps */
+  @media(max-width:1200px){ .qa-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media(max-width:768px){ .sidebar, .cm-sb { display:none; } }
+  `;
+};

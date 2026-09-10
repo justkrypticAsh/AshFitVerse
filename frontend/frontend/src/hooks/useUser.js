@@ -1,11 +1,20 @@
 // src/hooks/useUser.js
+// ─────────────────────────────────────────────────────────────
+// Source of truth: Firebase Auth + Firestore
+// localStorage = cache only (for faster first render)
+// ─────────────────────────────────────────────────────────────
+
 import { useState, useEffect } from "react";
-import { db, auth } from "../firebase";
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
+import { resolveEffectivePlan, hasMinPlan } from "../config/planConfig";
 
 export const DEFAULT_USER = {
   name: "Athlete",
+  plan: "free",
+  planBilling: "",
+  planExpiresAt: null,
   age: "",
   sex: "",
   height: "",
@@ -21,157 +30,113 @@ export const DEFAULT_USER = {
   maleFocus: [],
   maleConcerns: "none",
   streak: 0,
-  createdAt: null,
+  points: 0,
+  online: false,
+  avatar: null,
 };
 
 export default function useUser() {
-  const [user, setUser]           = useState(null);  // null until auth resolves
-  const [onboarded, setOnboarded] = useState(false);
-  const [loading, setLoading]     = useState(true);
-  const [uid, setUid]             = useState(null);
+  const [user,      setUser]      = useState(() => {
+    // Fast first render from localStorage cache
+    try {
+      const cached = localStorage.getItem("ashfitverse_user");
+      return cached ? { ...DEFAULT_USER, ...JSON.parse(cached) } : DEFAULT_USER;
+    } catch { return DEFAULT_USER; }
+  });
+  const [onboarded, setOnboarded] = useState(
+    () => localStorage.getItem("ashfitverse_onboarded") === "true"
+  );
+  const [loading,   setLoading]   = useState(true);
+  const [authUid,   setAuthUid]   = useState(null);
 
+  // ── Auth listener ──────────────────────────────────────────
   useEffect(() => {
-    let unsubDoc = null;
-
     const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) {
+      if (firebaseUser) {
+        setAuthUid(firebaseUser.uid);
+      } else {
+        // Logged out
+        setAuthUid(null);
         setUser(DEFAULT_USER);
         setOnboarded(false);
         setLoading(false);
-        setUid(null);
-        return;
       }
-
-      setUid(firebaseUser.uid);
-
-      const ref = doc(db, "users", firebaseUser.uid);
-      unsubDoc = onSnapshot(ref, (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          const merged = { ...DEFAULT_USER, ...data };
-          setUser(merged);
-          const isOnboarded = !!(data.agreeTerms || (data.name && data.name !== "Athlete" && data.age));
-          setOnboarded(isOnboarded);
-          localStorage.setItem("ashfitverse_user", JSON.stringify(merged));
-          if (isOnboarded) localStorage.setItem("ashfitverse_onboarded", "true");
-        } else {
-          // No Firestore doc — try localStorage cache
-          const saved = localStorage.getItem("ashfitverse_user");
-          const localOnboarded = localStorage.getItem("ashfitverse_onboarded") === "true";
-          setUser(saved ? { ...DEFAULT_USER, ...JSON.parse(saved) } : DEFAULT_USER);
-          setOnboarded(localOnboarded);
-        }
-        setLoading(false);
-      }, (err) => {
-        console.error("Firestore listener error:", err);
-        const saved = localStorage.getItem("ashfitverse_user");
-        const localOnboarded = localStorage.getItem("ashfitverse_onboarded") === "true";
-        setUser(saved ? { ...DEFAULT_USER, ...JSON.parse(saved) } : DEFAULT_USER);
-        setOnboarded(localOnboarded);
-        setLoading(false);
-      });
     });
-
-    return () => {
-      unsubAuth();
-      if (unsubDoc) unsubDoc();
-    };
+    return () => unsubAuth();
   }, []);
 
-  // ── Update user — saves to Firestore + localStorage ──────────────────
+  // ── Firestore real-time listener ───────────────────────────
+  useEffect(() => {
+    if (!authUid) return;
+
+    const userRef = doc(db, "users", authUid);
+    const unsubSnap = onSnapshot(
+      userRef,
+      (snap) => {
+        if (snap.exists()) {
+          const data = { ...DEFAULT_USER, ...snap.data() };
+          setUser(data);
+          setOnboarded(true);
+          // Sync to localStorage as cache
+          localStorage.setItem("ashfitverse_user",   JSON.stringify(data));
+          localStorage.setItem("ashfitverse_onboarded", "true");
+        } else {
+          // Doc doesn't exist yet — user hasn't completed onboarding
+          setOnboarded(false);
+        }
+        setLoading(false);
+      },
+      (err) => {
+        // Firestore read failed — fall back to localStorage
+        console.warn("Firestore read failed, using localStorage:", err.message);
+        const cached = localStorage.getItem("ashfitverse_user");
+        if (cached) {
+          try { setUser({ ...DEFAULT_USER, ...JSON.parse(cached) }); } catch {}
+        }
+        setOnboarded(localStorage.getItem("ashfitverse_onboarded") === "true");
+        setLoading(false);
+      }
+    );
+
+    return () => unsubSnap();
+  }, [authUid]);
+
+  // ── updateUser — saves to Firestore + localStorage ─────────
   const updateUser = async (updates) => {
     const updated = { ...user, ...updates };
-    setUser(updated);
+    setUser(updated); // optimistic
     localStorage.setItem("ashfitverse_user", JSON.stringify(updated));
 
-    const currentUser = auth.currentUser;
-    if (currentUser) {
+    if (authUid) {
       try {
-        await setDoc(doc(db, "users", currentUser.uid), updated, { merge: true });
-      } catch (err) {
-        console.error("Firestore updateUser error:", err);
+        await setDoc(doc(db, "users", authUid), updated, { merge: true });
+      } catch (e) {
+        console.error("updateUser Firestore error:", e);
       }
     }
   };
 
-  // ── Log today's data (weight, calories, mood etc.) ──────────────────
-  const logToday = async (updates) => {
-    const today = new Date().toISOString().split("T")[0];
-    const logKey = `logs.${today.replace(/-/g, "_")}`;
-    const merged = { ...user, dailyLogs: { ...(user.dailyLogs || {}), [today]: { ...(user.dailyLogs?.[today] || {}), ...updates } } };
-    setUser(merged);
-    localStorage.setItem("ashfitverse_user", JSON.stringify(merged));
-
-    const currentUser = auth.currentUser;
-    if (currentUser) {
+  // ── clearUser — logout cleanup ─────────────────────────────
+  const clearUser = async () => {
+    // Set offline before clearing
+    if (authUid) {
       try {
-        await setDoc(doc(db, "users", currentUser.uid), merged, { merge: true });
-      } catch (err) {
-        console.error("Firestore logToday error:", err);
-      }
+        await updateDoc(doc(db, "users", authUid), { online: false });
+      } catch {}
     }
-  };
-
-  // ── Clear user — logout ──────────────────────────────────────────────
-  const clearUser = () => {
     localStorage.removeItem("ashfitverse_user");
     localStorage.removeItem("ashfitverse_onboarded");
-    auth.signOut();
     setUser(DEFAULT_USER);
     setOnboarded(false);
-    setUid(null);
+    setAuthUid(null);
   };
 
-  // ── Computed values (safe against null user) ────────────────────────
-  const safeUser = user || DEFAULT_USER;
-  const isMale   = safeUser.sex === "male";
-  const isFemale = safeUser.sex === "female";
-  const isOther  = safeUser.sex === "other" || !safeUser.sex;
-
-  const bmi = safeUser.height && safeUser.weight
-    ? parseFloat((+safeUser.weight / ((+safeUser.height / 100) ** 2)).toFixed(1))
-    : null;
-
-  const bmr = safeUser.height && safeUser.weight && safeUser.age
-    ? isFemale
-      ? 10 * +safeUser.weight + 6.25 * +safeUser.height - 5 * +safeUser.age - 161
-      : 10 * +safeUser.weight + 6.25 * +safeUser.height - 5 * +safeUser.age + 5
-    : null;
-
-  const activityMultipliers = {
-    sedentary: 1.2, light: 1.375, moderate: 1.55,
-    active: 1.725, very_active: 1.9,
-  };
-  const tdee = bmr
-    ? Math.round(bmr * (activityMultipliers[safeUser.activityLevel] || 1.55))
-    : null;
-
-  const goalDeltas = {
-    muscle: 300, fat_loss: -500, strength: 100,
-    endurance: 0, general: 0, wellness: 0,
-  };
-  const calorieTarget = tdee ? tdee + (goalDeltas[safeUser.goal] || 0) : null;
-
-  const weightProgress = safeUser.weight && safeUser.targetWeight
-    ? Math.min(100, Math.max(0, Math.round(
-        Math.abs(+safeUser.weight - +safeUser.targetWeight) /
-        Math.max(Math.abs((+safeUser.weight - 5) - +safeUser.targetWeight), 1) * 100
-      )))
-    : 0;
-
-  const hasPCOS          = safeUser.femaleCondition === "pcos";
-  const hasPCOD          = safeUser.femaleCondition === "pcod";
-  const hasEndometriosis = safeUser.femaleCondition === "endo";
-  const hasThyroid       = safeUser.femaleCondition === "thyroid";
-
-  const hasMentalHealthFocus = safeUser.maleFocus?.includes("mental")   || safeUser.maleFocus?.includes("all");
-  const hasSexualHealthFocus = safeUser.maleFocus?.includes("sexual")   || safeUser.maleFocus?.includes("all");
-  const hasHormoneFocus      = safeUser.maleFocus?.includes("hormones") || safeUser.maleFocus?.includes("all");
-
+  // ── Cycle helpers ──────────────────────────────────────────
   const getCycleDay = () => {
-    if (!safeUser.lastPeriod) return null;
-    const diff = Math.floor((Date.now() - new Date(safeUser.lastPeriod).getTime()) / 86400000);
-    return (diff % (parseInt(safeUser.cycleLength) || 28)) + 1;
+    if (!user.lastPeriod) return null;
+    const diff = Math.floor((Date.now() - new Date(user.lastPeriod)) / 86400000);
+    const len  = parseInt(user.cycleLength) || 28;
+    return (diff % len) + 1;
   };
 
   const getPhaseName = (day) => {
@@ -182,13 +147,67 @@ export default function useUser() {
     return "Luteal 🌙";
   };
 
+  // ── Computed ───────────────────────────────────────────────
+  const isMale   = user.sex === "male";
+  const isFemale = user.sex === "female";
+  const isOther  = !user.sex || user.sex === "other";
+
+  const bmi = user.height && user.weight
+    ? parseFloat((+user.weight / ((+user.height / 100) ** 2)).toFixed(1))
+    : null;
+
+  const bmr = user.height && user.weight && user.age
+    ? isFemale
+      ? 10 * +user.weight + 6.25 * +user.height - 5 * +user.age - 161
+      : 10 * +user.weight + 6.25 * +user.height - 5 * +user.age + 5
+    : null;
+
+  const ACTIVITY_MUL = {
+    sedentary:1.2, light:1.375, moderate:1.55, active:1.725, very_active:1.9,
+  };
+  const tdee = bmr
+    ? Math.round(bmr * (ACTIVITY_MUL[user.activityLevel] || 1.55))
+    : null;
+
+  const GOAL_DELTA = {
+    muscle:300, fat_loss:-500, strength:100, endurance:0, general:0, wellness:0,
+  };
+  const calorieTarget = tdee
+    ? tdee + (GOAL_DELTA[user.goal] || 0)
+    : null;
+
+  const weightProgress = user.weight && user.targetWeight
+    ? Math.min(100, Math.max(0, Math.round(
+        Math.abs(+user.weight - +user.targetWeight) === 0 ? 100
+        : (1 - Math.abs(+user.weight - +user.targetWeight) /
+            Math.abs((+user.weight - 5) - +user.targetWeight)) * 100
+      )))
+    : 0;
+
+  // Male flags
+  const hasMentalHealthFocus = (user.maleFocus||[]).includes("mental")   || (user.maleFocus||[]).includes("all");
+  const hasSexualHealthFocus = (user.maleFocus||[]).includes("sexual")   || (user.maleFocus||[]).includes("all");
+  const hasHormoneFocus      = (user.maleFocus||[]).includes("hormones") || (user.maleFocus||[]).includes("all");
+
+  // Female flags
+  const hasPCOS          = user.femaleCondition === "pcos";
+  const hasPCOD          = user.femaleCondition === "pcod";
+  const hasEndometriosis = user.femaleCondition === "endo";
+  const hasThyroid       = user.femaleCondition === "thyroid";
+
+  const effectivePlan = resolveEffectivePlan(user);
+  const hasPlan = (minPlan) => hasMinPlan(effectivePlan, minPlan);
+  const isLite = hasPlan("lite");
+  const isPro  = hasPlan("pro");
+
   return {
-    user: safeUser, updateUser, logToday, clearUser,
-    onboarded, loading, uid,
+    user, updateUser, clearUser,
+    authUid, onboarded, loading,
     isMale, isFemale, isOther,
-    bmi, tdee, calorieTarget, weightProgress,
     hasMentalHealthFocus, hasSexualHealthFocus, hasHormoneFocus,
     hasPCOS, hasPCOD, hasEndometriosis, hasThyroid,
+    bmi, tdee, calorieTarget, weightProgress,
     getCycleDay, getPhaseName,
+    effectivePlan, hasPlan, isLite, isPro,
   };
 }

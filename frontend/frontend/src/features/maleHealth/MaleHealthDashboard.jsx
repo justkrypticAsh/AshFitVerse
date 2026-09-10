@@ -10,7 +10,7 @@ const QUICK_LINKS = [
   { label: "Mental Health Log",   icon: "🧠", path: "/male-mental-health",  color: "#4f8ef7" },
   { label: "Sexual Wellness",     icon: "❤️", path: "/sexual-wellness",     color: "#f472b6" },
   { label: "Sleep & Recovery",    icon: "😴", path: "/sleep-tracker",       color: "#a78bfa" },
-  { label: "Men's Shop",          icon: "🛒", path: "/shop?cat=male",       color: "#34d399" },
+  { label: "Men's Shop",          icon: "🛒", path: "/male-shop",           color: "#34d399" },
   { label: "Workout Planner",     icon: "🏋️", path: "/workout-planner",    color: "#fbbf24" },
 ];
 
@@ -79,7 +79,7 @@ const DAILY_TIPS = [
 export default function MaleHealthDashboard() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, isMale, loading } = useUser();
+  const { user } = useUser();
   const [mounted, setMounted]   = useState(false);
   const [mood, setMood]         = useState(null);
   const [energy, setEnergy]     = useState(3);
@@ -87,12 +87,9 @@ export default function MaleHealthDashboard() {
   const [saved, setSaved]       = useState(false);
 
   useEffect(() => {
-  setMounted(true);
-}, []);
+    setMounted(true);
+  }, []);
 
-useEffect(() => {
-  if (!loading && !isMale) navigate("/dashboard");
-}, [loading, isMale]);
   const toggleHabit = (id) =>
     setHabits(h => h.includes(id) ? h.filter(x => x !== id) : [...h, id]);
 
@@ -113,14 +110,16 @@ useEffect(() => {
       opacity:${dark?"0.04":"0.055"};filter:${dark?"grayscale(70%) blur(2px)":"grayscale(40%) blur(1px)"};}
 
     .mh-header{display:flex;align-items:center;justify-content:space-between;
-      padding:22px 40px;border-bottom:1px solid ${T.glassBorder};
-      background:${dark?"rgba(7,8,15,0.88)":"rgba(242,244,252,0.88)"};
-      backdrop-filter:blur(32px);position:sticky;top:0;z-index:50;}
-    .back-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;
-      border:1px solid ${T.glassBorder};background:${T.glass};color:${T.textSub};
-      font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;font-family:${FONT.body};}
-    .back-btn:hover{color:${T.orange};border-color:${T.orange}40;}
-    .mh-logo{font-family:${FONT.display};font-size:20px;font-weight:800;color:${T.text};}
+      padding:0 32px;height:60px;position:sticky;top:0;z-index:50;
+      border-bottom:1px solid ${T.glassBorder};
+      background:${dark?"rgba(8,8,12,0.85)":"rgba(255,255,255,0.85)"};
+      backdrop-filter:blur(40px);}
+    .pr-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;
+      border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};
+      color:${T.text};font-size:13px;font-weight:600;cursor:pointer;
+      transition:all 0.15s ease;font-family:${FONT.body};}
+    .pr-back:hover{background:${T.accentSoft};border-color:${T.accent}40;color:${T.accent};}
+    .mh-logo{font-family:${FONT.display};font-size:18px;font-weight:800;color:${T.text};}
     .mh-logo span{color:${T.orange};}
 
     .mh-content{max-width:1200px;margin:0 auto;padding:32px 40px;position:relative;z-index:1;}
@@ -210,7 +209,7 @@ useEffect(() => {
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
     @media(max-width:1100px){.pillars-grid{grid-template-columns:repeat(2,1fr);}.ql-grid{grid-template-columns:repeat(3,1fr);}.mh-grid{grid-template-columns:1fr;}}
-    @media(max-width:700px){.mh-content{padding:20px 16px;}.mh-header{padding:18px 20px;}.metric-row{grid-template-columns:1fr 1fr;}.ql-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:700px){.mh-content{padding:20px 16px;}.mh-header{padding:0 16px;}.metric-row{grid-template-columns:1fr 1fr;}.ql-grid{grid-template-columns:repeat(2,1fr);}}
   `;
 
   return (
@@ -223,10 +222,8 @@ useEffect(() => {
         <div className="orb orb-3" style={{ background: "radial-gradient(circle,rgba(167,139,250,0.04) 0%,transparent 65%)" }} />
 
         <div className="mh-header">
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <button className="back-btn" onClick={() => navigate("/dashboard")}>← Dashboard</button>
-            <div className="mh-logo">AshFit<span>Verse</span></div>
-          </div>
+          <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
+          <div className="mh-logo">AshFit<span>Verse</span></div>
           <button className="theme-toggle" onClick={toggleTheme}>
             <div className="toggle-thumb">{dark ? "🌙" : "☀️"}</div>
           </button>
@@ -236,7 +233,7 @@ useEffect(() => {
           {/* Hero */}
           <div style={{ animation: "fadeUp 0.6s ease both" }}>
             <div className="mh-eyebrow">♂ Men's Health</div>
-            <div className="mh-title">Hey {user.name?.split(" ")[0] || "Champion"} 🔥</div>
+            <div className="mh-title">Hey {user?.name?.split(" ")[0] || "Champion"} 🔥</div>
             <div className="mh-sub">
               Your complete men's health hub — testosterone optimisation, mental resilience, sexual wellness and recovery tracking.
               Every system working together for peak performance.
@@ -255,7 +252,7 @@ useEffect(() => {
           {/* Metric cards */}
           <div className="metric-row" style={{ animation: "fadeUp 0.6s ease 0.08s both" }}>
             {[
-              { lbl: "Workout Streak", val: `${user.streak || 18} days`, sub: "Keep it going 🔥", color: T.orange, glow: T.orangeGlow },
+              { lbl: "Workout Streak", val: `${user?.streak || 18} days`, sub: "Keep it going 🔥", color: T.orange, glow: T.orangeGlow },
               { lbl: "Sleep Score", val: "74/100", sub: "Last night", color: T.purple, glow: T.purpleGlow },
               { lbl: "Recovery", val: "Good", sub: "HRV trend up", color: T.green, glow: T.greenGlow },
             ].map((m, i) => (

@@ -1,3 +1,4 @@
+// src/pages/CalorieCalculator.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -67,10 +68,16 @@ export default function CalorieCalculator() {
     .root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};
       opacity:${mounted?1:0};transition:opacity 0.7s ease,background 0.5s,color 0.5s;position:relative;overflow-x:hidden;}
 
-    .header{display:flex;align-items:center;justify-content:space-between;padding:28px 40px;position:relative;z-index:10;border-bottom:1px solid ${T.glassBorder};background:${T.glass};backdrop-filter:blur(30px);}
-    .h-title{font-family:${FONT.display};font-size:20px;font-weight:800;color:${T.text};}
+    /* UNIFIED HEADER BAR WITH MATCHING NAVIGATION BUTTON */
+    .header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;position:sticky;top:0;z-index:50;border-bottom:1px solid ${T.glassBorder};background:${dark?"rgba(8,8,12,0.85)":"rgba(255,255,255,0.85)"};backdrop-filter:blur(40px);}
+    .pr-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};color:${T.text};font-size:13px;font-weight:600;cursor:pointer;font-family:${FONT.body};transition:all 0.15s ease;}
+    .pr-back:hover{background:${T.accentSoft};border-color:${T.accent}40;color:${T.accent};}
+    .h-title{font-family:${FONT.display};font-size:18px;font-weight:800;color:${T.text};}
     .h-title span{color:${T.accent};}
     .h-right{display:flex;align-items:center;gap:10px;}
+
+    .theme-toggle{width:48px;height:26px;border-radius:99px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"};cursor:pointer;position:relative;}
+    .toggle-thumb{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:${T.accent};display:flex;align-items:center;justify-content:center;font-size:10px;transition:left .2s ease;left:${dark?"24px":"2px"};}
 
     .content{max-width:1100px;margin:0 auto;padding:36px 40px;position:relative;z-index:1;}
     .page-title{font-family:${FONT.display};font-size:36px;font-weight:800;letter-spacing:-0.03em;color:${T.text};margin-bottom:6px;}
@@ -135,7 +142,7 @@ export default function CalorieCalculator() {
 
     @keyframes fu{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
     @media(max-width:900px){.grid2{grid-template-columns:1fr;}.result-grid{grid-template-columns:1fr 1fr;}.macro-grid{grid-template-columns:1fr 1fr 1fr;}}
-    @media(max-width:600px){.content{padding:24px 16px;}.result-grid{grid-template-columns:1fr;}.macro-grid{grid-template-columns:1fr 1fr;}}
+    @media(max-width:600px){.content{padding:24px 16px;}.header{padding:0 16px;}.result-grid{grid-template-columns:1fr;}.macro-grid{grid-template-columns:1fr 1fr;}}
   `;
 
   return (
@@ -145,8 +152,9 @@ export default function CalorieCalculator() {
         <div className="bg-image-layer"><img src={BG_IMAGES.calculator} alt="" loading="lazy" /></div>
         <div className="orb orb-1" /><div className="orb orb-2" />
 
+        {/* HEADER BAR WITH UNIFIED BACK BUTTON */}
         <div className="header">
-          <button className="back-btn" onClick={() => navigate("/dashboard")}>← Dashboard</button>
+          <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
           <div className="h-title">AshFit<span>Verse</span></div>
           <div className="h-right">
             <button className="theme-toggle" onClick={toggleTheme}>

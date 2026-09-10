@@ -1,11 +1,13 @@
+// src/features/diet/DietPlan.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+// GET API KEY FROM VITE ENV OR PASTE DIRECTLY FOR LOCAL TESTING
+const OPENROUTER_API_KEY = import.meta.env.VITE_CLAUDE_API_KEY || "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";
 
-const WEEK_PLAN = [
+const STATIC_WEEK_PLAN = [
   {
     day: "Monday", type: "Training Day", typeColor: "#4f8ef7",
     total: { cal: 2600, protein: 175, carbs: 280, fats: 72 },
@@ -93,25 +95,122 @@ const WEEK_PLAN = [
 export default function DietPlan() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
+  
   const [mounted, setMounted] = useState(false);
   const [activeDay, setActiveDay] = useState(0);
   const [expandedMeal, setExpandedMeal] = useState(null);
+  
+  const [weekPlan, setWeekPlan] = useState(STATIC_WEEK_PLAN);
+  const [generationMode, setGenerationMode] = useState("rule-based");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  const mockUserContext = {
+    goal: "muscle",
+    equipment: "full_gym",
+    activityLevel: "active",
+    calorieTarget: 2400,
+    sex: "male",
+    days: 4,
+    level: "intermediate"
+  };
 
-  const day = WEEK_PLAN[activeDay];
+  const fetchPlanData = async (modeType) => {
+    if (modeType === "rule-based") {
+      setWeekPlan(STATIC_WEEK_PLAN);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const systemPrompt = `You are the ultimate fitness intelligence matrix for AshFitVerse. 
+      Generate a precise macro-accurate 7-day diet plan based on the user's details. Respond ONLY with a valid JSON array matching the schema:
+      [
+        { 
+          "day": "String", "type": "String", "typeColor": "HexCode",
+          "total": { "cal": Number, "protein": Number, "carbs": Number, "fats": Number },
+          "meals": [
+            { "time": "String", "name": "String", "emoji": "String", "items": ["String"], "cal": Number, "protein": Number, "carbs": Number, "fats": Number }
+          ]
+        }
+      ]
+      No conversational filler, no markdown wrapping.`;
+
+      const userPrompt = `Goal: ${mockUserContext.goal}, Daily Target: ${mockUserContext.calorieTarget} kcal, Sex: ${mockUserContext.sex}.`;
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "anthropic/claude-3-haiku",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      const rawText = data?.choices?.[0]?.message?.content;
+      
+      const cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+      const aiData = JSON.parse(cleanJson);
+      
+      if (aiData && Array.isArray(aiData)) {
+        setWeekPlan(aiData);
+      } else {
+        setWeekPlan(STATIC_WEEK_PLAN);
+      }
+    } catch (err) {
+      console.error("Direct OpenRouter Call Failed, engaging fallback diet:", err);
+      setWeekPlan(STATIC_WEEK_PLAN);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { 
+    setMounted(true); 
+    fetchPlanData("rule-based");
+  }, []);
+
+  const handleModeChange = (newMode) => {
+    setGenerationMode(newMode);
+    fetchPlanData(newMode);
+  };
+
+  const day = weekPlan[activeDay] || STATIC_WEEK_PLAN[activeDay];
+
+  const avgCalories = Math.round(weekPlan.reduce((acc, d) => acc + (d?.total?.cal || 0), 0) / weekPlan.length);
+  const avgProtein = Math.round(weekPlan.reduce((acc, d) => acc + (d?.total?.protein || 0), 0) / weekPlan.length);
+  const trainingDaysCount = weekPlan.filter(d => d?.type?.toLowerCase().includes("training")).length;
+  const restDaysCount = weekPlan.length - trainingDaysCount;
 
   const css = generateCSS(T, dark) + `
     .root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};opacity:${mounted?1:0};transition:opacity 0.7s,background 0.5s,color 0.5s;position:relative;overflow-x:hidden;}
 
-    .header{display:flex;align-items:center;justify-content:space-between;padding:24px 40px;border-bottom:1px solid ${T.glassBorder};background:${dark?"rgba(7,8,15,0.88)":"rgba(242,244,252,0.88)"};backdrop-filter:blur(30px);position:sticky;top:0;z-index:50;}
-    .h-logo{font-family:${FONT.display};font-size:20px;font-weight:800;color:${T.text};}
+    /* UNIFIED HEADER BAR WITH MATCHING NAVIGATION BUTTON */
+    .header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;position:sticky;top:0;z-index:50;border-bottom:1px solid ${T.glassBorder};background:${dark?"rgba(8,8,12,0.85)":"rgba(255,255,255,0.85)"};backdrop-filter:blur(40px);}
+    .pr-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};color:${T.text};font-size:13px;font-weight:600;cursor:pointer;font-family:${FONT.body};transition:all 0.15s ease;}
+    .pr-back:hover{background:${T.accentSoft};border-color:${T.accent}40;color:${T.accent};}
+    .h-logo{font-family:${FONT.display};font-size:18px;font-weight:800;color:${T.text};}
     .h-logo span{color:${T.accent};}
+
+    .theme-toggle{width:48px;height:26px;border-radius:99px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"};cursor:pointer;position:relative;}
+    .toggle-thumb{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:${T.accent};display:flex;align-items:center;justify-content:center;font-size:10px;transition:left .2s ease;left:${dark?"24px":"2px"};}
 
     .content{max-width:1100px;margin:0 auto;padding:32px 40px;position:relative;z-index:1;}
     .page-title{font-family:${FONT.display};font-size:32px;font-weight:800;letter-spacing:-0.02em;color:${T.text};margin-bottom:6px;}
     .page-title span{background:linear-gradient(135deg,${T.purple},${T.accent});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-    .page-sub{font-size:14px;color:${T.textSub};margin-bottom:28px;}
+    
+    .mode-switch-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .mode-toggle { display: inline-flex; background: ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}; padding: 4px; border-radius: 99px; border: 1px solid ${T.glassBorder}; }
+    .mode-btn { background: transparent; border: none; padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 700; color: ${T.textSub}; cursor: pointer; transition: all 0.2s; }
+    .mode-btn.active { background: ${T.accent}; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+    .page-sub{font-size:14px;color:${T.textSub};}
 
     .day-tabs{display:flex;gap:8px;margin-bottom:28px;overflow-x:auto;padding-bottom:4px;}
     .day-tab{padding:11px 18px;border-radius:13px;border:1.5px solid ${T.glassBorder};background:${T.glass};backdrop-filter:blur(20px);cursor:pointer;font-size:13px;font-weight:700;color:${T.textSub};transition:all 0.25s;white-space:nowrap;font-family:${FONT.body};}
@@ -154,8 +253,12 @@ export default function DietPlan() {
     .tip-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid ${T.glassBorder};font-size:12px;color:${T.textSub};line-height:1.55;}
     .tip-row:last-child{border-bottom:none;}
 
+    .loading-overlay { font-size: 14px; color: ${T.textSub}; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .spinner { border: 2px solid ${T.glassBorder}; border-top: 2px solid ${T.accent}; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     @media(max-width:900px){.main-grid{grid-template-columns:1fr;}.macro-row{grid-template-columns:repeat(2,1fr);}}
-    @media(max-width:600px){.content{padding:20px 16px;}.day-header{flex-direction:column;align-items:flex-start;}.macro-row{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:600px){.content{padding:20px 16px;}.header{padding:0 16px;}.day-header{flex-direction:column;align-items:flex-start;}.macro-row{grid-template-columns:repeat(2,1fr);}}
   `;
 
   return (
@@ -165,8 +268,9 @@ export default function DietPlan() {
         <div className="bg-image-layer"><img src={BG_IMAGES.diet} alt="" loading="lazy" /></div>
         <div className="orb orb-1" /><div className="orb orb-2" />
 
+        {/* HEADER BAR WITH UNIFIED BACK BUTTON */}
         <div className="header">
-          <button className="back-btn" onClick={() => navigate("/dashboard")}>← Dashboard</button>
+          <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
           <div className="h-logo">AshFit<span>Verse</span></div>
           <button className="theme-toggle" onClick={toggleTheme}>
             <div className="toggle-thumb">{dark ? "🌙" : "☀️"}</div>
@@ -175,35 +279,51 @@ export default function DietPlan() {
 
         <div className="content">
           <div className="page-title" style={{ animation: "fadeUp 0.6s ease both" }}>Weekly Diet <span>Plan</span></div>
-          <div className="page-sub" style={{ animation: "fadeUp 0.6s ease 0.05s both" }}>
-            A personalised 7-day meal plan optimised for muscle gain — 2,400 kcal average · 165g protein
+          
+          <div className="mode-switch-container" style={{ animation: "fadeUp 0.6s ease 0.05s both" }}>
+            <div>
+              <div className="page-sub">
+                A personalised 7-day meal plan optimised for {mockUserContext.goal} — {avgCalories} kcal average · {avgProtein}g protein
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner" /> Updating...
+                </div>
+              )}
+              <div className="mode-toggle">
+                <button className={`mode-btn ${generationMode === "rule-based" ? "active" : ""}`} onClick={() => handleModeChange("rule-based")}>Standard</button>
+                <button className={`mode-btn ${generationMode === "ai-generated" ? "active" : ""}`} onClick={() => handleModeChange("ai-generated")}>Smart AI</button>
+              </div>
+            </div>
           </div>
 
           <div className="day-tabs" style={{ animation: "fadeUp 0.6s ease 0.08s both" }}>
-            {WEEK_PLAN.map((d, i) => (
+            {weekPlan.map((d, i) => (
               <button key={i} className={`day-tab ${activeDay === i ? "active" : ""}`}
-                style={activeDay === i ? { background: `linear-gradient(135deg,${d.typeColor},${d.typeColor}bb)` } : {}}
+                style={activeDay === i ? { background: `linear-gradient(135deg,${d.typeColor || '#4f8ef7'},${d.typeColor || '#4f8ef7'}bb)` } : {}}
                 onClick={() => { setActiveDay(i); setExpandedMeal(null); }}>
-                {d.day.slice(0, 3)}
+                {d?.day?.slice(0, 3) || "Day"}
               </button>
             ))}
           </div>
 
           <div className="day-header">
-            <div><div className="day-title">{day.day}</div></div>
-            <div className="day-type" style={{ background: `${day.typeColor}18`, color: day.typeColor, border: `1px solid ${day.typeColor}35` }}>{day.type}</div>
+            <div><div className="day-title">{day?.day}</div></div>
+            <div className="day-type" style={{ background: `${day?.typeColor || '#4f8ef7'}18`, color: day?.typeColor || '#4f8ef7', border: `1px solid ${day?.typeColor || '#4f8ef7'}35` }}>{day?.type || "Training Day"}</div>
           </div>
 
           <div className="macro-row">
             {[
-              { l: "Total Calories", v: day.total.cal, u: "kcal", c: T.accent },
-              { l: "Protein", v: day.total.protein, u: "g", c: "#4f8ef7" },
-              { l: "Carbohydrates", v: day.total.carbs, u: "g", c: T.purple },
-              { l: "Fats", v: day.total.fats, u: "g", c: T.orange },
+              { l: "Total Calories", v: day?.total?.cal, u: "kcal", c: T.accent },
+              { l: "Protein", v: day?.total?.protein, u: "g", c: "#4f8ef7" },
+              { l: "Carbohydrates", v: day?.total?.carbs, u: "g", c: T.purple },
+              { l: "Fats", v: day?.total?.fats, u: "g", c: T.orange },
             ].map((m, i) => (
               <div key={i} className="mc">
                 <div className="mc-l">{m.l}</div>
-                <div className="mc-v" style={{ color: m.c }}>{m.v}</div>
+                <div className="mc-v" style={{ color: m.c }}>{m.v || 0}</div>
                 <div className="mc-u">{m.u}</div>
               </div>
             ))}
@@ -211,36 +331,36 @@ export default function DietPlan() {
 
           <div className="main-grid">
             <div>
-              {day.meals.map((meal, mi) => (
+              {day?.meals?.map((meal, mi) => (
                 <div key={mi} className={`meal-card ${expandedMeal === mi ? "expanded" : ""}`}
-                  style={{ "--mc": day.typeColor, animationDelay: `${mi * 0.06}s` }}
+                  style={{ "--mc": day?.typeColor || T.accent, animationDelay: `${mi * 0.06}s` }}
                   onClick={() => setExpandedMeal(expandedMeal === mi ? null : mi)}>
                   <div className="mc-header">
                     <div className="mc-left">
-                      <span className="mc-emoji">{meal.emoji}</span>
+                      <span className="mc-emoji">{meal?.emoji || "🍽️"}</span>
                       <div>
-                        <div className="mc-time">{meal.time}</div>
-                        <div className="mc-name">{meal.name}</div>
+                        <div className="mc-time">{meal?.time}</div>
+                        <div className="mc-name">{meal?.name}</div>
                       </div>
                     </div>
                     <div className="mc-right">
-                      <span className="mc-cal-badge" style={{ background: `${day.typeColor}18`, color: day.typeColor }}>{meal.cal} kcal</span>
+                      <span className="mc-cal-badge" style={{ background: `${day?.typeColor || T.accent}18`, color: day?.typeColor || T.accent }}>{meal?.cal} kcal</span>
                       <span className={`mc-chevron ${expandedMeal === mi ? "open" : ""}`}>▼</span>
                     </div>
                   </div>
                   {expandedMeal === mi && (
                     <div className="mc-body">
                       <ul className="meal-items">
-                        {meal.items.map((item, ii) => (
+                        {meal?.items?.map((item, ii) => (
                           <li key={ii} className="meal-item">
-                            <div className="meal-item-dot" style={{ background: day.typeColor }} />{item}
+                            <div className="meal-item-dot" style={{ background: day?.typeColor || T.accent }} />{item}
                           </li>
                         ))}
                       </ul>
                       <div className="meal-macros">
-                        <span className="mm-chip" style={{ background: "#4f8ef720", color: "#4f8ef7" }}>P {meal.protein}g</span>
-                        <span className="mm-chip" style={{ background: "#a78bfa20", color: "#a78bfa" }}>C {meal.carbs}g</span>
-                        <span className="mm-chip" style={{ background: "#fb923c20", color: "#fb923c" }}>F {meal.fats}g</span>
+                        <span className="mm-chip" style={{ background: "#4f8ef720", color: "#4f8ef7" }}>P {meal?.protein}g</span>
+                        <span className="mm-chip" style={{ background: "#a78bfa20", color: "#a78bfa" }}>C {meal?.carbs}g</span>
+                        <span className="mm-chip" style={{ background: "#fb923c20", color: "#fb923c" }}>F {meal?.fats}g</span>
                       </div>
                     </div>
                   )}
@@ -288,10 +408,10 @@ export default function DietPlan() {
               <div className="tip-card">
                 <div className="tip-title">Week Summary</div>
                 {[
-                  { k: "Avg Calories", v: "2,414 kcal", c: T.accent },
-                  { k: "Avg Protein", v: "166g / day", c: "#4f8ef7" },
-                  { k: "Training Days", v: "4 days", c: T.purple },
-                  { k: "Rest Days", v: "3 days", c: T.green },
+                  { k: "Avg Calories", v: `${avgCalories} kcal`, c: T.accent },
+                  { k: "Avg Protein", v: `${avgProtein}g / day`, c: "#4f8ef7" },
+                  { k: "Training Days", v: `${trainingDaysCount} days`, c: T.purple },
+                  { k: "Rest Days", v: `${restDaysCount} days`, c: T.green },
                 ].map((r, i, a) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: i < a.length - 1 ? `1px solid ${T.glassBorder}` : "none", fontSize: 13 }}>
                     <span style={{ color: T.textSub }}>{r.k}</span>

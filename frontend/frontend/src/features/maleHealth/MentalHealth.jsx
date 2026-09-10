@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
+import { lastNDays, upsertDated, listenDated, todayKey, addAppNotification } from "../../lib/userLogs";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer
@@ -147,13 +148,20 @@ export default function MentalHealth() {
   const [triggers, setTriggers] = useState([]);
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
-  const [logs, setLogs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ashfitverse_mood_logs") || "{}"); } catch { return {}; }
-  });
+  const [logs, setLogs] = useState({});
 
   useEffect(() => {
-  setMounted(true);
-}, []);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!authUid) return;
+    return listenDated(authUid, "moodLogs", (arr) => {
+      const map = {};
+      arr.forEach((l) => { if (l.date) map[l.date] = l; });
+      setLogs(map);
+    });
+  }, [authUid]);
 
 useEffect(() => {
   if (!loading && !isMale) navigate("/dashboard");
@@ -164,20 +172,24 @@ useEffect(() => {
   const toggleTrigger = (t) =>
     setTriggers(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
 
-  const saveLog = () => {
+  const saveLog = async () => {
+    if (!authUid) return;
     const log = { mood: todayMood, stress: stressLevel, triggers, notes, date: today };
-    const updated = { ...logs, [today]: log };
-    setLogs(updated);
-    localStorage.setItem("ashfitverse_mood_logs", JSON.stringify(updated));
+    await upsertDated(authUid, "moodLogs", today, log);
+    await addAppNotification(authUid, {
+      text: "Mood check-in saved for today.",
+      type: "mood",
+      path: "/male-mental-health",
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const chartData = SAMPLE_MOOD_DATA.map(d => ({
-    ...d,
-    mood: logs[d.day]?.mood
-      ? MOODS.find(m => m.id === logs[d.day].mood)?.score || d.score
-      : d.score,
+  const chartData = lastNDays(7).map((d) => ({
+    day: d.label,
+    mood: logs[d.key]?.mood
+      ? MOODS.find((m) => m.id === logs[d.key].mood)?.score || 0
+      : 0,
   }));
 
   const css = generateCSS(T, dark) + `

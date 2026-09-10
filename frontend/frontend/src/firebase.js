@@ -1,4 +1,4 @@
- import { initializeApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -7,8 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-// 1. Firestore import add kijiye
 import { getFirestore } from "firebase/firestore"; 
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,13 +19,15 @@ const firebaseConfig = {
   appId:             import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// 1. Pehle App initialize hoga (Sabse important)
 const app = initializeApp(firebaseConfig);
+
+// 2. Ab 'app' use karne waale saare services iske niche initialize honge
 export const auth = getAuth(app);
-
-// 2. Database (Firestore) ko initialize karke export kijiye
 export const db = getFirestore(app); 
+export const storage = getStorage(app); // ✅ Fixed: Ab 'app' pehle se available hai
 
-// --- Baki aapka code bilkul same hai, maine kuch nahi badla ---
+// ── Providers & Methods ──────────────────────────────────────────────────────
 
 // Google
 const googleProvider = new GoogleAuthProvider();

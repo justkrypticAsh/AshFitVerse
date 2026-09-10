@@ -1,25 +1,8 @@
+// src/pages/BMICalculator.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
-
-const NAV_MAIN = [
-  { label: "Dashboard", icon: "⊞", path: "/dashboard" },
-  { label: "Community", icon: "◎", badge: "3", path: "/community" },
-  { label: "Profile", icon: "◉", path: "/profile" },
-];
-const TOOLS = [
-  { label: "Calorie Calc", icon: "🔥", path: "/calorie-calculator" },
-  { label: "Fat % Calc", icon: "📊", path: "/fat-calculator" },
-  { label: "Workout Planner", icon: "📋", path: "/workout-planner" },
-  { label: "Workout Logger", icon: "📝", path: "/workout-logger" },
-  { label: "Diet Logger", icon: "🥗", path: "/diet-logger" },
-  { label: "Diet Plan", icon: "🍱", path: "/diet-plan" },
-];
-const USER = {
-  name: "Ash Kumar", avatar: "https://i.pravatar.cc/150?img=11",
-  goal: "Muscle Gain", streak: 18,
-};
 
 const BMI_RANGES = [
   { label: "Severely Underweight", range: "< 16.0", min: 0, max: 16, color: "#60a5fa", icon: "🫀", tip: "Critical — please consult a doctor immediately." },
@@ -44,7 +27,6 @@ function getIdealWeight(heightCm, gender) {
 export default function BMICalculator() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const [activeNav, setActiveNav] = useState("");
   const [mounted, setMounted] = useState(false);
 
   const [unit, setUnit] = useState("metric");
@@ -76,7 +58,6 @@ export default function BMICalculator() {
     const result = parseFloat((w / (h * h)).toFixed(1));
     setBmi(result);
     setCalculated(true);
-    let start = 0;
     const duration = 1200;
     const startTime = performance.now();
     const animate = (now) => {
@@ -99,43 +80,22 @@ export default function BMICalculator() {
   const sliderStyle = (val, min, max) => ({ "--prog": `${((val - min) / (max - min)) * 100}%` });
 
   const css = generateCSS(T, dark) + `
-    .dr{min-height:100vh;display:flex;font-family:${FONT.body};background:${T.bg};color:${T.text};opacity:${mounted?1:0};transition:opacity 0.7s ease,background 0.5s,color 0.5s;}
+    .dr{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};opacity:${mounted?1:0};transition:opacity 0.7s ease,background 0.5s,color 0.5s;position:relative;overflow-x:hidden;}
 
-    .sb{width:255px;min-height:100vh;background:${T.sidebar};border-right:1px solid ${T.glassBorder};display:flex;flex-direction:column;padding:28px 15px 22px;flex-shrink:0;position:relative;z-index:20;transition:background 0.5s,border 0.5s;backdrop-filter:blur(40px);}
-    .sb::after{content:'';position:absolute;top:0;left:0;right:0;height:200px;background:linear-gradient(180deg,${T.accent}08 0%,transparent 100%);pointer-events:none;}
-    .lg{font-family:${FONT.display};font-size:21px;font-weight:800;letter-spacing:0.04em;color:${T.text};padding:0 8px;margin-bottom:4px;cursor:pointer;}
-    .lg span{color:${T.accent};}
-    .lt2{font-size:10px;color:${T.textMuted};letter-spacing:0.14em;text-transform:uppercase;font-weight:600;padding:0 8px;margin-bottom:24px;}
-    .su{padding:13px;background:${T.glass};border:1px solid ${T.glassBorder};border-radius:15px;backdrop-filter:blur(20px);display:flex;align-items:center;gap:11px;cursor:pointer;transition:all 0.25s;margin-bottom:22px;}
-    .su:hover{border-color:${T.accent}35;}
-    .sa{width:37px;height:37px;border-radius:50%;border:2px solid ${T.accent}40;object-fit:cover;box-shadow:0 0 16px ${T.accentGlow};}
-    .sn{font-size:13px;font-weight:700;color:${T.text};}
-    .sg{font-size:11px;color:${T.accent};font-weight:500;}
-    .nl{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:${T.textMuted};padding:0 8px;margin:16px 0 5px;}
-    .ni{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:13px;cursor:pointer;font-size:13.5px;font-weight:500;color:${T.textSub};transition:all 0.22s;margin-bottom:2px;border:1px solid transparent;}
-    .ni:hover{color:${T.text};background:${T.glass};border-color:${T.glassBorder};}
-    .ni.na{background:linear-gradient(135deg,${T.accent}16,${T.purple}0c);color:${T.accent};border-color:${T.accent}24;box-shadow:0 4px 20px ${T.accentGlow}40;}
-    .nn{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
-    .nbdg{margin-left:auto;padding:2px 7px;background:${T.accent}22;color:${T.accent};border-radius:99px;font-size:10px;font-weight:800;}
-    .ti{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:11px;cursor:pointer;font-size:13px;font-weight:500;color:${T.textSub};transition:all 0.2s;margin-bottom:1px;}
-    .ti:hover{color:${T.text};background:${T.glass};}
-    .ti.ta{color:${T.accent};background:${T.glass};}
-    .tic{font-size:14px;width:18px;text-align:center;}
+    /* UNIFIED HEADER BAR WITH MATCHING NAVIGATION BUTTON */
+    .header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;position:sticky;top:0;z-index:50;border-bottom:1px solid ${T.glassBorder};background:${dark?"rgba(8,8,12,0.85)":"rgba(255,255,255,0.85)"};backdrop-filter:blur(40px);}
+    .pr-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};color:${T.text};font-size:13px;font-weight:600;cursor:pointer;font-family:${FONT.body};transition:all 0.15s ease;}
+    .pr-back:hover{background:${T.accentSoft};border-color:${T.accent}40;color:${T.accent};}
+    .h-logo{font-family:${FONT.display};font-size:18px;font-weight:800;color:${T.text};}
+    .h-logo span{color:${T.accent};}
 
-    .mn{flex:1;overflow-y:auto;padding:32px 36px;position:relative;z-index:1;}
-    .tb{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;animation:fadeUp 0.6s ease both;}
-    .tt{font-family:${FONT.display};font-size:27px;font-weight:800;color:${T.text};letter-spacing:-0.02em;}
-    .ts{font-size:13px;color:${T.textSub};margin-top:3px;}
-    .tr{display:flex;align-items:center;gap:11px;}
-    .sp{display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.2);font-size:13px;font-weight:700;color:#fb923c;}
-    .nb2{width:42px;height:42px;border-radius:13px;border:1px solid ${T.glassBorder};background:${T.glass};backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;transition:all 0.22s;color:${T.textSub};}
-    .nb2:hover{border-color:${T.accent}30;color:${T.accent};}
-    .av{width:42px;height:42px;border-radius:50%;border:2px solid ${T.accent}40;object-fit:cover;box-shadow:0 0 18px ${T.accentGlow};cursor:pointer;transition:all 0.3s;}
-    .av:hover{border-color:${T.accent};}
+    .theme-toggle{width:48px;height:26px;border-radius:99px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"};cursor:pointer;position:relative;}
+    .toggle-thumb{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:${T.accent};display:flex;align-items:center;justify-content:center;font-size:10px;transition:left .2s ease;left:${dark?"24px":"2px"};}
 
-    .bc{display:flex;align-items:center;gap:8px;font-size:12px;color:${T.textMuted};margin-bottom:28px;animation:fadeUp 0.5s ease 0.05s both;}
-    .bc span{color:${T.accent};cursor:pointer;font-weight:600;}
-    .bc span:hover{text-decoration:underline;}
+    .mn{max-width:1100px;margin:0 auto;padding:32px 36px;position:relative;z-index:1;}
+    .page-title{font-family:${FONT.display};font-size:36px;font-weight:800;letter-spacing:-0.03em;color:${T.text};margin-bottom:6px;}
+    .page-title span{background:linear-gradient(135deg,${T.accent},${T.purple});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .page-sub{font-size:15px;color:${T.textSub};margin-bottom:32px;}
 
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
 
@@ -198,9 +158,8 @@ export default function BMICalculator() {
     .empty-title{font-family:${FONT.display};font-size:20px;font-weight:800;color:${T.text};margin-bottom:8px;}
     .empty-sub{font-size:14px;color:${T.textSub};line-height:1.6;}
 
-    @keyframes scaleIn{from{opacity:0;transform:scale(0.9);}to{opacity:1;transform:scale(1);}}
     @media(max-width:1100px){.grid2{grid-template-columns:1fr;}.mn{padding:24px 20px;}}
-    @media(max-width:768px){.sb{display:none;}.mn{padding:20px 16px;}}
+    @media(max-width:768px){.mn{padding:20px 16px;}.header{padding:0 16px;}}
   `;
 
   return (
@@ -210,58 +169,19 @@ export default function BMICalculator() {
         <div className="bg-image-layer"><img src={BG_IMAGES.calculator} alt="" loading="lazy" /></div>
         <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
 
-        {/* SIDEBAR */}
-        <aside className="sb">
-          <div className="lg" onClick={() => navigate("/dashboard")}>AshFit<span>Verse</span></div>
-          <div className="lt2">Premium Fitness OS</div>
-          <div className="su" onClick={() => navigate("/profile")}>
-            <img src={USER.avatar} className="sa" alt="avatar" />
-            <div><div className="sn">{USER.name}</div><div className="sg">{USER.goal}</div></div>
-          </div>
-          <div className="nl">Navigation</div>
-          {NAV_MAIN.map(n => (
-            <div key={n.label} className={`ni ${activeNav === n.label ? "na" : ""}`}
-              onClick={() => { setActiveNav(n.label); navigate(n.path); }}>
-              <span className="nn">{n.icon}</span><span>{n.label}</span>
-              {n.badge && <span className="nbdg">{n.badge}</span>}
-            </div>
-          ))}
-          <div className="nl">Tools</div>
-          {TOOLS.map(t => (
-            <div key={t.label} className="ti" onClick={() => navigate(t.path)}>
-              <span className="tic">{t.icon}</span><span>{t.label}</span>
-            </div>
-          ))}
-          <div className="ti ta" style={{ marginTop: 2 }}>
-            <span className="tic">📏</span><span>BMI Calculator</span>
-          </div>
-          <button className="logout-btn" onClick={() => navigate("/")} style={{ marginTop: 20 }}>⎋ &nbsp;Logout</button>
-        </aside>
+        {/* HEADER BAR WITH UNIFIED BACK BUTTON */}
+        <div className="header">
+          <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
+          <div className="h-logo">AshFit<span>Verse</span></div>
+          <button className="theme-toggle" onClick={toggleTheme}>
+            <div className="toggle-thumb">{dark ? "🌙" : "☀️"}</div>
+          </button>
+        </div>
 
         {/* MAIN */}
         <main className="mn">
-          <div className="tb">
-            <div>
-              <div className="tt">BMI Calculator 📏</div>
-              <div className="ts">Know your Body Mass Index & ideal weight range</div>
-            </div>
-            <div className="tr">
-              <div className="sp">🔥 {USER.streak}-day streak</div>
-              <button className="nb2">🔔</button>
-              <button className="theme-toggle" onClick={toggleTheme}>
-                <div className="toggle-thumb">{dark ? "🌙" : "☀️"}</div>
-              </button>
-              <img src={USER.avatar} className="av" alt="avatar" />
-            </div>
-          </div>
-
-          <div className="bc">
-            <span onClick={() => navigate("/dashboard")}>Dashboard</span>
-            <span style={{ color: "inherit", cursor: "default", fontWeight: 400 }}>›</span>
-            <span style={{ color: "inherit", cursor: "default" }}>Calculators</span>
-            <span style={{ color: "inherit", cursor: "default", fontWeight: 400 }}>›</span>
-            <span style={{ color: T.accent, cursor: "default" }}>BMI Calculator</span>
-          </div>
+          <div className="page-title" style={{ animation: "fadeUp 0.6s ease both" }}>BMI <span>Calculator</span></div>
+          <div className="page-sub" style={{ animation: "fadeUp 0.6s ease 0.05s both" }}>Know your Body Mass Index & ideal weight range</div>
 
           <div className="grid2">
             <div>

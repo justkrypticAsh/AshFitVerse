@@ -8,6 +8,7 @@ import {
 import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
+import { lastNDays, upsertDated, listenDated, todayKey, addAppNotification } from "../../lib/userLogs";
 
 const TABS = ["Log Sleep", "Trends", "Recovery Tips", "Sleep Science"];
 
@@ -30,16 +31,6 @@ const FACTORS = [
   { id: "heavymeal",  icon: "🍕", label: "Late heavy meal" },
   { id: "coldshower", icon: "🚿", label: "Cold shower" },
   { id: "meditation", icon: "🧘", label: "Meditation" },
-];
-
-const SAMPLE_WEEK = [
-  { day: "Mon", hours: 7.2, quality: 4, recovery: 72 },
-  { day: "Tue", hours: 6.5, quality: 3, recovery: 61 },
-  { day: "Wed", hours: 8.1, quality: 5, recovery: 88 },
-  { day: "Thu", hours: 7.8, quality: 4, recovery: 80 },
-  { day: "Fri", hours: 6.0, quality: 2, recovery: 54 },
-  { day: "Sat", hours: 8.5, quality: 5, recovery: 91 },
-  { day: "Sun", hours: 7.5, quality: 4, recovery: 76 },
 ];
 
 const RECOVERY_TIPS = [
@@ -184,7 +175,7 @@ const SLEEP_SCIENCE = [
 export default function SleepTracker() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user } = useUser();
+  const { user, authUid } = useUser();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
@@ -197,12 +188,13 @@ export default function SleepTracker() {
   const [saved, setSaved]           = useState(false);
 
   // Logs
-  const [logs, setLogs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ashfitverse_sleep_logs") || "[]"); } catch { return []; }
-  });
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { localStorage.setItem("ashfitverse_sleep_logs", JSON.stringify(logs)); }, [logs]);
+  useEffect(() => {
+    if (!authUid) return;
+    return listenDated(authUid, "sleepLogs", setLogs);
+  }, [authUid]);
 
   const toggleFactor = (id) =>
     setFactorsState(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
@@ -238,13 +230,19 @@ export default function SleepTracker() {
     return Math.min(100, Math.max(0, Math.round(score)));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!authUid) return;
+    const date = todayKey();
     const log = {
-      date: new Date().toISOString().split("T")[0],
-      bedTime, wakeTime, hours, quality, factors, notes,
+      date, bedTime, wakeTime, hours, quality, factors, notes,
       score: quality ? getSleepScore() : null,
     };
-    setLogs(l => [log, ...l.slice(0, 29)]);
+    await upsertDated(authUid, "sleepLogs", date, log);
+    await addAppNotification(authUid, {
+      text: `Sleep logged: ${hours}h${quality ? ` · score ${getSleepScore()}` : ""}`,
+      type: "sleep",
+      path: "/sleep-tracker",
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -252,15 +250,17 @@ export default function SleepTracker() {
   const scoreColor = (s) => s >= 80 ? T.green : s >= 60 ? T.accent : s >= 40 ? T.orange : T.red;
   const scoreLabel = (s) => s >= 80 ? "Excellent 🌟" : s >= 60 ? "Good 👍" : s >= 40 ? "Fair ⚠️" : "Poor 😴";
 
-  const weekData = SAMPLE_WEEK.map((d, i) => ({
-    ...d,
-    hours: logs[i]?.hours || d.hours,
-    quality: logs[i]?.quality || d.quality,
-    recovery: logs[i]?.score || d.recovery,
+  const byDate = {};
+  logs.forEach((l) => { if (l.date) byDate[l.date] = l; });
+  const weekData = lastNDays(7).map((d) => ({
+    day: d.label,
+    hours: byDate[d.key]?.hours || 0,
+    quality: byDate[d.key]?.quality || 0,
+    recovery: byDate[d.key]?.score || 0,
   }));
-
-  const avgHours = (weekData.reduce((a, d) => a + d.hours, 0) / 7).toFixed(1);
-  const avgRecovery = Math.round(weekData.reduce((a, d) => a + d.recovery, 0) / 7);
+  const loggedDays = weekData.filter((d) => d.hours > 0);
+  const avgHours = loggedDays.length ? (loggedDays.reduce((a, d) => a + d.hours, 0) / loggedDays.length).toFixed(1) : "—";
+  const avgRecovery = loggedDays.length ? Math.round(loggedDays.reduce((a, d) => a + d.recovery, 0) / loggedDays.length) : 0;
 
   const css = generateCSS(T, dark) + `
     .st-root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};
