@@ -1,5 +1,5 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
@@ -15,6 +15,8 @@ import Dashboard  from "./pages/Dashboard";
 import Pricing    from "./pages/Pricing";
 import Profile    from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
+import AdminDashboard from "./pages/AdminDashboard";
+import { isUserAdmin } from "./config/authConfig";
 
 // Calculators
 import CalorieCalculator from "./features/Calculator/CalorieCalculator";
@@ -37,7 +39,7 @@ import DietPlan   from "./features/diet/DietPlan";
 import Shop from "./features/shop/Shop";
 
 // Community
-import Community from "./features/community/Community";
+import Community from "./features/Community/Community";
 
 // Female Health
 import FemaleHealthDashboard from "./features/femaleHealth/FemaleHealthDashboard";
@@ -58,6 +60,7 @@ import SexualWellness      from "./features/maleHealth/SexualWellness";
 import SleepTracker        from "./features/maleHealth/SleepTracker";
 import MaleShop   from "./features/shop/MaleShop";
 import RequirePlan from "./components/RequirePlan";
+import DonePopup from "./components/DonePopup";
 
 
 // ── Auth + Onboarding guard ────────────────────────────────────────────────
@@ -66,7 +69,8 @@ function RequireAuth({ children }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      setStatus(user ? "authed" : "unauthed");
+      const hasLocalUser = Boolean(localStorage.getItem("ashfitverse_user") || localStorage.getItem("ashfitverse_email"));
+      setStatus((user || hasLocalUser) ? "authed" : "unauthed");
     });
     return () => unsub();
   }, []);
@@ -77,54 +81,100 @@ function RequireAuth({ children }) {
 }
 
 function RequireOnboarding({ children }) {
-  const [status, setStatus] = useState("loading");
+  const [status, setStatus] = useState(() => {
+    const hasLocal = typeof window !== "undefined" && (localStorage.getItem("ashfitverse_user") || localStorage.getItem("ashfitverse_email"));
+    if (!auth.currentUser && !hasLocal) return "unauthed";
+    try { localStorage.setItem("ashfitverse_onboarded", "true"); } catch {}
+    return "ready";
+  });
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (!user) { setStatus("unauthed"); return; }
-      const onboarded = localStorage.getItem("ashfitverse_onboarded") === "true";
-      setStatus(onboarded ? "ready" : "needs_onboarding");
+      const hasLocalUser = Boolean(localStorage.getItem("ashfitverse_user") || localStorage.getItem("ashfitverse_email"));
+      if (!user && !hasLocalUser) { setStatus("unauthed"); return; }
+      try { localStorage.setItem("ashfitverse_onboarded", "true"); } catch {}
+      setStatus("ready");
     });
     return () => unsub();
   }, []);
 
   if (status === "loading")          return <FullScreenLoader />;
   if (status === "unauthed")         return <Navigate to="/login" replace />;
-  if (status === "needs_onboarding") return <Navigate to="/onboarding" replace />;
   return children;
 }
 
 function RedirectIfAuthed({ children }) {
   const [status, setStatus] = useState("loading");
+  const location = useLocation();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (!user) { setStatus("show"); return; }
-      const onboarded = localStorage.getItem("ashfitverse_onboarded") === "true";
-      setStatus(onboarded ? "dashboard" : "onboarding");
+      const searchParams = new URLSearchParams(location.search);
+      const isSwitching = searchParams.get("switch") === "true" || searchParams.get("new") === "true";
+
+      // If not logged in, or explicitly switching/registering, always show the auth page!
+      if (!user || isSwitching) {
+        setStatus("show");
+        return;
+      }
+
+      // If user is already authenticated, go straight to dashboard (never force onboarding!)
+      setStatus("dashboard");
+    });
+    return () => unsub();
+  }, [location.pathname, location.search]);
+
+  if (status === "loading")     return <FullScreenLoader />;
+  if (status === "dashboard")   return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+// ── Admin Guard (Strictly restricted to ashishkanellis33@gmail.com) ─────────
+function RequireAdmin({ children }) {
+  const [status, setStatus] = useState(() => {
+    const storedEmail = typeof window !== "undefined" ? localStorage.getItem("ashfitverse_email") : null;
+    const storedUser = typeof window !== "undefined" ? (() => {
+      try { return JSON.parse(localStorage.getItem("ashfitverse_user") || "{}"); } catch { return null; }
+    })() : null;
+    if (!storedEmail && !storedUser?.email && !auth.currentUser) {
+      return "unauthed";
+    }
+    const admin = isUserAdmin(storedUser, auth.currentUser);
+    return admin ? "authorized" : "forbidden";
+  });
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      const storedEmail = localStorage.getItem("ashfitverse_email");
+      const storedUser = (() => {
+        try { return JSON.parse(localStorage.getItem("ashfitverse_user") || "{}"); } catch { return null; }
+      })();
+
+      if (!user && !storedEmail && !storedUser?.email) {
+        setStatus("unauthed");
+        return;
+      }
+
+      const admin = isUserAdmin(storedUser, user);
+      setStatus(admin ? "authorized" : "forbidden");
     });
     return () => unsub();
   }, []);
 
-  if (status === "loading")     return <FullScreenLoader />;
-  if (status === "dashboard")   return <Navigate to="/dashboard" replace />;
-  if (status === "onboarding")  return <Navigate to="/onboarding" replace />;
+  if (status === "loading")    return <FullScreenLoader />;
+  if (status === "unauthed")   return <Navigate to="/login" replace />;
+  if (status === "forbidden")  return <Navigate to="/dashboard" replace />;
   return children;
 }
 
+// ── Full-screen fallback loader ─────────────────────────────────────────────
 function FullScreenLoader() {
   return (
     <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center",
-      justifyContent: "center", background: "#07080f",
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "#08090c", color: "#f1f3f9", fontFamily: "sans-serif",
     }}>
       <div style={{ textAlign: "center" }}>
-        <div style={{
-          fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800,
-          color: "#eef2ff", marginBottom: 20, letterSpacing: "0.04em",
-        }}>
-          AshFit<span style={{ color: "#4f8ef7" }}>Verse</span>
-        </div>
         <div style={{
           width: 36, height: 36, border: "3px solid rgba(255,255,255,0.1)",
           borderTopColor: "#4f8ef7", borderRadius: "50%",
@@ -145,12 +195,8 @@ export default function App() {
         {/* ── Public ── */}
         <Route path="/" element={<LandingPage />} />
         
-        <Route path="/login" element={
-          <RedirectIfAuthed><Login /></RedirectIfAuthed>
-        } />
-        <Route path="/signup" element={
-          <RedirectIfAuthed><Signup /></RedirectIfAuthed>
-        } />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
         {/* ── Onboarding ── */}
         <Route path="/onboarding" element={
@@ -167,6 +213,11 @@ export default function App() {
         } />
         <Route path="/user/:uid" element={
           <RequireOnboarding><UserProfile /></RequireOnboarding>
+        } />
+
+        {/* ── Admin Dashboard (Strictly ashishkanellis33@gmail.com) ── */}
+        <Route path="/admin" element={
+          <RequireAdmin><AdminDashboard /></RequireAdmin>
         } />
 
         {/* ── Calculators ── */}
@@ -194,9 +245,7 @@ export default function App() {
         } />
         <Route path="/workout-logger" element={
           <RequireOnboarding>
-            <RequirePlan minPlan="lite" feature="Workout Logger">
-              <WorkoutLogger />
-            </RequirePlan>
+            <WorkoutLogger />
           </RequireOnboarding>
         } />
         <Route path="/workout/chest" element={
@@ -215,9 +264,7 @@ export default function App() {
         {/* ── Diet ── */}
         <Route path="/diet-logger" element={
           <RequireOnboarding>
-            <RequirePlan minPlan="lite" feature="Diet Logger">
-              <DietLogger />
-            </RequirePlan>
+            <DietLogger />
           </RequireOnboarding>
         } />
         <Route path="/diet-plan" element={
@@ -262,6 +309,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
+      <DonePopup />
     </Router>
   );
 }
