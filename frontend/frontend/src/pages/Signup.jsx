@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { registerWithEmail, loginWithGoogle, loginWithApple, logoutUser, auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import useTheme from "../hooks/useTheme";
+import useTheme from "../hooks/usetheme";
 import { generateCSS, BG_IMAGES, FONT } from "../theme";
 import { DEFAULT_USER } from "../hooks/useUser";
 import { isUserAdmin } from "../config/authConfig";

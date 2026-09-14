@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle, loginWithApple, logoutUser, auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import useTheme from "../hooks/useTheme";
+import useTheme from "../hooks/usetheme";
 import { generateCSS, BG_IMAGES, FONT } from "../theme";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { DEFAULT_USER } from "../hooks/useUser";

@@ -1,7 +1,7 @@
 // src/pages/LandingPage.jsx — AshFitVerse v8
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useTheme from "../hooks/useTheme";
+import useTheme from "../hooks/usetheme";
 import useUser from "../hooks/useUser";
 import { generateCSS, FONT } from "../theme";
 

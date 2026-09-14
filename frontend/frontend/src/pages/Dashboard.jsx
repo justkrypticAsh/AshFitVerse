@@ -5,7 +5,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
-import useTheme from "../hooks/useTheme";
+import useTheme from "../hooks/usetheme";
 import useUser  from "../hooks/useUser";
 import useUserLogs from "../hooks/useUserLogs";
 import useAppNotifications from "../hooks/useAppNotifications";
