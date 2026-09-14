@@ -25,8 +25,8 @@ export const ROUTE_MIN_PLAN = {
 
   "/fat-calculator":      "lite",
   "/workout-planner":     "lite",
-  "/workout-logger":      "lite",
-  "/diet-logger":         "lite",
+  "/workout-logger":      "free",
+  "/diet-logger":         "free",
   "/diet-plan":           "lite",
 
   "/female-health":       "pro",

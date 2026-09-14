@@ -1,7 +1,10 @@
 // src/features/diet/DietPlan.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
+import useUser from "../../hooks/useUser";
+import useUserLogs from "../../hooks/useUserLogs";
+import { lastNDays } from "../../lib/userLogs";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
 
 // GET API KEY FROM VITE ENV OR PASTE DIRECTLY FOR LOCAL TESTING
@@ -95,98 +98,46 @@ const STATIC_WEEK_PLAN = [
 export default function DietPlan() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
+  const { authUid, user } = useUser();
+  const { meals } = useUserLogs(authUid);
   
   const [mounted, setMounted] = useState(false);
   const [activeDay, setActiveDay] = useState(0);
   const [expandedMeal, setExpandedMeal] = useState(null);
   
-  const [weekPlan, setWeekPlan] = useState(STATIC_WEEK_PLAN);
-  const [generationMode, setGenerationMode] = useState("rule-based");
-  const [loading, setLoading] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
-  const mockUserContext = {
-    goal: "muscle",
-    equipment: "full_gym",
-    activityLevel: "active",
-    calorieTarget: 2400,
-    sex: "male",
-    days: 4,
-    level: "intermediate"
-  };
-
-  const fetchPlanData = async (modeType) => {
-    if (modeType === "rule-based") {
-      setWeekPlan(STATIC_WEEK_PLAN);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const systemPrompt = `You are the ultimate fitness intelligence matrix for AshFitVerse. 
-      Generate a precise macro-accurate 7-day diet plan based on the user's details. Respond ONLY with a valid JSON array matching the schema:
-      [
-        { 
-          "day": "String", "type": "String", "typeColor": "HexCode",
-          "total": { "cal": Number, "protein": Number, "carbs": Number, "fats": Number },
-          "meals": [
-            { "time": "String", "name": "String", "emoji": "String", "items": ["String"], "cal": Number, "protein": Number, "carbs": Number, "fats": Number }
-          ]
-        }
-      ]
-      No conversational filler, no markdown wrapping.`;
-
-      const userPrompt = `Goal: ${mockUserContext.goal}, Daily Target: ${mockUserContext.calorieTarget} kcal, Sex: ${mockUserContext.sex}.`;
-
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "anthropic/claude-3-haiku",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt }
-          ]
-        })
-      });
-
-      const data = await response.json();
-      const rawText = data?.choices?.[0]?.message?.content;
-      
-      const cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-      const aiData = JSON.parse(cleanJson);
-      
-      if (aiData && Array.isArray(aiData)) {
-        setWeekPlan(aiData);
-      } else {
-        setWeekPlan(STATIC_WEEK_PLAN);
-      }
-    } catch (err) {
-      console.error("Direct OpenRouter Call Failed, engaging fallback diet:", err);
-      setWeekPlan(STATIC_WEEK_PLAN);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { 
-    setMounted(true); 
-    fetchPlanData("rule-based");
-  }, []);
-
-  const handleModeChange = (newMode) => {
-    setGenerationMode(newMode);
-    fetchPlanData(newMode);
-  };
-
-  const day = weekPlan[activeDay] || STATIC_WEEK_PLAN[activeDay];
-
-  const avgCalories = Math.round(weekPlan.reduce((acc, d) => acc + (d?.total?.cal || 0), 0) / weekPlan.length);
-  const avgProtein = Math.round(weekPlan.reduce((acc, d) => acc + (d?.total?.protein || 0), 0) / weekPlan.length);
-  const trainingDaysCount = weekPlan.filter(d => d?.type?.toLowerCase().includes("training")).length;
-  const restDaysCount = weekPlan.length - trainingDaysCount;
+  const weekPlan = useMemo(() => lastNDays(7).map((d) => {
+    const entries = meals.filter((m) => m.date === d.key);
+    const total = entries.reduce((acc, m) => {
+      const qty = Number(m.qty) || 1;
+      return {
+        cal: acc.cal + (Number(m.cal) || 0) * qty,
+        protein: acc.protein + (Number(m.protein) || 0) * qty,
+        carbs: acc.carbs + (Number(m.carbs) || 0) * qty,
+        fats: acc.fats + (Number(m.fats) || 0) * qty,
+      };
+    }, { cal:0, protein:0, carbs:0, fats:0 });
+    return {
+      day: d.date.toLocaleDateString("en-IN", { weekday:"long" }),
+      type: entries.length ? "Logged" : "No entries",
+      typeColor: entries.length ? "#34d399" : "#9ca3af",
+      total: Object.fromEntries(Object.entries(total).map(([k, v]) => [k, Math.round(v)])),
+      meals: entries.map((m) => ({
+        time: "Logged meal", name: m.meal || "Meal", emoji:"🍽️", items:[m.food || "Meal"],
+        cal: Math.round((Number(m.cal) || 0) * (Number(m.qty) || 1)),
+        protein: Math.round((Number(m.protein) || 0) * (Number(m.qty) || 1)),
+        carbs: Math.round((Number(m.carbs) || 0) * (Number(m.qty) || 1)),
+        fats: Math.round((Number(m.fats) || 0) * (Number(m.qty) || 1)),
+      })),
+    };
+  }), [meals]);
+  const day = weekPlan[activeDay] || weekPlan[0];
+  const loggedDays = weekPlan.filter((d) => d.meals.length > 0);
+  const avgCalories = loggedDays.length ? Math.round(loggedDays.reduce((acc, d) => acc + d.total.cal, 0) / loggedDays.length) : 0;
+  const avgProtein = loggedDays.length ? Math.round(loggedDays.reduce((acc, d) => acc + d.total.protein, 0) / loggedDays.length) : 0;
+  const trainingDaysCount = 0;
+  const restDaysCount = 0;
 
   const css = generateCSS(T, dark) + `
     .root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};opacity:${mounted?1:0};transition:opacity 0.7s,background 0.5s,color 0.5s;position:relative;overflow-x:hidden;}
@@ -278,24 +229,16 @@ export default function DietPlan() {
         </div>
 
         <div className="content">
-          <div className="page-title" style={{ animation: "fadeUp 0.6s ease both" }}>Weekly Diet <span>Plan</span></div>
+          <div className="page-title" style={{ animation: "fadeUp 0.6s ease both" }}>Weekly Diet <span>Log</span></div>
           
           <div className="mode-switch-container" style={{ animation: "fadeUp 0.6s ease 0.05s both" }}>
             <div>
               <div className="page-sub">
-                A personalised 7-day meal plan optimised for {mockUserContext.goal} — {avgCalories} kcal average · {avgProtein}g protein
+                Your real meals from the past 7 days — {loggedDays.length ? `${avgCalories} kcal average · ${avgProtein}g protein` : "log meals to begin your analysis"}
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              {loading && (
-                <div className="loading-overlay">
-                  <div className="spinner" /> Updating...
-                </div>
-              )}
-              <div className="mode-toggle">
-                <button className={`mode-btn ${generationMode === "rule-based" ? "active" : ""}`} onClick={() => handleModeChange("rule-based")}>Standard</button>
-                <button className={`mode-btn ${generationMode === "ai-generated" ? "active" : ""}`} onClick={() => handleModeChange("ai-generated")}>Smart AI</button>
-              </div>
+              <button className="mode-btn active" onClick={() => navigate("/diet-logger")}>+ Log a meal</button>
             </div>
           </div>
 
@@ -331,6 +274,7 @@ export default function DietPlan() {
 
           <div className="main-grid">
             <div>
+              {!day?.meals?.length && <div className="meal-card" style={{padding:"28px",textAlign:"center",color:T.textMuted,cursor:"pointer"}} onClick={() => navigate("/diet-logger")}>No meals logged for this day. Add a real entry from Diet Logger →</div>}
               {day?.meals?.map((meal, mi) => (
                 <div key={mi} className={`meal-card ${expandedMeal === mi ? "expanded" : ""}`}
                   style={{ "--mc": day?.typeColor || T.accent, animationDelay: `${mi * 0.06}s` }}
@@ -410,8 +354,8 @@ export default function DietPlan() {
                 {[
                   { k: "Avg Calories", v: `${avgCalories} kcal`, c: T.accent },
                   { k: "Avg Protein", v: `${avgProtein}g / day`, c: "#4f8ef7" },
-                  { k: "Training Days", v: `${trainingDaysCount} days`, c: T.purple },
-                  { k: "Rest Days", v: `${restDaysCount} days`, c: T.green },
+                  { k: "Logged Days", v: `${loggedDays.length} days`, c: T.purple },
+                  { k: "Meals Logged", v: `${meals.length}`, c: T.green },
                 ].map((r, i, a) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: i < a.length - 1 ? `1px solid ${T.glassBorder}` : "none", fontSize: 13 }}>
                     <span style={{ color: T.textSub }}>{r.k}</span>

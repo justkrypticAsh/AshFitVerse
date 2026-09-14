@@ -7,7 +7,14 @@ import {
 } from "recharts";
 import useTheme from "../hooks/useTheme";
 import useUser  from "../hooks/useUser";
+import useUserLogs from "../hooks/useUserLogs";
+import useAppNotifications from "../hooks/useAppNotifications";
+import { todayKey } from "../lib/userLogs";
 import { generateCSS, FONT } from "../theme";
+import QuickActionsModal from "../components/QuickActionsModal";
+import WeightLogModal from "../components/WeightLogModal";
+import FeedbackModal from "../components/FeedbackModal";
+import { getDefaultQuickActions, QA_THEMES, sanitizeActionsForUser } from "../config/quickActionsCatalog";
 
 // ─── Workout plans ────────────────────────────────────────────────────────────
 function getWorkouts(goal, equipment) {
@@ -67,31 +74,6 @@ function getWorkouts(goal, equipment) {
   return goalPlan[equipment] || goalPlan.full_gym || goalPlan[Object.keys(goalPlan)[0]];
 }
 
-function getDietLog(goal, calorieTarget) {
-  const cal = calorieTarget || 2000;
-  const plans = {
-    muscle:    [{ meal:"Breakfast", items:"Oats · 4 Eggs · Banana · Whey",     calPct:0.25, color:"#4f8ef7" },{ meal:"Lunch",       items:"Chicken 200g · Rice · Broccoli",     calPct:0.32, color:"#a78bfa" },{ meal:"Pre-Workout", items:"Sweet Potato · Tuna · Yogurt",        calPct:0.18, color:"#fb923c" },{ meal:"Dinner",      items:"Salmon · Quinoa · Spinach · Avocado", calPct:0.25, color:"#34d399" }],
-    fat_loss:  [{ meal:"Breakfast", items:"3 Eggs · Greek Yogurt · Berries",    calPct:0.22, color:"#4f8ef7" },{ meal:"Lunch",       items:"Grilled Chicken · Mixed Salad",       calPct:0.30, color:"#34d399" },{ meal:"Snack",       items:"Almonds 30g · Apple · Green Tea",     calPct:0.13, color:"#fb923c" },{ meal:"Dinner",      items:"White Fish · Steamed Veg · Rice 50g", calPct:0.25, color:"#a78bfa" }],
-    strength:  [{ meal:"Breakfast", items:"5 Eggs · Oats · Peanut Butter",      calPct:0.28, color:"#4f8ef7" },{ meal:"Lunch",       items:"Beef 200g · Rice 150g · Veg",        calPct:0.32, color:"#fb923c" },{ meal:"Pre-Workout", items:"Banana · Whey · Creatine",            calPct:0.12, color:"#34d399" },{ meal:"Dinner",      items:"Chicken 250g · Pasta 150g",           calPct:0.28, color:"#a78bfa" }],
-    endurance: [{ meal:"Breakfast", items:"Porridge · Honey · Banana · OJ",     calPct:0.28, color:"#34d399" },{ meal:"Mid-Run",     items:"Energy Gel · Electrolyte",           calPct:0.12, color:"#fb923c" },{ meal:"Lunch",       items:"Pasta 200g · Chicken 150g",          calPct:0.35, color:"#4f8ef7" },{ meal:"Dinner",      items:"Rice · Lentils · Roasted Veg",        calPct:0.25, color:"#a78bfa" }],
-    wellness:  [{ meal:"Breakfast", items:"Smoothie Bowl · Seeds · Berries",     calPct:0.22, color:"#f472b6" },{ meal:"Lunch",       items:"Buddha Bowl · Tofu · Avocado",       calPct:0.32, color:"#34d399" },{ meal:"Snack",       items:"Apple · Almond Butter · Green Tea",   calPct:0.13, color:"#a78bfa" },{ meal:"Dinner",      items:"Lentil Dal · Roti · Raita",           calPct:0.33, color:"#fb923c" }],
-    general:   [{ meal:"Breakfast", items:"Oats · Banana · Whey Protein",       calPct:0.24, color:"#4f8ef7" },{ meal:"Lunch",       items:"Chicken Rice Bowl · Salad",           calPct:0.32, color:"#a78bfa" },{ meal:"Snack",       items:"Mixed Nuts · Greek Yogurt",           calPct:0.14, color:"#fb923c" },{ meal:"Dinner",      items:"Salmon · Quinoa · Broccoli",          calPct:0.30, color:"#34d399" }],
-  };
-  return (plans[goal] || plans.general).map(m => ({ ...m, cal: Math.round(cal * m.calPct) }));
-}
-
-function getMacros(goal) {
-  const m = {
-    muscle:    [{name:"Protein",value:35,fill:"#4f8ef7"},{name:"Carbs",value:45,fill:"#a78bfa"},{name:"Fats",value:20,fill:"#fb923c"}],
-    fat_loss:  [{name:"Protein",value:45,fill:"#4f8ef7"},{name:"Carbs",value:25,fill:"#a78bfa"},{name:"Fats",value:30,fill:"#fb923c"}],
-    strength:  [{name:"Protein",value:35,fill:"#4f8ef7"},{name:"Carbs",value:45,fill:"#a78bfa"},{name:"Fats",value:20,fill:"#fb923c"}],
-    endurance: [{name:"Protein",value:20,fill:"#4f8ef7"},{name:"Carbs",value:60,fill:"#a78bfa"},{name:"Fats",value:20,fill:"#fb923c"}],
-    wellness:  [{name:"Protein",value:25,fill:"#4f8ef7"},{name:"Carbs",value:45,fill:"#a78bfa"},{name:"Fats",value:30,fill:"#fb923c"}],
-    general:   [{name:"Protein",value:30,fill:"#4f8ef7"},{name:"Carbs",value:45,fill:"#a78bfa"},{name:"Fats",value:25,fill:"#fb923c"}],
-  };
-  return m[goal] || m.general;
-}
-
 function useScrollReveal() {
   const ref = useRef(null);
   const [v, setV] = useState(false);
@@ -134,16 +116,41 @@ const SLANGS = [
 export default function Dashboard() {
   const navigate  = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, clearUser, loading, isMale, isFemale, bmi, calorieTarget, weightProgress, getCycleDay, getPhaseName, isPro } = useUser();
+  const { user, authUid, clearUser, loading, isMale, isFemale, bmi, calorieTarget, getCycleDay, getPhaseName, isPro, isAdmin, updateUser } = useUser();
+  const { ready: logsReady, weeklyWeight, calData, todayCalories, todayMacros, mealGroups, streak: liveStreak, workouts, weights, todayWorkouts } = useUserLogs(authUid);
+  const { items: notifications, unread: unreadNotifications, markRead, markAllRead, requestPermission } = useAppNotifications(authUid);
 
   const [mounted,     setMounted]     = useState(false);
   const [activeNav,   setActiveNav]   = useState("Dashboard");
   const [showProfile, setShowProfile] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showQAModal, setShowQAModal] = useState(false);
+  const [showWeightModal, setShowWeightModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [customActions, setCustomActions] = useState(() => {
+    try {
+      const stored = localStorage.getItem("ashfitverse_custom_qa");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return null;
+  });
+  const [qaThemeId, setQaThemeId] = useState(() => {
+    return localStorage.getItem("ashfitverse_qa_theme") || "cyan";
+  });
   const [slangIdx,    setSlangIdx]    = useState(0);
   const [now,         setNow]         = useState(() => new Date());
   const profileRef = useRef(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    if (typeof window !== "undefined") {
+      window.__updateUser = updateUser;
+      window.__user = user;
+    }
+  }, [user, updateUser]);
   useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(tick);
@@ -159,14 +166,22 @@ export default function Dashboard() {
     return () => clearInterval(iv);
   }, []);
 
-  const weekDays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const W = parseFloat(user.weight) || 0;
-  const weeklyWeight = weekDays.map((d,i) => ({ day:d, weight: W ? parseFloat((W+i*0.05-0.1).toFixed(1)) : 0 }));
   const calGoal    = calorieTarget || 2000;
-  const calData    = weekDays.map((d,i) => ({ day:d, consumed:calGoal+Math.round(Math.sin(i)*120), burned:Math.round(calGoal*0.88+Math.sin(i+1)*80) }));
-  const WORKOUTS   = getWorkouts(user.goal, user.equipment);
-  const DIET_LOG   = getDietLog(user.goal, calGoal);
-  const MACROS     = getMacros(user.goal);
+  const macroTotal = todayMacros.protein + todayMacros.carbs + todayMacros.fats;
+  const MACROS = macroTotal ? [
+    { name:"Protein", value:Math.round(todayMacros.protein / macroTotal * 100), fill:"#4f8ef7" },
+    { name:"Carbs", value:Math.round(todayMacros.carbs / macroTotal * 100), fill:"#a78bfa" },
+    { name:"Fats", value:Math.round(todayMacros.fats / macroTotal * 100), fill:"#fb923c" },
+  ] : [];
+  const recordedWeights = weights.filter((w) => Number.isFinite(Number(w.weight))).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const firstWeight = recordedWeights[0]?.weight;
+  const currentWeight = recordedWeights.at(-1)?.weight ?? user.weight;
+  const targetWeight = Number(user.targetWeight);
+  const startWeight = Number(firstWeight);
+  const currentWeightNumber = Number(currentWeight);
+  const weightProgress = startWeight && targetWeight && currentWeightNumber
+    ? Math.max(0, Math.min(100, Math.round(Math.abs(currentWeightNumber - startWeight) / Math.abs(targetWeight - startWeight || 1) * 100)))
+    : 0;
   const cycleDay   = isFemale ? getCycleDay() : null;
   const cycleLen   = parseInt(user.cycleLength) || 28;
   const bmiColor   = !bmi ? T.accent : bmi<18.5 ? T.accent : bmi<25 ? T.green : T.orange;
@@ -177,9 +192,9 @@ export default function Dashboard() {
     { done:!!user.goal,                              text:"Set primary fitness goal",     path:"/onboarding"     },
     { done:!!user.activityLevel,                     text:"Set activity level",           path:"/profile"        },
     { done:!!user.equipment,                         text:"Choose equipment access",      path:"/profile"        },
-    { done:(user.streak||0)>=3,                      text:"Achieve 3-day workout streak", path:"/workout-logger" },
-    { done:false,                                    text:"Log first meal",               path:"/diet-logger"    },
-    { done:false,                                    text:"Join the community",           path:"/community"      },
+    { done:liveStreak>=3,                            text:"Achieve 3-day workout streak", path:"/workout-logger" },
+    { done:todayCalories>0,                          text:"Log a meal today",             path:"/diet-logger"    },
+    { done:workouts.length>0,                        text:"Complete your first workout",  path:"/workout-logger" },
   ];
   const checkDone = checklist.filter(c=>c.done).length;
   const checkPct  = Math.round((checkDone/checklist.length)*100);
@@ -196,6 +211,7 @@ export default function Dashboard() {
     { label:"FitVerse",  icon:"◎", path:"/community", badge:"3" },
     ...(isFemale?[{label:"Women's Health",icon:"♀",path:"/female-health",color:"#f472b6"}]:[]),
     ...(isMale  ?[{label:"Men's Health",  icon:"♂",path:"/male-health",  color:"#4f8ef7"}]:[]),
+    ...(isAdmin ?[{label:"Admin Console", icon:"🛡️",path:"/admin", badge:"ADMIN", color:"#38bdf8"}]:[]),
   ];
   const TOOL_SECTIONS = [
     {
@@ -223,18 +239,24 @@ export default function Dashboard() {
     {
       title:"More",
       items:[
-        { label:"Shop", icon:"🛒", path: isFemale ? "/female-shop" : "/male-shop" },
+        { label:"Shop", icon:"🛒", path: "/shop" },
+        { label:"Rate & Feedback", icon:"💬", path: null, action: "feedback" },
       ],
     },
   ];
 
-  const QUICK_ACTIONS = [
-    {label:"Workout Planner", icon:"📋", path:"/workout-planner"},
-    {label:"Diet Plan",       icon:"🍱", path:"/diet-plan"},
-    {label:"Shop",            icon:"🛒", path: isFemale ? "/female-shop" : "/male-shop"},
-    ...(isFemale?[{label:"Women's Health",icon:"♀",path:"/female-health"}]:[]),
-    ...(isMale  ?[{label:"Men's Health",  icon:"♂",path:"/male-health"}]:[]),
-  ];
+  const currentActions = sanitizeActionsForUser(customActions, user);
+  const currentQaTheme = QA_THEMES.find((t) => t.id === qaThemeId) || QA_THEMES[0];
+
+  const handleSaveQuickActions = ({ actions, themeId }) => {
+    const sanitized = sanitizeActionsForUser(actions, user);
+    setCustomActions(sanitized);
+    setQaThemeId(themeId);
+    try {
+      localStorage.setItem("ashfitverse_custom_qa", JSON.stringify(sanitized));
+      localStorage.setItem("ashfitverse_qa_theme", themeId);
+    } catch {}
+  };
 
   const BG        = dark ? T.bg       : "#F5F0E8";
   const SB_BG     = dark ? "rgba(7,8,15,0.97)"   : "rgba(252,248,242,0.98)";
@@ -525,6 +547,14 @@ export default function Dashboard() {
       font-size:14px;cursor:pointer;color:${T.textSub};
       transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);}
     .tb-btn:hover{color:${T.accent};border-color:${T.accent}40;transform:scale(1.08);}
+    .tb-notif-wrap{position:relative;}
+    .tb-notif-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:${T.red};border:2px solid ${dark?"#12131b":"#fff"};}
+    .tb-notif-panel{position:absolute;top:calc(100% + 10px);right:0;width:320px;max-height:360px;overflow:auto;z-index:210;
+      background:${dark?"rgba(16,17,25,0.98)":"rgba(255,255,255,0.98)"};border:1px solid ${GB_BORDER};border-radius:17px;
+      box-shadow:0 16px 46px rgba(0,0,0,${dark?"0.42":"0.15"});backdrop-filter:blur(36px);}
+    .tb-notif-head{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-bottom:1px solid ${GB_BORDER};}
+    .tb-notif-item{padding:11px 14px;border-bottom:1px solid ${GB_BORDER};cursor:pointer;font-size:12px;color:${T.textSub};line-height:1.45;}
+    .tb-notif-item:hover,.tb-notif-item.unread{background:${T.accentSoft};color:${T.text};}
     .tb-toggle{width:50px;height:27px;border-radius:99px;border:1px solid ${GB_BORDER};
       background:${dark?"rgba(255,255,255,0.07)":"rgba(255,252,245,0.80)"};
       cursor:pointer;position:relative;flex-shrink:0;}
@@ -533,6 +563,46 @@ export default function Dashboard() {
       display:flex;align-items:center;justify-content:center;font-size:10px;
       transition:left 0.35s cubic-bezier(0.34,1.56,0.64,1);
       box-shadow:0 2px 8px ${T.accentGlow};}
+
+    .tb-admin-btn{
+      display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:12px;
+      background:linear-gradient(135deg,rgba(56,189,248,0.18),rgba(99,102,241,0.22));
+      border:1px solid rgba(56,189,248,0.45);
+      color:#38bdf8;font-size:12px;font-weight:800;font-family:${FONT.body};
+      cursor:pointer;transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:0 4px 18px rgba(56,189,248,0.25);
+    }
+    .tb-admin-btn:hover{
+      transform:translateY(-2px);
+      border-color:#38bdf8;
+      box-shadow:0 6px 24px rgba(56,189,248,0.40);
+      filter:brightness(1.1);
+    }
+    .tb-admin-pulse{
+      width:7px;height:7px;border-radius:50%;background:#38bdf8;
+      box-shadow:0 0 10px #38bdf8;animation:adminPulse 1.8s infinite;
+    }
+    @keyframes adminPulse{
+      0%,100%{transform:scale(1);opacity:0.7;}
+      50%{transform:scale(1.4);opacity:1;}
+    }
+    .tb-feedback-btn{
+      display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:12px;
+      background:${dark?"rgba(255,255,255,0.06)":"rgba(255,252,245,0.85)"};
+      border:1px solid ${GB_BORDER};
+      color:${T.text};font-size:12px;font-weight:700;font-family:${FONT.body};
+      cursor:pointer;transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .tb-feedback-btn:hover{
+      border-color:${T.accent}45;color:${T.accent};
+      transform:translateY(-1px);
+      box-shadow:0 4px 14px ${T.accentGlow}15;
+    }
+    .cc-tile.admin-tile{
+      background:linear-gradient(135deg,rgba(56,189,248,0.20),rgba(99,102,241,0.22));
+      border-color:rgba(56,189,248,0.45);
+    }
+    .cc-tile.admin-tile .cc-tl{color:#38bdf8;}
     
     /* Profile Popup layer override */
     .pf-wrap{position:relative;z-index:9999;}
@@ -606,7 +676,7 @@ export default function Dashboard() {
     .banner-male:hover{transform:translateY(-2px);}
 
     /* Quick actions */
-    .qa-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px;}
+    .qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:28px;}
     .qa-btn{padding:18px 10px 14px;border-radius:18px;border:1px solid ${GB_BORDER};
       background:${GB};backdrop-filter:blur(40px);
       cursor:pointer;font-family:${FONT.body};font-size:11px;font-weight:700;
@@ -615,12 +685,15 @@ export default function Dashboard() {
       box-shadow:inset 0 1.5px 0 ${GB_TOP},0 2px 8px rgba(0,0,0,${dark?"0.14":"0.04"});}
     .qa-btn::before{content:'';position:absolute;inset:0;border-radius:inherit;
       background:linear-gradient(128deg,rgba(255,255,255,${dark?"0.07":"0.42"}) 0%,transparent 30%);pointer-events:none;}
-    .qa-btn:hover{border-color:${T.accent}48;color:${T.accent};
+    .qa-btn:hover{border-color:var(--qa-color, ${T.accent});color:var(--qa-color, ${T.accent});
       transform:translateY(-6px) scale(1.03);
-      box-shadow:0 16px 38px ${T.accentGlow}38,inset 0 1.5px 0 rgba(255,255,255,${dark?"0.18":"0.78"});}
+      box-shadow:0 16px 38px var(--qa-glow, ${T.accentGlow}38),inset 0 1.5px 0 rgba(255,255,255,${dark?"0.18":"0.78"});}
     .qa-ico{font-size:27px;display:block;margin-bottom:10px;
       transition:transform 0.30s cubic-bezier(0.34,1.56,0.64,1);}
     .qa-btn:hover .qa-ico{transform:scale(1.20) rotate(-6deg);}
+
+    .qa-customize-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.04)"};color:${T.textSub};cursor:pointer;transition:all 0.22s cubic-bezier(0.22,1,0.36,1);}
+    .qa-customize-btn:hover{border-color:var(--qa-color, ${T.accent});color:var(--qa-color, ${T.accent});background:var(--qa-glow, ${T.accentGlow});transform:scale(1.04);}
 
     /* Pro banner */
     .pro-banner{border-radius:22px;padding:26px 30px;margin-bottom:28px;
@@ -893,7 +966,13 @@ export default function Dashboard() {
             <React.Fragment key={sec.title}>
               <div className="sb-tool-sec">{sec.title}</div>
               {sec.items.map(t => (
-                <div key={t.label} className="sb-ti" onClick={() => navigate(t.path)}>
+                <div key={t.label} className="sb-ti" onClick={() => {
+                  if (t.action === "feedback") {
+                    setShowFeedbackModal(true);
+                  } else if (t.path) {
+                    navigate(t.path);
+                  }
+                }}>
                   <span className="sb-ti-ico">{t.icon}</span>
                   <span>{t.label}</span>
                 </div>
@@ -946,8 +1025,50 @@ export default function Dashboard() {
             </div>
 
             <div className="tb-right">
+              {/* Master Admin Console Pill — STRICTLY ashishkanellis33@gmail.com */}
+              {isAdmin && (
+                <button
+                  className="tb-admin-btn"
+                  title="Master Admin Console"
+                  onClick={() => navigate("/admin")}
+                >
+                  <span style={{ fontSize: 13 }}>🛡️</span>
+                  <span>Admin Console</span>
+                  <span className="tb-admin-pulse" />
+                </button>
+              )}
+
+              {/* Feedback & Rating Trigger for all athletes */}
+              <button
+                className="tb-feedback-btn"
+                title="Rate App & Send Feedback"
+                onClick={() => setShowFeedbackModal(true)}
+              >
+                <span>💬</span>
+                <span>Feedback</span>
+              </button>
+
               {(user.streak||0) > 0 && <div className="streak-pill">🔥 {user.streak}-day streak</div>}
-              <button className="tb-btn" title="Notifications">🔔</button>
+              <div className="tb-notif-wrap">
+                <button className="tb-btn" title="Notifications" onClick={() => setShowNotifications(v => !v)}>
+                  🔔{unreadNotifications > 0 && <span className="tb-notif-dot"/>}
+                </button>
+                {showNotifications && (
+                  <div className="tb-notif-panel">
+                    <div className="tb-notif-head">
+                      <strong style={{fontSize:12,color:T.text}}>Notifications{unreadNotifications ? ` (${unreadNotifications})` : ""}</strong>
+                      <div style={{display:"flex",gap:10}}>
+                        <button onClick={requestPermission} style={{border:0,background:"none",fontSize:10,fontWeight:700,color:T.accent,cursor:"pointer"}}>Enable alerts</button>
+                        {unreadNotifications > 0 && <button onClick={markAllRead} style={{border:0,background:"none",fontSize:10,fontWeight:700,color:T.accent,cursor:"pointer"}}>Read all</button>}
+                      </div>
+                    </div>
+                    {!notifications.length ? <div style={{padding:"20px",textAlign:"center",fontSize:12,color:T.textMuted}}>No notifications yet.</div>
+                    : notifications.map(n => <div key={n.id} className={`tb-notif-item ${!n.read?"unread":""}`} onClick={() => { markRead(n.id); if(n.path) navigate(n.path); }}>
+                      {n.text}
+                    </div>)}
+                  </div>
+                )}
+              </div>
               <button className="tb-toggle" onClick={toggleTheme}>
                 <div className="tb-knob">{dark?"🌙":"☀️"}</div>
               </button>
@@ -1006,6 +1127,21 @@ export default function Dashboard() {
                           <div className="cc-ts">View benefits</div>
                         </div>
                       )}
+
+                      {/* Master Admin Console Tile in profile menu */}
+                      {isAdmin && (
+                        <div className="cc-tile admin-tile" onClick={()=>{setShowProfile(false);navigate("/admin");}}>
+                          <span className="cc-tico">🛡️</span>
+                          <div className="cc-tl">Admin Console</div>
+                          <div className="cc-ts">Manage feedback & logs</div>
+                        </div>
+                      )}
+
+                      <div className="cc-tile" onClick={()=>{setShowProfile(false);setShowFeedbackModal(true);}}>
+                        <span className="cc-tico">💬</span>
+                        <div className="cc-tl">Rate & Feedback</div>
+                        <div className="cc-ts">Share your review</div>
+                      </div>
 
                       <div className="cc-tile" onClick={()=>{setShowProfile(false);navigate("/community");}}>
                         <span className="cc-tico">👥</span>
@@ -1077,10 +1213,45 @@ export default function Dashboard() {
 
           {/* Quick Actions */}
           <Reveal delay={0.05}>
-            <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Quick Actions</div><div className="sdiv-line"/></div>
-            <div className="qa-grid">
-              {QUICK_ACTIONS.map((t,i) => (
-                <button key={i} className="qa-btn" onClick={() => navigate(t.path)}>
+            <div className="sdiv" style={{ alignItems: "center" }}>
+              <div className="sdiv-line" />
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="sdiv-txt">Quick Actions</div>
+                <button
+                  className="qa-customize-btn"
+                  style={{
+                    "--qa-color": currentQaTheme.color,
+                    "--qa-glow": currentQaTheme.glow,
+                  }}
+                  onClick={() => setShowQAModal(true)}
+                  title="Customize your dashboard shortcuts"
+                >
+                  ⚙️ Customize
+                </button>
+              </div>
+              <div className="sdiv-line" />
+            </div>
+            <div className="qa-grid" style={{
+              gridTemplateColumns: `repeat(${Math.min(currentActions.length, 6)}, minmax(0, 1fr))`
+            }}>
+              {currentActions.map((t, i) => (
+                <button
+                  key={t.id || i}
+                  className="qa-btn"
+                  style={{
+                    "--qa-color": currentQaTheme.color,
+                    "--qa-glow": currentQaTheme.glow,
+                  }}
+                  onClick={() => {
+                    if (t.id === "weight-checkin") {
+                      setShowWeightModal(true);
+                    } else if (t.id === "feedback-modal" || t.path === "#feedback-modal") {
+                      setShowFeedbackModal(true);
+                    } else {
+                      navigate(t.path);
+                    }
+                  }}
+                >
                   <span className="qa-ico">{t.icon}</span>{t.label}
                 </button>
               ))}
@@ -1117,9 +1288,9 @@ export default function Dashboard() {
             <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Your Stats</div><div className="sdiv-line"/></div>
             <div className="sg">
               {[
-                {label:"Weight",         val:user.weight?`${user.weight}`:"—", unit:"kg",     sub:user.targetWeight?`Goal: ${user.targetWeight} kg`:"Set a goal",       color:T.accent,  glow:T.accentGlow, prog:weightProgress},
+                {label:"Latest Weight",  val:currentWeight?`${currentWeight}`:"—", unit:"kg",  sub:recordedWeights.length?`Logged ${recordedWeights.at(-1)?.date}`:"Log your first weight", color:T.accent, glow:T.accentGlow, prog:weightProgress},
                 {label:"BMI",            val:bmi?`${bmi}`:"—",                unit:"",       sub:bmiLabel,                                                              color:bmiColor,  glow:T.greenGlow,  prog:bmi?Math.min((bmi/30)*100,100):0},
-                {label:"Calorie Target", val:calorieTarget?`${calorieTarget}`:"—", unit:"kcal", sub:user.goal?.replace(/_/g," ")||"—",                                 color:T.green,   glow:T.greenGlow,  prog:calorieTarget?75:0},
+                {label:"Logged Today",   val:todayCalories?`${todayCalories}`:"—", unit:"kcal", sub:todayCalories?`Target: ${calGoal} kcal`:"Log a meal to begin", color:T.green, glow:T.greenGlow, prog:todayCalories?Math.min(todayCalories/calGoal*100,100):0},
                 {
                   label:isFemale?"Cycle Day":"Height",
                   val:  isFemale?(cycleDay?`${cycleDay}`:"—"):(user.height?`${user.height}`:"—"),
@@ -1146,8 +1317,54 @@ export default function Dashboard() {
           <Reveal delay={0.11}>
             <div className="cr1">
               <div className="cc2 gl">
-                <div className="cc2-title">Weight Trend — This Week</div>
-                <ResponsiveContainer width="100%" height={210}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div className="cc2-title" style={{margin:0}}>Weight Trend — This Week</div>
+                  <button
+                    onClick={() => setShowWeightModal(true)}
+                    style={{
+                      background:"rgba(34, 197, 94, 0.14)",
+                      color:"#22c55e",
+                      border:"1px solid rgba(34, 197, 94, 0.35)",
+                      padding:"3px 10px",
+                      borderRadius:99,
+                      fontSize:11,
+                      fontWeight:700,
+                      cursor:"pointer",
+                      display:"flex",
+                      alignItems:"center",
+                      gap:4,
+                      transition:"all 0.2s",
+                    }}
+                    title="Quick daily weight check-in"
+                  >
+                    <span>⚖️</span> + Log Weight
+                  </button>
+                </div>
+                {!logsReady ? <div style={{height:210,display:"grid",placeItems:"center",fontSize:12,color:T.textMuted}}>Loading your entries…</div>
+                : !weeklyWeight.some(d=>d.weight!=null) ? (
+                  <div style={{height:210,display:"grid",placeItems:"center",textAlign:"center",fontSize:12,color:T.textMuted,lineHeight:1.6}}>
+                    <div>
+                      No weight entries yet.<br/>
+                      <button
+                        onClick={() => setShowWeightModal(true)}
+                        style={{
+                          marginTop:8,
+                          background:"rgba(34, 197, 94, 0.15)",
+                          color:"#22c55e",
+                          border:"1px solid rgba(34, 197, 94, 0.4)",
+                          borderRadius:10,
+                          padding:"6px 14px",
+                          fontSize:11.5,
+                          fontWeight:700,
+                          cursor:"pointer",
+                        }}
+                      >
+                        ⚖️ Log Today's Weigh-in
+                      </button>
+                    </div>
+                  </div>
+                )
+                : <ResponsiveContainer width="100%" height={210}>
                   <AreaChart data={weeklyWeight} margin={{top:5,right:4,bottom:0,left:-24}}>
                     <defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={T.accent} stopOpacity={0.30}/><stop offset="100%" stopColor={T.accent} stopOpacity={0}/></linearGradient></defs>
                     <CartesianGrid strokeDasharray="3 3" stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"}/>
@@ -1156,19 +1373,19 @@ export default function Dashboard() {
                     <Tooltip content={<CT/>}/>
                     <Area type="monotone" dataKey="weight" name="Weight (kg)" stroke={T.accent} strokeWidth={2.5} fill="url(#wg)" dot={{fill:T.accent,r:3.5,strokeWidth:0}} activeDot={{r:5.5,strokeWidth:0,fill:T.accent}}/>
                   </AreaChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer>}
               </div>
               <div className="cc2 gl">
                 <div className="cc2-title">Your Profile</div>
                 <div style={{marginBottom:12}}>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:T.textSub,marginBottom:8}}>
-                    <span>Start: {user.weight?(+user.weight-5).toFixed(1):"—"} kg</span>
+                    <span>Start: {firstWeight||"—"} kg</span>
                     <span>Target: {user.targetWeight||"—"} kg</span>
                   </div>
                   <div style={{height:8,background:dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.07)",borderRadius:99,overflow:"hidden"}}>
                     <div style={{height:"100%",width:`${weightProgress}%`,background:`linear-gradient(90deg,${T.accent},${T.purple})`,borderRadius:99,transition:"width 2s cubic-bezier(0.4,0,0.2,1)"}}/>
                   </div>
-                  <div style={{fontSize:11,color:T.accent,marginTop:5,fontWeight:800}}>{weightProgress}% complete</div>
+                  <div style={{fontSize:11,color:T.accent,marginTop:5,fontWeight:800}}>{recordedWeights.length ? `${weightProgress}% toward your goal` : "Add entries to track progress"}</div>
                 </div>
                 {[
                   {k:"Activity",  v:user.activityLevel?.replace(/_/g," ")||"—", c:T.green   },
@@ -1191,7 +1408,9 @@ export default function Dashboard() {
             <div className="cr2">
               <div className="cc2 gl">
                 <div className="cc2-title">Calorie Balance — This Week</div>
-                <ResponsiveContainer width="100%" height={210}>
+                {!logsReady ? <div style={{height:210,display:"grid",placeItems:"center",fontSize:12,color:T.textMuted}}>Loading your entries…</div>
+                : !calData.some(d=>d.consumed||d.burned) ? <div style={{height:210,display:"grid",placeItems:"center",textAlign:"center",fontSize:12,color:T.textMuted,lineHeight:1.6}}>No nutrition or workout logs this week.<br/>Your real balance will appear here.</div>
+                : <ResponsiveContainer width="100%" height={210}>
                   <BarChart data={calData} barGap={3} margin={{top:5,right:4,bottom:0,left:-24}}>
                     <defs>
                       <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={T.accent} stopOpacity={1}/><stop offset="100%" stopColor={T.accent} stopOpacity={0.4}/></linearGradient>
@@ -1204,18 +1423,18 @@ export default function Dashboard() {
                     <Bar dataKey="consumed" name="Consumed" fill="url(#bg1)" radius={[6,6,0,0]}/>
                     <Bar dataKey="burned"   name="Burned"   fill="url(#bg2)" radius={[6,6,0,0]}/>
                   </BarChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer>}
               </div>
               <div className="cc2 gl">
-                <div className="cc2-title">Macro Split — {user.goal?.replace(/_/g," ")||"General"}</div>
-                <ResponsiveContainer width="100%" height={145}>
+                <div className="cc2-title">Today's Macro Split</div>
+                {MACROS.length ? <ResponsiveContainer width="100%" height={145}>
                   <PieChart>
                     <Pie data={MACROS} cx="50%" cy="50%" innerRadius={44} outerRadius={64} paddingAngle={3} dataKey="value" strokeWidth={0}>
                       {MACROS.map((m,i) => <Cell key={i} fill={m.fill}/>)}
                     </Pie>
                     <Tooltip content={<CT/>}/>
                   </PieChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer> : <div style={{height:145,display:"grid",placeItems:"center",textAlign:"center",fontSize:12,color:T.textMuted,lineHeight:1.6}}>No meals logged today.<br/>Macros will be calculated from your entries.</div>}
                 <div className="mn-row">
                   {MACROS.map((m,i) => (
                     <div key={i} className="mn-item">
@@ -1225,11 +1444,11 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                {calorieTarget && (
+                {MACROS.length > 0 && (
                   <div style={{marginTop:14,padding:"10px 12px",borderRadius:11,background:T.accentSoft,border:`1px solid ${T.accent}18`,fontSize:11,color:T.textSub,textAlign:"center"}}>
-                    Protein <b style={{color:T.accent}}>{Math.round(calorieTarget*MACROS[0].value/100/4)}g</b>
-                    {" · "}Carbs <b style={{color:T.purple}}>{Math.round(calorieTarget*MACROS[1].value/100/4)}g</b>
-                    {" · "}Fats <b style={{color:T.orange}}>{Math.round(calorieTarget*MACROS[2].value/100/9)}g</b>
+                    Protein <b style={{color:T.accent}}>{Math.round(todayMacros.protein)}g</b>
+                    {" · "}Carbs <b style={{color:T.purple}}>{Math.round(todayMacros.carbs)}g</b>
+                    {" · "}Fats <b style={{color:T.orange}}>{Math.round(todayMacros.fats)}g</b>
                   </div>
                 )}
               </div>
@@ -1238,15 +1457,22 @@ export default function Dashboard() {
 
           {/* Workouts */}
           <Reveal delay={0.15}>
-            <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Today's Training — {user.goal?.replace(/_/g," ")||"General"}</div><div className="sdiv-line"/></div>
+            <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Today's Logged Training</div><div className="sdiv-line"/></div>
             <div className="wg">
-              {WORKOUTS.map((w,i) => (
-                <div key={i} className="wc gl" style={{"--wc":w.color}} onClick={() => navigate(w.path)}>
-                  <span className="wc-emo">{w.emoji}</span>
-                  <div className="wc-name">{w.name}</div>
-                  <div className="wc-ex">{w.exercises}</div>
-                  <span className="wc-tag" style={{background:`${w.color}13`,color:w.color,border:`1px solid ${w.color}25`}}>{w.tag}</span>
-                  <button className="wc-btn" style={{background:`linear-gradient(135deg,${w.color},${w.color}bb)`,color:"#000"}}>Start →</button>
+              {!todayWorkouts.length ? (
+                <div className="wc gl" style={{gridColumn:"1/-1",textAlign:"center",cursor:"pointer"}} onClick={() => navigate("/workout-logger")}>
+                  <span className="wc-emo">🏋️</span>
+                  <div className="wc-name">No workout logged today</div>
+                  <div className="wc-ex">Start a session and your real workout details, sets, duration, and volume will appear here.</div>
+                  <button className="wc-btn" style={{background:`linear-gradient(135deg,${T.accent},${T.purple})`,color:"#fff"}}>Log Workout →</button>
+                </div>
+              ) : todayWorkouts.map((w,i) => (
+                <div key={w.id || i} className="wc gl" style={{"--wc":T.accent}} onClick={() => navigate("/workout-logger")}>
+                  <span className="wc-emo">🏋️</span>
+                  <div className="wc-name">{w.name || "Workout"}</div>
+                  <div className="wc-ex">{w.exercises?.length || 0} exercises · {w.sets || 0} sets · {w.duration ? `${Math.round(w.duration / 60)} min` : "Duration not logged"}</div>
+                  <span className="wc-tag" style={{background:`${T.green}13`,color:T.green,border:`1px solid ${T.green}25`}}>{Number(w.volume || 0).toLocaleString()} kg</span>
+                  <button className="wc-btn" style={{background:`linear-gradient(135deg,${T.accent},${T.purple})`,color:"#fff"}}>View Log →</button>
                 </div>
               ))}
             </div>
@@ -1256,13 +1482,19 @@ export default function Dashboard() {
           <Reveal delay={0.17}>
             <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Today's Nutrition</div><div className="sdiv-line"/></div>
             <div className="dg">
-              {DIET_LOG.map((d,i) => (
+              {!mealGroups.length ? (
+                <div className="dc gl" style={{gridColumn:"1/-1",textAlign:"center",cursor:"pointer"}} onClick={() => navigate("/diet-logger")}>
+                  <div className="dc-meal">No meals logged today</div>
+                  <div className="dc-items">Add a meal to see your real calories and macro totals here.</div>
+                  <button className="wc-btn" style={{background:`linear-gradient(135deg,${T.green},${T.accent})`,color:"#fff"}}>Log a Meal →</button>
+                </div>
+              ) : mealGroups.map((d,i) => (
                 <div key={i} className="dc gl">
                   <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:9}}>
                     <div style={{width:7,height:7,borderRadius:"50%",background:d.color,boxShadow:`0 0 6px ${d.color}`,flexShrink:0}}/>
                     <div className="dc-meal">{d.meal}</div>
                   </div>
-                  <div className="dc-items">{d.items}</div>
+                  <div className="dc-items">{d.items.map(item=>item.food).join(" · ")}</div>
                   <div className="dc-cal" style={{color:d.color}}>{d.cal}<span style={{fontSize:10,fontWeight:500,color:T.textSub,marginLeft:3}}>kcal</span></div>
                   <div className="dc-pct">{Math.round((d.cal/calGoal)*100)}% of daily target</div>
                   <div className="dc-bar"><div className="dc-fill" style={{width:`${Math.min((d.cal/calGoal)*100,100)}%`,background:d.color}}/></div>
@@ -1295,15 +1527,14 @@ export default function Dashboard() {
             <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Milestones</div><div className="sdiv-line"/></div>
             <div className="ach-row">
               {[
-                {label:`🔥 ${user.streak||0}-Day Streak`,color:"#fb923c"},
-                {label:"💪 First Workout",              color:"#4f8ef7"},
-                {label:"🥗 Clean Week",                 color:"#34d399"},
-                {label:"🏆 Top 10%",                    color:"#fbbf24"},
-                {label:"📈 Progress Logged",            color:"#a78bfa"},
-                {label:"⚡ AshFitVerse Member",         color:"#f472b6"},
+                ...(liveStreak > 0 ? [{label:`🔥 ${liveStreak}-Day Workout Streak`,color:"#fb923c"}] : []),
+                ...(workouts.length > 0 ? [{label:`💪 ${workouts.length} Workout${workouts.length===1?"":"s"} Logged`,color:"#4f8ef7"}] : []),
+                ...(todayCalories > 0 ? [{label:`🥗 ${todayCalories} kcal Logged Today`,color:"#34d399"}] : []),
+                ...(recordedWeights.length > 0 ? [{label:`📈 ${recordedWeights.length} Weight Check-in${recordedWeights.length===1?"":"s"}`,color:"#a78bfa"}] : []),
               ].map((a,i) => (
                 <div key={i} className="ach-b" style={{color:a.color,borderColor:`${a.color}24`,background:`${a.color}0a`}}>{a.label}</div>
               ))}
+              {!workouts.length && !todayCalories && !recordedWeights.length && <div style={{fontSize:12,color:T.textMuted}}>Your earned milestones will appear here as you log progress.</div>}
             </div>
           </Reveal>
 
@@ -1318,16 +1549,8 @@ export default function Dashboard() {
                   <div style={{fontSize:13,color:T.textSub,marginTop:10,fontWeight:500,lineHeight:1.6}}>
                     Your tribe is out here grinding. Join the conversation, drop your PR, flex your progress.
                   </div>
-                  <div style={{display:"flex",alignItems:"center",gap:14,marginTop:16}}>
-                    <div className="fv-avatars">
-                      {[12,22,33,44,55].map(n => (
-                        <img key={n} src={`https://i.pravatar.cc/40?img=${n}`} className="fv-av" alt=""/>
-                      ))}
-                    </div>
-                    <div style={{fontSize:12,color:T.textSub,fontWeight:600,lineHeight:1.5}}>
-                      <div style={{color:T.text,fontWeight:700}}>Founding Members</div>
-                      <div>The squad is just getting started 💪</div>
-                    </div>
+                  <div style={{fontSize:12,color:T.textSub,fontWeight:600,lineHeight:1.5,marginTop:16}}>
+                    Your community activity is shown from real posts and challenges in FitVerse.
                   </div>
                 </div>
                 <div className="fv-action">
@@ -1376,6 +1599,34 @@ export default function Dashboard() {
 
         </main>
       </div>
+
+      <QuickActionsModal
+        isOpen={showQAModal}
+        onClose={() => setShowQAModal(false)}
+        currentActions={currentActions}
+        currentThemeId={qaThemeId}
+        user={user}
+        onSave={handleSaveQuickActions}
+        dark={dark}
+      />
+
+      <WeightLogModal
+        isOpen={showWeightModal}
+        onClose={() => setShowWeightModal(false)}
+        user={user}
+        authUid={authUid}
+        weights={weights}
+        updateUser={updateUser}
+        dark={dark}
+      />
+
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        user={user}
+        authUid={authUid}
+        dark={dark}
+      />
     </>
   );
 }

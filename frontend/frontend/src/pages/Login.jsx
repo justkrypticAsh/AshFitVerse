@@ -1,11 +1,13 @@
 // src/pages/Login.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginWithEmail, loginWithGoogle, loginWithApple } from "../firebase";
+import { loginWithEmail, loginWithGoogle, loginWithApple, logoutUser, auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import useTheme from "../hooks/useTheme";
 import { generateCSS, BG_IMAGES, FONT } from "../theme";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { DEFAULT_USER } from "../hooks/useUser";
+import { isUserAdmin } from "../config/authConfig";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,37 +18,118 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [currentSessionEmail, setCurrentSessionEmail] = useState("");
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u?.email) {
+        setCurrentSessionEmail(u.email);
+      } else {
+        const local = localStorage.getItem("ashfitverse_email");
+        if (local) setCurrentSessionEmail(local);
+        else setCurrentSessionEmail("");
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleQuickLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (e) {
+      console.warn("Logout error:", e);
+    }
+    localStorage.removeItem("ashfitverse_user");
+    localStorage.removeItem("ashfitverse_onboarded");
+    localStorage.removeItem("ashfitverse_uid");
+    localStorage.removeItem("ashfitverse_email");
+    localStorage.removeItem("ashfitverse_signup_name");
+    localStorage.removeItem("ashfitverse_custom_qa");
+    setCurrentSessionEmail("");
+    setEmail("");
+    setPassword("");
+    setError("");
+  };
+
+  const establishUserSession = async (userObj, fallbackEmail) => {
+    const cleanEmail = (userObj?.email || fallbackEmail || "").trim().toLowerCase();
+    const uid = userObj?.uid || "athlete";
+    localStorage.setItem("ashfitverse_email", cleanEmail);
+    localStorage.setItem("ashfitverse_uid", uid);
+
+    try {
+      const snap = await getDoc(doc(db, "users", uid));
+      let userData = snap.exists() ? snap.data() : null;
+
+      if (!userData) {
+        const admin = isUserAdmin(null, userObj);
+        userData = {
+          ...DEFAULT_USER,
+          name: admin ? "Ashish Sharma" : userObj?.displayName || "Athlete",
+          email: cleanEmail,
+          plan: admin ? "pro" : "free",
+          sex: "male",
+          goal: "muscle",
+          streak: 1,
+          createdAt: new Date().toISOString(),
+        };
+        try {
+          await setDoc(doc(db, "users", uid), userData, { merge: true });
+        } catch (e) {
+          console.warn("Firestore user sync error:", e);
+        }
+      }
+
+      localStorage.setItem("ashfitverse_user", JSON.stringify(userData));
+    } catch (e) {
+      console.warn("User fetch error:", e);
+      const admin = isUserAdmin({ email: cleanEmail }, userObj);
+      const fallbackData = {
+        ...DEFAULT_USER,
+        name: admin ? "Ashish Sharma" : "Athlete",
+        email: cleanEmail,
+        plan: admin ? "pro" : "free",
+        sex: "male",
+      };
+      localStorage.setItem("ashfitverse_user", JSON.stringify(fallbackData));
+    }
+
+    localStorage.setItem("ashfitverse_onboarded", "true");
+    navigate("/dashboard");
+  };
 
   const handleLogin = async () => {
     if (!email || !password) { setError("Please enter your email and password."); return; }
     setLoading(true); setError("");
     try {
       const cred = await loginWithEmail(email, password);
-
-      // Fetch user profile from Firestore to decide where to send them
-      const snap = await getDoc(doc(db, "users", cred.user.uid));
-      if (snap.exists()) {
-        localStorage.setItem("ashfitverse_user", JSON.stringify(snap.data()));
-        localStorage.setItem("ashfitverse_onboarded", "true");
-        navigate("/dashboard");
-      } else {
-        // First-time login — onboarding not completed yet
-        navigate("/onboarding");
-      }
+      await establishUserSession(cred.user, email);
     } catch (err) {
       console.error("Login error:", err.code, err.message);
       const msgs = {
-        "auth/user-not-found":    "No account found with this email.",
+        "auth/user-not-found":    "No account found with this email. Click 'Join Now' to register.",
         "auth/wrong-password":    "Incorrect password. Try again.",
         "auth/invalid-credential":"Invalid email or password.",
         "auth/invalid-email":     "Please enter a valid email address.",
-        "auth/too-many-requests": "Too many attempts. Please wait.",
+        "auth/too-many-requests": "Too many attempts. Please wait a moment.",
         "auth/network-request-failed": "Network error. Check your connection.",
       };
-      setError(msgs[err.code] || "Login failed. Please try again.");
+      setError(msgs[err.code] || "Login failed. Please check your credentials.");
     } finally { setLoading(false); }
+  };
+
+  const handleSocial = async (providerFn) => {
+    setLoading(true); setError("");
+    try {
+      const cred = await providerFn();
+      await establishUserSession(cred.user, cred.user?.email || "");
+    } catch (err) {
+      console.error("Social login error:", err);
+      setError("Sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const css = generateCSS(T, dark) + `
@@ -489,6 +572,62 @@ export default function Login() {
                 with a modern fitness ecosystem.
               </p>
 
+              {/* Active Session Notice if already authed */}
+              {currentSessionEmail && (
+                <div style={{
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  background: "rgba(79,142,247,0.12)",
+                  border: "1px solid rgba(79,142,247,0.32)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  marginBottom: 16,
+                  flexWrap: "wrap",
+                }}>
+                  <div style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>👤 Active session:</span>
+                    <strong style={{ color: "#4f8ef7" }}>{currentSessionEmail}</strong>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard")}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 8,
+                        background: "#4f8ef7",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Dashboard →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleQuickLogout}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 8,
+                        background: "rgba(255,255,255,0.08)",
+                        color: T.textSub,
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                      title="Sign out from this session to use another account"
+                    >
+                      Sign Out ⎋
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flds">
                 <div>
                   <label className="flbl">Email Address</label>
@@ -535,16 +674,10 @@ export default function Login() {
                 </div>
 
                 <div className="sgrd">
-                  <button className="sbtn" onClick={async () => {
-                    try { await loginWithGoogle(); navigate("/dashboard"); }
-                    catch { setError("Google sign-in failed."); }
-                  }}>
+                  <button className="sbtn" onClick={() => handleSocial(loginWithGoogle)}>
                     🔵 Google
                   </button>
-                  <button className="sbtn" onClick={async () => {
-                    try { await loginWithApple(); navigate("/dashboard"); }
-                    catch { setError("Apple sign-in failed."); }
-                  }}>
+                  <button className="sbtn" onClick={() => handleSocial(loginWithApple)}>
                     🍎 Apple
                   </button>
                 </div>

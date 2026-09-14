@@ -3,6 +3,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
+import useUserLogs from "../../hooks/useUserLogs";
+import { listenDated, upsertDated, todayKey, addAppNotification, getEffectiveUid } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 import { generateCSS, FONT, BG_IMAGES } from "../../theme";
 
 const CYCLE_PHASES = [
@@ -67,15 +70,27 @@ const SYMPTOMS = [
 export default function FemaleHealthDashboard() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user } = useUser();
+  const { user, authUid } = useUser();
+  const { streak: liveStreak, todayCalories } = useUserLogs(authUid);
   const [mounted, setMounted] = useState(false);
   const [todaySymptoms, setTodaySymptoms] = useState([]);
   const [moodRating, setMoodRating] = useState(null);
   const [energyRating, setEnergyRating] = useState(null);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => { 
     setMounted(true); 
   }, []);
+  useEffect(() => {
+    if (!authUid) return;
+    return listenDated(authUid, "femaleHealthLogs", (entries) => {
+      const current = entries.find((entry) => entry.date === todayKey());
+      if (!current) return;
+      setTodaySymptoms(current.symptoms || []);
+      setMoodRating(current.mood ?? null);
+      setEnergyRating(current.energy ?? null);
+    });
+  }, [authUid]);
 
   // Calculate current cycle day and phase
   const getCycleInfo = () => {
@@ -99,6 +114,24 @@ export default function FemaleHealthDashboard() {
   const { day, phase, daysUntilPeriod, cycleLen } = getCycleInfo();
   const toggleSymptom = (s) =>
     setTodaySymptoms(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
+  const saveHealthLog = async () => {
+    const effectiveUid = authUid || getEffectiveUid();
+    await upsertDated(effectiveUid, "femaleHealthLogs", todayKey(), {
+      symptoms: todaySymptoms, mood: moodRating, energy: energyRating,
+      cycleDay: day || null, phase: phase?.name || null,
+    });
+    try {
+      await addAppNotification(effectiveUid, { text:"Women's health check-in saved for today.", type:"health", path:"/female-health" });
+    } catch {}
+    setSaved(true);
+    showDonePopup({
+      title: "Done!",
+      message: "Women's health check-in saved & synced with your Dashboard!",
+      subtext: `${todaySymptoms.length} symptoms · ${energyRating ? `${energyRating}/5 energy` : "saved"}`,
+      color: "#f472b6",
+    });
+    setTimeout(() => setSaved(false), 2200);
+  };
 
   const css = generateCSS(T, dark) + `
     .fh-root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};
@@ -148,7 +181,7 @@ export default function FemaleHealthDashboard() {
 
     /* Main grid */
     .fh-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:24px;}
-    .fh-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+    .fh-grid-3{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
 
     /* Glass card */
     .g-card{background:${T.glass};border:1px solid ${T.glassBorder};border-radius:22px;
@@ -305,7 +338,8 @@ export default function FemaleHealthDashboard() {
             {[
               {lbl:"Cycle Day",val:day?`Day ${day}`:"—",sub:`of ${cycleLen||28} day cycle`,color:T.pink,glow:T.pinkGlow},
               {lbl:"Current Phase",val:phase?.name||"—",sub:phase?.days||"Set last period date",color:T.purple,glow:T.purpleGlow},
-              {lbl:"Next Period",val:daysUntilPeriod?`${daysUntilPeriod} days`:"—",sub:"estimated",color:T.orange,glow:T.orangeGlow},
+              {lbl:"Next Period",val:daysUntilPeriod?`${daysUntilPeriod} days`:"—",sub:"estimated arrival",color:T.orange,glow:T.orangeGlow},
+              {lbl:"Workout Streak",val:`${liveStreak ?? user?.streak ?? 0} days`,sub:(liveStreak ?? user?.streak) > 0 ? "🔥 Streak active" : "Log a workout",color:T.accent,glow:T.accentGlow},
             ].map((m,i) => (
               <div key={i} className="metric-card">
                 <div className="metric-glow" style={{background:m.glow}} />
@@ -426,7 +460,7 @@ export default function FemaleHealthDashboard() {
                 </div>
               )}
 
-              <button className="save-btn">Save Today's Log ✓</button>
+              <button className="save-btn" onClick={saveHealthLog}>{saved ? "✓ Check-in Saved" : "Save Today's Log ✓"}</button>
             </div>
           </div>
 

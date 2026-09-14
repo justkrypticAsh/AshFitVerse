@@ -5,6 +5,7 @@ import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
 import { lastNDays, upsertDated, listenDated, todayKey, addAppNotification } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer
@@ -131,17 +132,10 @@ const RESOURCES = [
 ];
 
 // Sample mood data for chart
-const SAMPLE_MOOD_DATA = [
-  { day: "Mon", score: 3 }, { day: "Tue", score: 4 },
-  { day: "Wed", score: 2 }, { day: "Thu", score: 4 },
-  { day: "Fri", score: 5 }, { day: "Sat", score: 4 },
-  { day: "Sun", score: 3 },
-];
-
 export default function MentalHealth() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, isMale,loading } = useUser();
+  const { user, authUid, isMale, loading } = useUser();
   const [mounted, setMounted] = useState(false);
   const [todayMood, setTodayMood] = useState(null);
   const [stressLevel, setStressLevel] = useState(null);
@@ -182,6 +176,12 @@ useEffect(() => {
       path: "/male-mental-health",
     });
     setSaved(true);
+    showDonePopup({
+      title: "Done!",
+      message: "Mental health check-in saved & synced with your Dashboard!",
+      subtext: `Mood: ${todayMood ? todayMood.toUpperCase() : "Saved"} · Stress: ${stressLevel}/10`,
+      color: "#4f8ef7",
+    });
     setTimeout(() => setSaved(false), 2000);
   };
 

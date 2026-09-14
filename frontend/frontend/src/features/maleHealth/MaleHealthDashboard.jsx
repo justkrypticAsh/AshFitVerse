@@ -1,8 +1,11 @@
 // src/features/maleHealth/MaleHealthDashboard.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
+import useUserLogs from "../../hooks/useUserLogs";
+import { listenDated, upsertDated, todayKey, addAppNotification, getEffectiveUid } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 import { generateCSS, FONT, BG_IMAGES } from "../../theme";
 
 const QUICK_LINKS = [
@@ -15,11 +18,11 @@ const QUICK_LINKS = [
 ];
 
 const MOODS = [
-  { id: "great",    icon: "😄", label: "Great" },
-  { id: "good",     icon: "😊", label: "Good" },
-  { id: "okay",     icon: "😐", label: "Okay" },
-  { id: "low",      icon: "😔", label: "Low" },
-  { id: "stressed", icon: "😤", label: "Stressed" },
+  { id: "great",    icon: "😄", label: "Great",    score: 95 },
+  { id: "good",     icon: "😊", label: "Good",     score: 80 },
+  { id: "okay",     icon: "😐", label: "Okay",     score: 60 },
+  { id: "low",      icon: "😔", label: "Low",      score: 35 },
+  { id: "stressed", icon: "😤", label: "Stressed", score: 25 },
 ];
 
 const DAILY_HABITS = [
@@ -33,41 +36,6 @@ const DAILY_HABITS = [
   { id: "coldshower", icon: "🚿", label: "Cold Shower" },
 ];
 
-const HEALTH_PILLARS = [
-  {
-    title: "Testosterone",
-    icon: "⚡",
-    color: "#fb923c",
-    score: 78,
-    tip: "Natural T optimisation through sleep, zinc, heavy lifting and stress reduction.",
-    path: "/testosterone-health",
-  },
-  {
-    title: "Mental Health",
-    icon: "🧠",
-    color: "#4f8ef7",
-    score: 65,
-    tip: "Track your mood, manage stress and build emotional resilience.",
-    path: "/male-mental-health",
-  },
-  {
-    title: "Sexual Wellness",
-    icon: "❤️",
-    color: "#f472b6",
-    score: 72,
-    tip: "Performance, libido and stamina supported by nutrition and lifestyle.",
-    path: "/sexual-wellness",
-  },
-  {
-    title: "Sleep & Recovery",
-    icon: "😴",
-    color: "#a78bfa",
-    score: 61,
-    tip: "HRV, sleep quality and recovery score — the foundation of everything.",
-    path: "/sleep-tracker",
-  },
-];
-
 const DAILY_TIPS = [
   { ico: "🌅", txt: "Get 10–15 minutes of morning sunlight within 30 minutes of waking — sets circadian rhythm and boosts morning testosterone." },
   { ico: "🥩", txt: "Hit your protein target today — 2g per kg of bodyweight minimum for muscle retention and hormonal health." },
@@ -79,7 +47,9 @@ const DAILY_TIPS = [
 export default function MaleHealthDashboard() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user } = useUser();
+  const { user, authUid } = useUser();
+  const { streak: liveStreak, sleepLogs, todayWorkouts } = useUserLogs(authUid);
+
   const [mounted, setMounted]   = useState(false);
   const [mood, setMood]         = useState(null);
   const [energy, setEnergy]     = useState(3);
@@ -90,17 +60,151 @@ export default function MaleHealthDashboard() {
     setMounted(true);
   }, []);
 
-  const toggleHabit = (id) =>
-    setHabits(h => h.includes(id) ? h.filter(x => x !== id) : [...h, id]);
+  // Sync today's check-in from Firestore in real time
+  useEffect(() => {
+    if (!authUid) return;
+    return listenDated(authUid, "dailyCheckins", (entries) => {
+      const today = todayKey();
+      const current = entries.find((e) => e.date === today);
+      if (current) {
+        if (current.mood) setMood(current.mood);
+        if (current.energy) setEnergy(current.energy);
+        if (Array.isArray(current.habits)) setHabits(current.habits);
+      }
+    });
+  }, [authUid]);
 
-  const handleSave = () => {
-    const log = { date: new Date().toISOString().split("T")[0], mood, energy, habits };
+  const toggleHabit = (id) =>
+    setHabits((h) => (h.includes(id) ? h.filter((x) => x !== id) : [...h, id]));
+
+  // Real-time sleep metrics
+  const latestSleep = useMemo(() => {
+    if (!sleepLogs || !sleepLogs.length) return null;
+    return [...sleepLogs]
+      .filter((s) => s && s.date)
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+  }, [sleepLogs]);
+
+  const sleepScore = latestSleep?.score != null ? Number(latestSleep.score) : null;
+
+  // Real-time recovery calculation
+  const recoveryState = useMemo(() => {
+    if (sleepScore == null && !energy) {
+      return { val: "Not Logged", sub: "Log sleep in tracker", color: T.textMuted, glow: "transparent" };
+    }
+    const combined = (sleepScore ?? 65) * 0.6 + (energy / 5) * 40;
+    if (combined >= 78) {
+      return { val: "Optimal", sub: "Peak readiness 🔥", color: T.green, glow: T.greenGlow };
+    }
+    if (combined >= 58) {
+      return { val: "Good", sub: "Ready to train 💪", color: T.accent, glow: T.accentGlow };
+    }
+    return { val: "Low Recovery", sub: "Prioritise rest & sleep 💤", color: T.orange, glow: T.orangeGlow };
+  }, [sleepScore, energy, T]);
+
+  // Real-time calculated health pillar scores
+  const testosteroneScore = useMemo(() => {
+    let score = 48;
+    if (todayWorkouts?.length || habits.includes("workout")) score += 14;
+    if (habits.includes("sleep8")) score += 9;
+    if (habits.includes("sunlight")) score += 7;
+    if (habits.includes("protein")) score += 8;
+    if (habits.includes("zinc")) score += 6;
+    if (habits.includes("noalcohol")) score += 5;
+    if (habits.includes("coldshower")) score += 3;
+    if (energy >= 4) score += 5;
+    return Math.min(99, Math.max(25, score));
+  }, [todayWorkouts, habits, energy]);
+
+  const mentalScore = useMemo(() => {
+    let score = 50;
+    const moodObj = MOODS.find((m) => m.id === mood);
+    if (moodObj) score = Math.round(moodObj.score * 0.75);
+    if (habits.includes("meditation")) score += 12;
+    if (habits.includes("sunlight")) score += 8;
+    if (energy >= 4) score += 5;
+    return Math.min(99, Math.max(20, score));
+  }, [mood, habits, energy]);
+
+  const sexualScore = useMemo(() => {
+    let score = 50;
+    if (sleepScore && sleepScore >= 75) score += 14;
+    if (habits.includes("noalcohol")) score += 10;
+    if (habits.includes("zinc")) score += 10;
+    if (habits.includes("workout") || todayWorkouts?.length) score += 10;
+    if (energy >= 4) score += 6;
+    return Math.min(99, Math.max(25, score));
+  }, [sleepScore, habits, todayWorkouts, energy]);
+
+  const sleepPillarScore = useMemo(() => {
+    if (sleepScore != null) return sleepScore;
+    if (habits.includes("sleep8")) return 80;
+    return 55;
+  }, [sleepScore, habits]);
+
+  const HEALTH_PILLARS = [
+    {
+      title: "Testosterone",
+      icon: "⚡",
+      color: "#fb923c",
+      score: testosteroneScore,
+      tip: "Natural T optimisation through sleep, zinc, heavy lifting and stress reduction.",
+      path: "/testosterone-health",
+    },
+    {
+      title: "Mental Health",
+      icon: "🧠",
+      color: "#4f8ef7",
+      score: mentalScore,
+      tip: "Track your mood, manage stress and build emotional resilience.",
+      path: "/male-mental-health",
+    },
+    {
+      title: "Sexual Wellness",
+      icon: "❤️",
+      color: "#f472b6",
+      score: sexualScore,
+      tip: "Performance, libido and stamina supported by nutrition and lifestyle.",
+      path: "/sexual-wellness",
+    },
+    {
+      title: "Sleep & Recovery",
+      icon: "😴",
+      color: "#a78bfa",
+      score: sleepPillarScore,
+      tip: "HRV, sleep quality and recovery score — the foundation of everything.",
+      path: "/sleep-tracker",
+    },
+  ];
+
+  const handleSave = async () => {
+    const today = todayKey();
+    const effectiveUid = authUid || getEffectiveUid();
+    const log = { date: today, mood, energy, habits, updatedAt: new Date().toISOString() };
     const ex = JSON.parse(localStorage.getItem("ashfitverse_male_daily") || "[]");
     ex.push(log);
     localStorage.setItem("ashfitverse_male_daily", JSON.stringify(ex));
+
+    await upsertDated(effectiveUid, "dailyCheckins", today, log);
+    try {
+      await addAppNotification(effectiveUid, {
+        text: `Men's health daily check-in saved (${habits.length}/8 habits, ${energy}/5 energy).`,
+        type: "health",
+        path: "/male-health",
+      });
+    } catch {}
+
     setSaved(true);
+    showDonePopup({
+      title: "Done!",
+      message: "Men's health daily check-in saved & synced with your Dashboard!",
+      subtext: `${habits.length}/8 habits · ${energy}/5 energy`,
+      color: "#fb923c",
+    });
     setTimeout(() => setSaved(false), 2500);
   };
+
+  const streakVal = liveStreak ?? user?.streak ?? 0;
 
   const css = generateCSS(T, dark) + `
     .mh-root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};
@@ -194,13 +298,13 @@ export default function MaleHealthDashboard() {
     .save-btn.saved{background:linear-gradient(135deg,${T.green},${T.accent});}
 
     /* Metric cards */
-    .metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+    .metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
     .metric-card{background:${T.glass};border:1px solid ${T.glassBorder};border-radius:18px;
       padding:18px;text-align:center;position:relative;overflow:hidden;}
     .metric-glow{position:absolute;width:100px;height:100px;border-radius:50%;
       top:-30px;right:-30px;filter:blur(40px);opacity:0.4;pointer-events:none;}
     .metric-lbl{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${T.textMuted};margin-bottom:6px;}
-    .metric-val{font-family:${FONT.display};font-size:28px;font-weight:800;line-height:1;}
+    .metric-val{font-family:${FONT.display};font-size:26px;font-weight:800;line-height:1;}
     .metric-sub{font-size:11px;color:${T.textSub};margin-top:4px;}
 
     /* Tip list */
@@ -208,7 +312,7 @@ export default function MaleHealthDashboard() {
     .tip-item:last-child{border-bottom:none;}
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-    @media(max-width:1100px){.pillars-grid{grid-template-columns:repeat(2,1fr);}.ql-grid{grid-template-columns:repeat(3,1fr);}.mh-grid{grid-template-columns:1fr;}}
+    @media(max-width:1100px){.pillars-grid{grid-template-columns:repeat(2,1fr);}.ql-grid{grid-template-columns:repeat(3,1fr);}.mh-grid{grid-template-columns:1fr;}.metric-row{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:700px){.mh-content{padding:20px 16px;}.mh-header{padding:0 16px;}.metric-row{grid-template-columns:1fr 1fr;}.ql-grid{grid-template-columns:repeat(2,1fr);}}
   `;
 
@@ -249,12 +353,37 @@ export default function MaleHealthDashboard() {
             ))}
           </div>
 
-          {/* Metric cards */}
+          {/* Metric cards — 100% Real-Time User Logged Data */}
           <div className="metric-row" style={{ animation: "fadeUp 0.6s ease 0.08s both" }}>
             {[
-              { lbl: "Workout Streak", val: `${user?.streak || 18} days`, sub: "Keep it going 🔥", color: T.orange, glow: T.orangeGlow },
-              { lbl: "Sleep Score", val: "74/100", sub: "Last night", color: T.purple, glow: T.purpleGlow },
-              { lbl: "Recovery", val: "Good", sub: "HRV trend up", color: T.green, glow: T.greenGlow },
+              {
+                lbl: "Workout Streak",
+                val: streakVal > 0 ? `${streakVal} days` : "0 days",
+                sub: streakVal > 0 ? "Keep it burning 🔥" : "Log workout to begin",
+                color: T.orange,
+                glow: T.orangeGlow,
+              },
+              {
+                lbl: "Sleep Score",
+                val: sleepScore != null ? `${sleepScore}/100` : "—",
+                sub: latestSleep ? `${latestSleep.hours || 0}h logged ${latestSleep.date === todayKey() ? "today" : latestSleep.date}` : "Tap sleep tracker",
+                color: T.purple,
+                glow: T.purpleGlow,
+              },
+              {
+                lbl: "Recovery",
+                val: recoveryState.val,
+                sub: recoveryState.sub,
+                color: recoveryState.color,
+                glow: recoveryState.glow,
+              },
+              {
+                lbl: "Habits Today",
+                val: `${habits.length}/8`,
+                sub: habits.length ? `${Math.round((habits.length / 8) * 100)}% completed` : "Check habits below",
+                color: T.green,
+                glow: T.greenGlow,
+              },
             ].map((m, i) => (
               <div key={i} className="metric-card">
                 <div className="metric-glow" style={{ background: m.glow }} />
@@ -265,7 +394,7 @@ export default function MaleHealthDashboard() {
             ))}
           </div>
 
-          {/* Health pillars */}
+          {/* Health pillars — Real-Time Synced */}
           <div className="pillars-grid" style={{ animation: "fadeUp 0.6s ease 0.1s both" }}>
             {HEALTH_PILLARS.map((p, i) => (
               <div key={i} className="pillar-card" style={{ "--pc": p.color }} onClick={() => navigate(p.path)}>
@@ -283,7 +412,7 @@ export default function MaleHealthDashboard() {
           {/* Daily check-in + tips */}
           <div className="mh-grid" style={{ animation: "fadeUp 0.6s ease 0.15s both" }}>
             <div className="g-card">
-              <div className="g-title">Daily Check-in</div>
+              <div className="g-title">Daily Check-in (Real-Time Sync)</div>
 
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textMuted, marginBottom: 10 }}>Mood</div>
               <div className="mood-row">
@@ -304,7 +433,7 @@ export default function MaleHealthDashboard() {
                 ))}
               </div>
 
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textMuted, marginBottom: 10 }}>Habits Completed Today</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textMuted, marginBottom: 10 }}>Habits Completed Today ({habits.length}/8)</div>
               <div className="habit-grid">
                 {DAILY_HABITS.map(h => (
                   <button key={h.id} className={`habit-chip ${habits.includes(h.id) ? "active" : ""}`}
@@ -315,7 +444,7 @@ export default function MaleHealthDashboard() {
               </div>
 
               <button className={`save-btn ${saved ? "saved" : ""}`} onClick={handleSave}>
-                {saved ? "✓ Saved!" : "Save Daily Check-in"}
+                {saved ? "✓ Saved & Synced!" : "Save Daily Check-in"}
               </button>
             </div>
 

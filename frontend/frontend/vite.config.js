@@ -7,7 +7,7 @@ export default defineConfig({
   server:{
     host:true,
     allowedHosts:[
-      "here-vehicles-manitoba-foto.trycloudflare.com"
+      "otherwise-fibre-favourites-elderly.trycloudflare.com"
     ]
   },
   optimizeDeps: {

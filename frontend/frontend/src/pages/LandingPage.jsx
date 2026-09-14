@@ -137,6 +137,8 @@ const GENDER_CARDS = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const { dark: isDark, toggleTheme, T } = useTheme();
+  const { user } = useUser();
+  const hasAuthed = Boolean(user?.email || (typeof window !== "undefined" && localStorage.getItem("ashfitverse_email")));
 
   const [clipIdx,    setClipIdx]    = useState(0);
   const [iPhase,     setIPhase]     = useState("in");
@@ -578,8 +580,17 @@ export default function LandingPage() {
             <button className="tt" onClick={toggleTheme} aria-label="Toggle theme">
               <div className="tk">{isDark ? "🌙" : "☀️"}</div>
             </button>
-            <button className="nl" onClick={() => navigate("/login")}>Sign In</button>
-            <button className="nbtn" onClick={() => navigate("/signup")}>Get Started</button>
+            {hasAuthed ? (
+              <>
+                <button className="nl" onClick={() => navigate("/dashboard")}>Dashboard →</button>
+                <button className="nbtn" onClick={() => navigate("/login")}>Switch Account</button>
+              </>
+            ) : (
+              <>
+                <button className="nl" onClick={() => navigate("/login")}>Sign In</button>
+                <button className="nbtn" onClick={() => navigate("/signup")}>Get Started</button>
+              </>
+            )}
           </div>
         </nav>
 

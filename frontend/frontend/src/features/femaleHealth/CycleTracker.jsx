@@ -5,6 +5,7 @@ import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT, BG_IMAGES } from "../../theme";
 import { upsertDated, listenDated, addAppNotification } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -43,7 +44,7 @@ function getPhase(cycleDay, cycleLen=28) {
 export default function CycleTracker() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, isFemale, loading } = useUser();
+  const { user, isFemale, loading, authUid, updateUser } = useUser();
   const [mounted, setMounted] = useState(false);
 
   const today = new Date();
@@ -55,10 +56,23 @@ export default function CycleTracker() {
   });
   const [logForm, setLogForm] = useState({ flow:"none", mood:"", symptoms:[], notes:"" });
 
-  useEffect(() => { setMounted(true);},[]);useEffect(() => {
-  if (!loading && !isFemale) navigate("/dashboard");
-}, [loading, isFemale]); 
-  useEffect(() => { localStorage.setItem("ashfitverse_cycle_logs", JSON.stringify(logs)); }, [logs]);
+  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    if (!loading && !isFemale) navigate("/dashboard");
+  }, [loading, isFemale]);
+  useEffect(() => {
+    localStorage.setItem("ashfitverse_cycle_logs", JSON.stringify(logs));
+  }, [logs]);
+
+  // Real-time Firestore sync for cycle logs
+  useEffect(() => {
+    if (!authUid) return;
+    return listenDated(authUid, "cycleLogs", (entries) => {
+      const map = {};
+      entries.forEach((e) => { if (e.date) map[e.date] = e; });
+      setLogs((prev) => ({ ...prev, ...map }));
+    });
+  }, [authUid]);
 
   const cycleLen = parseInt(user.cycleLength) || 28;
   const lastPeriod = user.lastPeriod ? new Date(user.lastPeriod) : null;
@@ -134,9 +148,27 @@ export default function CycleTracker() {
     return { isToday, isSel, isPeriod, isOv, hasLog, phase, cd };
   };
 
-  const saveLog = () => {
+  const saveLog = async () => {
     if (!selected) return;
-    setLogs(l => ({ ...l, [selKey]: { ...logForm, date: selKey } }));
+    const entry = { ...logForm, date: selKey };
+    setLogs(l => ({ ...l, [selKey]: entry }));
+    if (authUid) {
+      await upsertDated(authUid, "cycleLogs", selKey, entry);
+      if (logForm.flow && logForm.flow !== "none") {
+        await updateUser({ lastPeriod: selKey });
+      }
+      await addAppNotification(authUid, {
+        text: `Cycle log saved for ${selKey}.`,
+        type: "health",
+        path: "/cycle-tracker",
+      });
+    }
+    showDonePopup({
+      title: "Done!",
+      message: `Cycle log saved for ${selKey} & synced to Dashboard!`,
+      subtext: `Flow: ${logForm.flow} · ${logForm.symptoms.length} symptoms logged`,
+      color: "#f472b6",
+    });
     setLogForm({ flow:"none", mood:"", symptoms:[], notes:"" });
   };
 

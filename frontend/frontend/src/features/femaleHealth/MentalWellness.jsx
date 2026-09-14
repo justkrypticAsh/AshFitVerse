@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
+import { lastNDays, listenDated, upsertDated, todayKey, addAppNotification } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 import { generateCSS, FONT } from "../../theme";
 
 const MOOD_OPTIONS = [
@@ -120,21 +122,10 @@ const JOURNAL_PROMPTS = [
   "Three small moments of beauty I noticed today.",
 ];
 
-// Generate 7-day mock trend
-const generateTrend = () => {
-  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  return days.map((d, i) => ({
-    day: d,
-    mood: Math.floor(Math.random() * 3) + 2,
-    stress: Math.floor(Math.random() * 3) + 1,
-    energy: Math.floor(Math.random() * 3) + 2,
-  }));
-};
-
 export default function MentalWellness() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, isFemale, loading } = useUser();
+  const { user, authUid, isFemale, loading } = useUser();
   const [mounted, setMounted]     = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [mood, setMood]           = useState(null);
@@ -143,10 +134,17 @@ export default function MentalWellness() {
   const [activities, setActivities] = useState([]);
   const [notes, setNotes]         = useState("");
   const [saved, setSaved]         = useState(false);
-  const [trendData]               = useState(generateTrend);
+  const [logs, setLogs]           = useState({});
   const [promptIdx, setPromptIdx] = useState(0);
 
-  useEffect(() => { setMounted(true);},[]);useEffect(() => {
+  useEffect(() => { setMounted(true);},[]);
+  useEffect(() => {
+    if (!authUid) return;
+    return listenDated(authUid, "femaleMoodLogs", (entries) => {
+      setLogs(Object.fromEntries(entries.filter((entry) => entry.date).map((entry) => [entry.date, entry])));
+    });
+  }, [authUid]);
+  useEffect(() => {
     if (!loading && !isFemale) navigate("/dashboard");
   }, [loading, isFemale]); 
 
@@ -167,13 +165,30 @@ export default function MentalWellness() {
   const toggleActivity = (id) =>
     setActivities(a => a.includes(id) ? a.filter(x => x !== id) : [...a, id]);
 
-  const handleSave = () => {
-    const log = { date: new Date().toISOString().split("T")[0], mood, stress, energy, activities, notes };
-    const existing = JSON.parse(localStorage.getItem("ashfitverse_mental_logs") || "[]");
-    existing.push(log);
-    localStorage.setItem("ashfitverse_mental_logs", JSON.stringify(existing));
+  const handleSave = async () => {
+    if (!authUid) return;
+    await upsertDated(authUid, "femaleMoodLogs", todayKey(), { mood, stress, energy, activities, notes });
+    await addAppNotification(authUid, { text:"Wellness check-in saved for today.", type:"wellness", path:"/female-mental" });
     setSaved(true);
+    showDonePopup({
+      title: "Done!",
+      message: "Mental wellness check-in saved & synced with your Dashboard!",
+      subtext: `Mood: ${mood ? mood.toUpperCase() : "Saved"} · Stress: ${stress ? stress.toUpperCase() : "Normal"}`,
+      color: "#f472b6",
+    });
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const trendData = lastNDays(7).map((d) => ({
+    day: d.label,
+    mood: MOOD_OPTIONS.find((item) => item.id === logs[d.key]?.mood)?.score || 0,
+    stress: STRESS_LEVELS.find((item) => item.id === logs[d.key]?.stress)?.score || 0,
+    energy: Number(logs[d.key]?.energy) || 0,
+  }));
+  const loggedEntries = Object.values(logs);
+  const average = (key, lookup) => {
+    const values = loggedEntries.map((entry) => lookup ? lookup.find((x) => x.id === entry[key])?.score : Number(entry[key])).filter(Boolean);
+    return values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1) : "—";
   };
 
   const TABS = ["Daily Log", "Trends", "Phase Wellness", "Breathing", "Journal"];
@@ -447,10 +462,10 @@ export default function MentalWellness() {
                   </div>
                   <div>
                     {[
-                      { label: "Avg Mood", val: "3.4/5", sub: "This week", color: T.purple },
-                      { label: "Avg Stress", val: "2.8/5", sub: "This week", color: T.pink },
-                      { label: "Avg Energy", val: "3.1/5", sub: "This week", color: T.green },
-                      { label: "Logs Saved", val: "12", sub: "This month", color: T.accent },
+                      { label: "Avg Mood", val: `${average("mood", MOOD_OPTIONS)}/5`, sub: "Your saved entries", color: T.purple },
+                      { label: "Avg Stress", val: `${average("stress", STRESS_LEVELS)}/5`, sub: "Your saved entries", color: T.pink },
+                      { label: "Avg Energy", val: `${average("energy")}/5`, sub: "Your saved entries", color: T.green },
+                      { label: "Logs Saved", val: `${loggedEntries.length}`, sub: "All time", color: T.accent },
                     ].map((s, i) => (
                       <div key={i} className="trend-stat">
                         <div className="ts-val" style={{ color: s.color }}>{s.val}</div>

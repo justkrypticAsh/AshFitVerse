@@ -6,26 +6,8 @@ import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
 import useUserLogs from "../../hooks/useUserLogs";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
-import { addLog, deleteLog, todayKey, addAppNotification } from "../../lib/userLogs";
-
-const FOOD_DB = [
-  { name: "Chicken Breast (100g)", cal: 165, protein: 31, carbs: 0, fats: 3.6 },
-  { name: "Brown Rice (100g)", cal: 216, protein: 5, carbs: 45, fats: 1.8 },
-  { name: "Whole Eggs (1 large)", cal: 78, protein: 6, carbs: 0.6, fats: 5 },
-  { name: "Whey Protein (30g)", cal: 120, protein: 24, carbs: 3, fats: 2 },
-  { name: "Oats (100g)", cal: 389, protein: 17, carbs: 66, fats: 7 },
-  { name: "Banana (1 medium)", cal: 105, protein: 1.3, carbs: 27, fats: 0.4 },
-  { name: "Salmon (100g)", cal: 208, protein: 20, carbs: 0, fats: 13 },
-  { name: "Sweet Potato (100g)", cal: 86, protein: 1.6, carbs: 20, fats: 0.1 },
-  { name: "Greek Yogurt (170g)", cal: 100, protein: 17, carbs: 6, fats: 0.7 },
-  { name: "Almonds (30g)", cal: 174, protein: 6, carbs: 6, fats: 15 },
-  { name: "Quinoa (100g)", cal: 120, protein: 4.4, carbs: 22, fats: 1.9 },
-  { name: "Broccoli (100g)", cal: 34, protein: 2.8, carbs: 7, fats: 0.4 },
-  { name: "Avocado (1/2)", cal: 160, protein: 2, carbs: 9, fats: 15 },
-  { name: "Cottage Cheese (100g)", cal: 98, protein: 11, carbs: 3.4, fats: 4.3 },
-  { name: "Peanut Butter (2 tbsp)", cal: 188, protein: 8, carbs: 6, fats: 16 },
-  { name: "Milk 2% (240ml)", cal: 122, protein: 8, carbs: 12, fats: 5 },
-];
+import { addLog, deleteLog, todayKey, addAppNotification, getEffectiveUid } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack", "Pre-Workout", "Post-Workout"];
 const MEAL_COLORS = {
@@ -33,18 +15,36 @@ const MEAL_COLORS = {
   Snack: "#fb923c", "Pre-Workout": "#f472b6", "Post-Workout": "#fbbf24",
 };
 
+const FOOD_DB = [
+  { name: "Oatmeal with Berries", cal: 320, protein: 12, carbs: 54, fats: 6, serving: "1 bowl (250g)" },
+  { name: "Scrambled Eggs (3 eggs)", cal: 230, protein: 19, carbs: 2, fats: 16, serving: "3 whole eggs" },
+  { name: "Grilled Chicken Breast", cal: 280, protein: 52, carbs: 0, fats: 6, serving: "200g cooked" },
+  { name: "Brown Rice", cal: 215, protein: 5, carbs: 45, fats: 2, serving: "1 cup (195g)" },
+  { name: "Salmon Fillet", cal: 365, protein: 34, carbs: 0, fats: 24, serving: "180g" },
+  { name: "Whey Protein Shake", cal: 130, protein: 25, carbs: 3, fats: 1.5, serving: "1 scoop (32g)" },
+  { name: "Sweet Potato", cal: 160, protein: 3, carbs: 37, fats: 0.2, serving: "1 large (180g)" },
+  { name: "Greek Yogurt (0%)", cal: 130, protein: 22, carbs: 9, fats: 0, serving: "200g" },
+  { name: "Almonds", cal: 164, protein: 6, carbs: 6, fats: 14, serving: "1 handful (28g)" },
+  { name: "Banana", cal: 105, protein: 1.3, carbs: 27, fats: 0.3, serving: "1 medium (118g)" },
+  { name: "Broccoli (Steamed)", cal: 55, protein: 4, carbs: 11, fats: 0.6, serving: "150g" },
+  { name: "Avocado", cal: 240, protein: 3, carbs: 12, fats: 22, serving: "1 medium (150g)" },
+  { name: "Peanut Butter", cal: 190, protein: 8, carbs: 7, fats: 16, serving: "2 tbsp (32g)" },
+  { name: "Paneer (Raw)", cal: 265, protein: 18, carbs: 3, fats: 20, serving: "100g" },
+  { name: "Dal (Cooked Lentils)", cal: 198, protein: 14, carbs: 32, fats: 1, serving: "1 cup (200g)" },
+  { name: "Roti (Whole Wheat)", cal: 104, protein: 3.5, carbs: 22, fats: 0.5, serving: "1 piece (35g)" },
+];
+
 export default function DietLogger() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { authUid, calorieTarget } = useUser();
+  const { authUid, user, calorieTarget } = useUser();
   const { todayMeals } = useUserLogs(authUid);
   const [mounted, setMounted] = useState(false);
-
-  const [showAdd, setShowAdd] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState("Breakfast");
   const [search, setSearch] = useState("");
-  const [qty, setQty] = useState(1);
   const [selectedFood, setSelectedFood] = useState(null);
+  const [qty, setQty] = useState(1);
+  const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -60,27 +60,47 @@ export default function DietLogger() {
   }), { cal: 0, protein: 0, carbs: 0, fats: 0 });
 
   const addMealEntry = async () => {
-    if (!selectedFood || !authUid) return;
-    await addLog(authUid, "meals", {
-      date: todayKey(),
-      meal: selectedMeal,
-      food: selectedFood.name,
-      qty,
-      cal: selectedFood.cal,
-      protein: selectedFood.protein,
-      carbs: selectedFood.carbs,
-      fats: selectedFood.fats,
-    });
-    if (logs.length === 0) {
-      await addAppNotification(authUid, {
-        text: `First meal logged today: ${selectedFood.name}`,
-        type: "diet",
-        path: "/diet-logger",
+    if (!selectedFood) return;
+    const effectiveUid = authUid || getEffectiveUid();
+    try {
+      await addLog(effectiveUid, "meals", {
+        date: todayKey(),
+        meal: selectedMeal,
+        food: selectedFood.name,
+        qty,
+        cal: selectedFood.cal,
+        protein: selectedFood.protein,
+        carbs: selectedFood.carbs,
+        fats: selectedFood.fats,
       });
+      if (logs.length === 0) {
+        try {
+          await addAppNotification(effectiveUid, {
+            text: `First meal logged today: ${selectedFood.name}`,
+            type: "diet",
+            path: "/diet-logger",
+          });
+        } catch {}
+      }
+      showDonePopup({
+        title: "Done!",
+        message: `${selectedFood.name} logged & synced to your Dashboard!`,
+        subtext: `${selectedMeal} · ${Math.round(selectedFood.cal * qty)} kcal · ${Math.round(selectedFood.protein * qty)}g protein`,
+        color: "#22c55e",
+      });
+    } catch (err) {
+      console.error("addMealEntry error:", err);
+    } finally {
+      setShowAdd(false);
+      setSearch("");
+      setSelectedFood(null);
+      setQty(1);
     }
-    setShowAdd(false); setSearch(""); setSelectedFood(null); setQty(1);
   };
-  const removeMeal = (id) => { if (authUid) deleteLog(authUid, "meals", id); };
+  const removeMeal = (id) => {
+    const effectiveUid = authUid || getEffectiveUid();
+    deleteLog(effectiveUid, "meals", id);
+  };
   const filteredFoods = FOOD_DB.filter(f => f.name.toLowerCase().includes(search.toLowerCase()));
   const mealGroups = MEAL_TYPES.map(m => ({ meal: m, items: logs.filter(l => l.meal === m), color: MEAL_COLORS[m] })).filter(g => g.items.length > 0);
   const macroChartData = [

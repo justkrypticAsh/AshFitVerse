@@ -6,7 +6,8 @@ import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
 import useUserLogs from "../../hooks/useUserLogs";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
-import { addLog, todayKey, addAppNotification } from "../../lib/userLogs";
+import { addLog, todayKey, addAppNotification, getEffectiveUid } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 
 const EXERCISE_LIST = [
   "Bench Press", "Squat", "Deadlift", "OHP", "Pull-ups",
@@ -43,13 +44,16 @@ export default function WorkoutLogger() {
   const formatTime = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
 
   const addExercise = (name) => {
-    setExercises([...exercises, { id: Date.now(), name, sets: [{ reps: 8, weight: 60 }], notes: "" }]);
+    setExercises([
+      ...exercises,
+      { id: Date.now(), name, sets: [{ reps: 10, weight: 20 }] },
+    ]);
     setShowExPicker(false);
   };
 
   const addSet = (exId) => {
     setExercises(exercises.map(ex => ex.id === exId
-      ? { ...ex, sets: [...ex.sets, { ...ex.sets[ex.sets.length - 1] }] }
+      ? { ...ex, sets: [...ex.sets, { reps: 10, weight: ex.sets[ex.sets.length - 1]?.weight || 20 }] }
       : ex));
   };
 
@@ -78,12 +82,13 @@ export default function WorkoutLogger() {
     d.key === todayKey() ? { ...d, volume: d.volume + totalVolume } : d);
 
   const finishWorkout = async () => {
-    if (!exercises.length || !authUid || saving) return;
+    if (!exercises.length || saving) return;
     setSaving(true);
     setTimerActive(false);
     const duration = timer;
+    const effectiveUid = authUid || getEffectiveUid();
     try {
-      await addLog(authUid, "workouts", {
+      await addLog(effectiveUid, "workouts", {
         date: todayKey(),
         name: workoutName.trim() || "Workout",
         exercises,
@@ -93,20 +98,31 @@ export default function WorkoutLogger() {
         caloriesBurned: Math.round((duration / 60) * 6),
       });
       const nextStreak = (user.streak || 0) < 1 ? 1 : (todayWorkouts.length ? user.streak : (user.streak || 0) + 1);
-      await updateUser({ streak: nextStreak, lastWorkoutAt: todayKey() });
-      await addAppNotification(authUid, {
-        text: `Workout saved: ${workoutName.trim() || "Session"} · ${totalVolume.toLocaleString()} kg volume`,
-        type: "workout",
-        path: "/workout-logger",
-      });
+      try {
+        await updateUser({ streak: nextStreak, lastWorkoutAt: todayKey() });
+      } catch {}
+      try {
+        await addAppNotification(effectiveUid, {
+          text: `Workout saved: ${workoutName.trim() || "Session"} · ${totalVolume.toLocaleString()} kg volume`,
+          type: "workout",
+          path: "/workout-logger",
+        });
+      } catch {}
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
         try { new Notification("AshFitVerse", { body: "Workout logged. Great work." }); } catch {}
       }
       setCompleted(true);
+      showDonePopup({
+        title: "Done!",
+        message: `${workoutName.trim() || "Workout"} logged & synced with your Dashboard!`,
+        subtext: `${totalSets} sets · ${totalVolume.toLocaleString()} kg volume · ${Math.round(duration / 60)} min`,
+        color: "#22c55e",
+      });
     } catch (e) {
       console.error(e);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const css = generateCSS(T, dark) + `

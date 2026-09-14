@@ -9,6 +9,7 @@ import useTheme from "../../hooks/useTheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
 import { lastNDays, upsertDated, listenDated, todayKey, addAppNotification } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 
 const TABS = ["Log Sleep", "Trends", "Recovery Tips", "Sleep Science"];
 
@@ -244,6 +245,12 @@ export default function SleepTracker() {
       path: "/sleep-tracker",
     });
     setSaved(true);
+    showDonePopup({
+      title: "Done!",
+      message: "Sleep log saved & recovery score updated on Dashboard!",
+      subtext: `${hours} hours logged · Sleep Score: ${quality ? getSleepScore() : "Saved"}`,
+      color: "#a78bfa",
+    });
     setTimeout(() => setSaved(false), 2500);
   };
 

@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import useUser from "../../hooks/useUser";
+import { addLog, todayKey, addAppNotification } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 
 const DT = {
   bg: "#060810", glass: "rgba(255,255,255,0.035)", glassBorder: "rgba(255,255,255,0.075)",
@@ -22,6 +25,7 @@ const LT = {
 
 export default function WorkoutDayPage({ config }) {
   const navigate = useNavigate();
+  const { authUid } = useUser();
   const [dark, setDark] = useState(true);
   const [mounted, setMounted] = useState(false);
   const T = dark ? DT : LT;
@@ -33,6 +37,7 @@ export default function WorkoutDayPage({ config }) {
   const [restActive, setRestActive] = useState(false);
   const [done, setDone] = useState(false);
   const [activeEx, setActiveEx] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -68,6 +73,32 @@ export default function WorkoutDayPage({ config }) {
   const totalSets = config.exercises.reduce((a, ex) => a + ex.sets.length, 0);
   const completedCount = Object.values(completedSets).filter(Boolean).length;
   const progress = totalSets > 0 ? (completedCount / totalSets) * 100 : 0;
+
+  const finishWorkout = async () => {
+    if (completedCount === 0 || saving) return;
+    setSaving(true);
+    setTimerActive(false);
+    const effectiveUid = authUid || getEffectiveUid();
+    try {
+      const exercises = config.exercises.map((exercise, exIdx) => ({
+        name: exercise.name,
+        sets: exercise.sets.filter((_, setIdx) => completedSets[`${exIdx}-${setIdx}`]),
+      })).filter((exercise) => exercise.sets.length);
+      await addLog(effectiveUid, "workouts", {
+        date: todayKey(), name: config.name, exercises, sets: completedCount,
+        duration: timer, volume: 0, caloriesBurned: Math.round((timer / 60) * 6),
+      });
+      await addAppNotification(effectiveUid, { text:`Workout saved: ${config.name} · ${completedCount} sets complete`, type:"workout", path:"/workout-logger" });
+      setDone(true);
+      showDonePopup({
+        title: "Done!",
+        message: `${config.name} logged & synced with your Dashboard!`,
+        subtext: `${completedCount} sets completed · ${Math.round(timer / 60)} min session`,
+        color: config.color || "#22c55e",
+      });
+    } catch (error) { console.error(error); }
+    setSaving(false);
+  };
 
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
@@ -341,8 +372,8 @@ export default function WorkoutDayPage({ config }) {
 
             <button className="finish-btn"
               disabled={completedCount === 0}
-              onClick={() => { setTimerActive(false); setDone(true); }}>
-              Finish {config.name} ✓
+              onClick={finishWorkout}>
+              {saving ? "Saving…" : `Finish ${config.name} ✓`}
             </button>
           </div>
         </div>

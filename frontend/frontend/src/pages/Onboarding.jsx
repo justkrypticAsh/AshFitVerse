@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import useTheme from "../hooks/useTheme";
 import { generateCSS, FONT } from "../theme";
+import { isUserAdmin } from "../config/authConfig";
 
 const TOTAL_STEPS = 6;
 
@@ -494,19 +496,57 @@ export default function Onboarding() {
   const goNext = () => { setDirection("forward"); setStep(s => s + 1); };
   const goPrev = () => { setDirection("backward"); setStep(s => s - 1); };
 
+  const skipToDashboard = async () => {
+    localStorage.setItem("ashfitverse_onboarded", "true");
+    const existing = localStorage.getItem("ashfitverse_user");
+    if (!existing) {
+      const currentUser = auth.currentUser;
+      const userEmail = (currentUser?.email || localStorage.getItem("ashfitverse_email") || "").trim().toLowerCase();
+      const admin = isUserAdmin({ email: userEmail }, currentUser);
+      const def = {
+        name: admin ? "Ashish Sharma" : (data.name || "Athlete"),
+        email: userEmail,
+        plan: admin ? "pro" : "free",
+        sex: data.sex || "male",
+        goal: data.goal || "muscle",
+        streak: 1,
+        createdAt: new Date().toISOString(),
+      };
+      if (currentUser?.uid) {
+        try {
+          await setDoc(doc(db, "users", currentUser.uid), def, { merge: true });
+        } catch {}
+      }
+      localStorage.setItem("ashfitverse_user", JSON.stringify(def));
+    }
+    navigate("/dashboard");
+  };
+
+  const handleLogoutSwitch = async () => {
+    try {
+      await signOut(auth);
+    } catch {}
+    localStorage.clear();
+    navigate("/login?switch=true");
+  };
+
   const finish = async () => {
     setSaving(true);
+    const currentUser = auth.currentUser;
+    const userEmail = (currentUser?.email || localStorage.getItem("ashfitverse_email") || "").trim().toLowerCase();
+    const admin = isUserAdmin({ email: userEmail }, currentUser);
     const profileData = {
       ...data,
+      email: userEmail,
+      plan: admin ? "pro" : (data.plan || "free"),
       createdAt: new Date().toISOString(),
-      streak: 0,
+      streak: 1,
     };
 
     try {
       localStorage.setItem("ashfitverse_user", JSON.stringify(profileData));
       localStorage.setItem("ashfitverse_onboarded", "true");
 
-      const currentUser = auth.currentUser;
       if (currentUser) {
         await setDoc(doc(db, "users", currentUser.uid), profileData, { merge: true });
         console.log("✅ Profile saved to Firestore:", currentUser.uid);
@@ -775,6 +815,30 @@ export default function Onboarding() {
                 </div>
               );
             })}
+
+            <div style={{ marginTop: "auto", paddingTop: 20 }}>
+              <button
+                type="button"
+                onClick={handleLogoutSwitch}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: 12,
+                  border: `1px solid ${T.glassBorder}`,
+                  background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+                  color: T.textSub,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                <span>⎋</span> Switch Account
+              </button>
+            </div>
           </div>
 
           {/* Right card */}
@@ -782,7 +846,25 @@ export default function Onboarding() {
             <div className="ob-prog-wrap">
               <div className="ob-prog-header">
                 <span className="ob-step-label">Your Profile</span>
-                <span className="ob-step-count">{step} / {TOTAL_STEPS}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={skipToDashboard}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: T.accent,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      padding: "4px 8px",
+                      borderRadius: 8,
+                    }}
+                  >
+                    Skip to Dashboard →
+                  </button>
+                  <span className="ob-step-count">{step} / {TOTAL_STEPS}</span>
+                </div>
               </div>
               <div className="ob-prog-track">
                 <div className="ob-prog-fill" style={{ width: `${progress}%` }} />

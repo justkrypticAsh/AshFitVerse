@@ -1,9 +1,13 @@
 // src/pages/Signup.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerWithEmail, loginWithGoogle, loginWithApple } from "../firebase";
+import { registerWithEmail, loginWithGoogle, loginWithApple, logoutUser, auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import useTheme from "../hooks/useTheme";
 import { generateCSS, BG_IMAGES, FONT } from "../theme";
+import { DEFAULT_USER } from "../hooks/useUser";
+import { isUserAdmin } from "../config/authConfig";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -12,8 +16,37 @@ export default function Signup() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [message, setMessage] = useState({ text: "", type: "" });
   const [loading, setLoading] = useState(false);
+  const [currentSessionEmail, setCurrentSessionEmail] = useState("");
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u?.email) {
+        setCurrentSessionEmail(u.email);
+      } else {
+        const local = localStorage.getItem("ashfitverse_email");
+        if (local) setCurrentSessionEmail(local);
+        else setCurrentSessionEmail("");
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleQuickLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (e) {
+      console.warn("Logout error:", e);
+    }
+    localStorage.removeItem("ashfitverse_user");
+    localStorage.removeItem("ashfitverse_onboarded");
+    localStorage.removeItem("ashfitverse_uid");
+    localStorage.removeItem("ashfitverse_email");
+    localStorage.removeItem("ashfitverse_signup_name");
+    localStorage.removeItem("ashfitverse_custom_qa");
+    setCurrentSessionEmail("");
+    setMessage({ text: "Signed out. You can now create a new account.", type: "success" });
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -22,23 +55,41 @@ export default function Signup() {
     }
     setLoading(true); setMessage({ text: "", type: "" });
     try {
-      await registerWithEmail(form.email, form.password);
+      const cred = await registerWithEmail(form.email, form.password);
 
-      // ✅ FIX 1: Save name to localStorage for onboarding pre-fill
+      const cleanEmail = form.email.trim().toLowerCase();
+      const admin = isUserAdmin(null, cred.user);
+
+      const initialUser = {
+        ...DEFAULT_USER,
+        name: form.name.trim() || (admin ? "Ashish Sharma" : "Athlete"),
+        email: cleanEmail,
+        plan: admin ? "pro" : "free",
+        sex: "male",
+        goal: "muscle",
+        streak: 1,
+        createdAt: new Date().toISOString(),
+      };
+
+      try {
+        await setDoc(doc(db, "users", cred.user.uid), initialUser, { merge: true });
+      } catch (err) {
+        console.warn("Firestore user sync error:", err);
+      }
+
       localStorage.setItem("ashfitverse_signup_name", form.name);
+      localStorage.setItem("ashfitverse_email", cleanEmail);
+      localStorage.setItem("ashfitverse_uid", cred.user.uid);
+      localStorage.setItem("ashfitverse_user", JSON.stringify(initialUser));
+      localStorage.setItem("ashfitverse_onboarded", "true");
 
-      // ✅ FIX 2: Remove any stale onboarding flag so RequireOnboarding works
-      localStorage.removeItem("ashfitverse_onboarded");
-      localStorage.removeItem("ashfitverse_user");
-
-      setMessage({ text: "Account created! Setting up your profile... 🚀", type: "success" });
-
-      // ✅ FIX 3: Go to ONBOARDING, not dashboard
-      setTimeout(() => navigate("/onboarding"), 1000);
+      setMessage({ text: "Account created! Launching your dashboard... 🚀", type: "success" });
+      setTimeout(() => navigate("/dashboard"), 600);
 
     } catch (err) {
+      console.error("Signup error:", err);
       const msgs = {
-        "auth/email-already-in-use": "This email is already registered. Try signing in.",
+        "auth/email-already-in-use": "This email is already registered! Please click 'Sign In' at top right to log in.",
         "auth/weak-password":         "Password must be at least 6 characters.",
         "auth/invalid-email":         "Please enter a valid email address.",
       };
@@ -46,13 +97,32 @@ export default function Signup() {
     } finally { setLoading(false); }
   };
 
-  // ✅ FIX 4: Google/Apple signin → also go to onboarding if not onboarded
   const handleSocialSignin = async (providerFn) => {
     try {
-      await providerFn();
-      const alreadyOnboarded = localStorage.getItem("ashfitverse_onboarded") === "true";
-      navigate(alreadyOnboarded ? "/dashboard" : "/onboarding");
-    } catch {
+      const cred = await providerFn();
+      const cleanEmail = (cred.user?.email || "").trim().toLowerCase();
+      const admin = isUserAdmin(null, cred.user);
+      const initialUser = {
+        ...DEFAULT_USER,
+        name: cred.user?.displayName || (admin ? "Ashish Sharma" : "Athlete"),
+        email: cleanEmail,
+        plan: admin ? "pro" : "free",
+        sex: "male",
+        goal: "muscle",
+        streak: 1,
+        createdAt: new Date().toISOString(),
+      };
+      try {
+        await setDoc(doc(db, "users", cred.user.uid), initialUser, { merge: true });
+      } catch {}
+
+      localStorage.setItem("ashfitverse_email", cleanEmail);
+      localStorage.setItem("ashfitverse_uid", cred.user.uid);
+      localStorage.setItem("ashfitverse_user", JSON.stringify(initialUser));
+      localStorage.setItem("ashfitverse_onboarded", "true");
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Social signin error:", err);
       setMessage({ text: "Sign-in failed. Please try again.", type: "error" });
     }
   };
@@ -196,7 +266,7 @@ export default function Signup() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button className="stog" onClick={toggleTheme}><div className="stth">{dark ? "🌙" : "☀️"}</div></button>
-                <button className="sinlnk" onClick={() => navigate("/")}>Sign In</button>
+                <button className="sinlnk" onClick={() => navigate("/login")}>Sign In</button>
               </div>
             </div>
 
@@ -204,6 +274,62 @@ export default function Signup() {
               <p className="seye">— New Member</p>
               <h2 className="sttl">Start<span>Strong.</span></h2>
               <p className="ssubt">Join thousands transforming their physique. Your fitness journey begins right here.</p>
+
+              {/* Active Session Notice if already authed */}
+              {currentSessionEmail && (
+                <div style={{
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  background: "rgba(79,142,247,0.12)",
+                  border: "1px solid rgba(79,142,247,0.32)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  marginBottom: 16,
+                  flexWrap: "wrap",
+                }}>
+                  <div style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>👤 Active session:</span>
+                    <strong style={{ color: "#4f8ef7" }}>{currentSessionEmail}</strong>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard")}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 8,
+                        background: "#4f8ef7",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Dashboard →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleQuickLogout}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 8,
+                        background: "rgba(255,255,255,0.08)",
+                        color: T.textSub,
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                      title="Sign out from this session to create a new account"
+                    >
+                      Sign Out ⎋
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <form className="sflds" onSubmit={onSubmit}>
                 <div>

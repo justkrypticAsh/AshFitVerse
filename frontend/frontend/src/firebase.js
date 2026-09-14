@@ -6,6 +6,7 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore"; 
 import { getStorage } from "firebase/storage";
@@ -43,3 +44,5 @@ export const registerWithEmail = (email, password) =>
 
 export const loginWithEmail = (email, password) =>
   signInWithEmailAndPassword(auth, email, password);
+
+export const logoutUser = () => signOut(auth);

@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../hooks/useTheme";
 import useUser from "../hooks/useUser";
+import { todayKey, upsertDated } from "../lib/userLogs";
+import { showDonePopup } from "../components/DonePopup";
 import { generateCSS, FONT } from "../theme";
 
 const GOALS = [
@@ -31,7 +33,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
   const {
-    user, updateUser, clearUser, loading,
+    user, authUid, updateUser, clearUser, loading,
     bmi, tdee, calorieTarget, isMale, isFemale,
   } = useUser();
 
@@ -53,9 +55,22 @@ export default function Profile() {
   const save = async () => {
     setSaving(true);
     await updateUser(form);
+    const effectiveUid = authUid || getEffectiveUid();
+    if (form.weight !== "" && form.weight != null) {
+      await upsertDated(effectiveUid, "weights", todayKey(), {
+        weight: Number(form.weight),
+        source: "profile-checkin",
+      });
+    }
     setSaving(false);
     setSaved(true);
     setEditing(false);
+    showDonePopup({
+      title: "Done!",
+      message: "Profile updated & weight check-in synced with Dashboard!",
+      subtext: form.weight ? `Current weight: ${form.weight} kg` : "Profile saved",
+      color: "#22c55e",
+    });
     setTimeout(() => setSaved(false), 2500);
   };
 

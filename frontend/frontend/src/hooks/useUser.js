@@ -5,10 +5,12 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { resolveEffectivePlan, hasMinPlan } from "../config/planConfig";
+import { getEffectiveUid } from "../lib/userLogs";
+import { isUserAdmin } from "../config/authConfig";
 
 export const DEFAULT_USER = {
   name: "Athlete",
@@ -47,18 +49,27 @@ export default function useUser() {
     () => localStorage.getItem("ashfitverse_onboarded") === "true"
   );
   const [loading,   setLoading]   = useState(true);
-  const [authUid,   setAuthUid]   = useState(null);
+  const [authUid,   setAuthUid]   = useState(() => getEffectiveUid());
 
   // ── Auth listener ──────────────────────────────────────────
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setAuthUid(firebaseUser.uid);
+        try { localStorage.setItem("ashfitverse_uid", firebaseUser.uid); } catch {}
       } else {
-        // Logged out
-        setAuthUid(null);
-        setUser(DEFAULT_USER);
-        setOnboarded(false);
+        const localUid = getEffectiveUid();
+        setAuthUid(localUid);
+        const cached = localStorage.getItem("ashfitverse_user");
+        if (cached) {
+          try {
+            setUser({ ...DEFAULT_USER, ...JSON.parse(cached) });
+            setOnboarded(true);
+          } catch {}
+        } else {
+          setUser(DEFAULT_USER);
+          setOnboarded(false);
+        }
         setLoading(false);
       }
     });
@@ -67,7 +78,7 @@ export default function useUser() {
 
   // ── Firestore real-time listener ───────────────────────────
   useEffect(() => {
-    if (!authUid) return;
+    if (!authUid || authUid.startsWith("athlete_") || !auth.currentUser) return;
 
     const userRef = doc(db, "users", authUid);
     const unsubSnap = onSnapshot(
@@ -107,28 +118,38 @@ export default function useUser() {
     setUser(updated); // optimistic
     localStorage.setItem("ashfitverse_user", JSON.stringify(updated));
 
-    if (authUid) {
+    const effectiveUid = authUid || getEffectiveUid();
+    if (auth.currentUser && !effectiveUid.startsWith("athlete_")) {
       try {
-        await setDoc(doc(db, "users", authUid), updated, { merge: true });
+        await setDoc(doc(db, "users", effectiveUid), updated, { merge: true });
       } catch (e) {
-        console.error("updateUser Firestore error:", e);
+        console.warn("updateUser Firestore error:", e);
       }
     }
   };
 
   // ── clearUser — logout cleanup ─────────────────────────────
   const clearUser = async () => {
-    // Set offline before clearing
-    if (authUid) {
+    const effectiveUid = authUid || getEffectiveUid();
+    if (auth.currentUser && !effectiveUid.startsWith("athlete_")) {
       try {
-        await updateDoc(doc(db, "users", authUid), { online: false });
+        await updateDoc(doc(db, "users", effectiveUid), { online: false });
       } catch {}
+    }
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn("Firebase signOut error:", e);
     }
     localStorage.removeItem("ashfitverse_user");
     localStorage.removeItem("ashfitverse_onboarded");
+    localStorage.removeItem("ashfitverse_uid");
+    localStorage.removeItem("ashfitverse_email");
+    localStorage.removeItem("ashfitverse_signup_name");
+    localStorage.removeItem("ashfitverse_custom_qa");
     setUser(DEFAULT_USER);
     setOnboarded(false);
-    setAuthUid(null);
+    setAuthUid(getEffectiveUid());
   };
 
   // ── Cycle helpers ──────────────────────────────────────────
@@ -199,11 +220,13 @@ export default function useUser() {
   const hasPlan = (minPlan) => hasMinPlan(effectivePlan, minPlan);
   const isLite = hasPlan("lite");
   const isPro  = hasPlan("pro");
+  const isAdmin = isUserAdmin(user, auth?.currentUser);
 
   return {
     user, updateUser, clearUser,
     authUid, onboarded, loading,
     isMale, isFemale, isOther,
+    isAdmin,
     hasMentalHealthFocus, hasSexualHealthFocus, hasHormoneFocus,
     hasPCOS, hasPCOD, hasEndometriosis, hasThyroid,
     bmi, tdee, calorieTarget, weightProgress,
