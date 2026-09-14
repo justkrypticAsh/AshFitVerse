@@ -1,7 +1,7 @@
 // src/features/diet/DietPlan.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
 import useUserLogs from "../../hooks/useUserLogs";
 import { lastNDays } from "../../lib/userLogs";

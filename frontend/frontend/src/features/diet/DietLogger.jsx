@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
 import useUserLogs from "../../hooks/useUserLogs";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";

@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useTheme from "../hooks/useTheme";
+import useTheme from "../hooks/usetheme";
 import { generateCSS, BG_IMAGES, FONT } from "../theme";
 
 export default function PageWrapper({

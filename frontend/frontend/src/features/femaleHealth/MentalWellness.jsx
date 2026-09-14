@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
 import { lastNDays, listenDated, upsertDated, todayKey, addAppNotification } from "../../lib/userLogs";
 import { showDonePopup } from "../../components/DonePopup";

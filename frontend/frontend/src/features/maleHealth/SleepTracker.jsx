@@ -5,7 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, BarChart, Bar, Cell
 } from "recharts";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
 import { lastNDays, upsertDated, listenDated, todayKey, addAppNotification } from "../../lib/userLogs";

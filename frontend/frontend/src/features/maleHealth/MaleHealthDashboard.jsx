@@ -1,7 +1,7 @@
 // src/features/maleHealth/MaleHealthDashboard.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
 import useUserLogs from "../../hooks/useUserLogs";
 import { listenDated, upsertDated, todayKey, addAppNotification, getEffectiveUid } from "../../lib/userLogs";

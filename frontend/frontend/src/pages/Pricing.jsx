@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import useTheme from "../hooks/useTheme";
+import useTheme from "../hooks/usetheme";
 import usePayment from "../hooks/usePayment";
 import { generateCSS, FONT } from "../theme";
 

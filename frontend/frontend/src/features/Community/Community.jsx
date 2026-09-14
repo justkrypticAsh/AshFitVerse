@@ -1,7 +1,7 @@
 // src/features/community/Community.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
 import { db, auth } from "../../firebase";

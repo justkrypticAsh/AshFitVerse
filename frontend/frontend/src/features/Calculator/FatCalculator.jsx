@@ -1,7 +1,7 @@
 // src/pages/FatCalculator.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
 
 const FAT_CATEGORIES_MALE = [
