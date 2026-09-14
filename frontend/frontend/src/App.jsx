@@ -39,7 +39,7 @@ import DietPlan   from "./features/diet/DietPlan";
 import Shop from "./features/shop/Shop";
 
 // Community
-import Community from "./features/community/Community";
+import Community from "./features/Community/Community";
 
 // Female Health
 import FemaleHealthDashboard from "./features/femaleHealth/FemaleHealthDashboard";
