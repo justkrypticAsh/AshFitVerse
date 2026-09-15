@@ -100,9 +100,29 @@ export default function useUserLogs(uid) {
       const burned = workouts
         .filter((w) => matchesDate(w.date, d.key))
         .reduce((a, w) => a + (Number(w.caloriesBurned) || Math.round(((Number(w.duration) || 0) / 60) * 6) || 0), 0);
-      return { day: d.label, consumed: Math.round(consumed), burned: Math.round(burned), date: d.key };
+      const c = Math.round(consumed);
+      const b = Math.round(burned);
+      const net = Math.max(0, c - b);
+      return {
+        day: d.label,
+        consumed: c,
+        burned: b,
+        net,
+        date: d.key,
+      };
     });
   }, [meals, workouts, week]);
+
+  const todayBurned = useMemo(() => {
+    return todayWorkouts.reduce(
+      (a, w) => a + (Number(w.caloriesBurned) || Math.round(((Number(w.duration) || 0) / 60) * 6) || 0),
+      0
+    );
+  }, [todayWorkouts]);
+
+  const todayNetCalories = useMemo(() => {
+    return Math.max(0, todayCalories - todayBurned);
+  }, [todayCalories, todayBurned]);
 
   const volumeHistory = useMemo(() => {
     return week.map((d) => {
@@ -114,7 +134,16 @@ export default function useUserLogs(uid) {
   }, [workouts, week]);
 
   const workoutDates = useMemo(
-    () => workouts.map((w) => w.date).filter(Boolean),
+    () =>
+      workouts
+        .map((w) => {
+          if (!w) return null;
+          if (typeof w.date === "string") return w.date.slice(0, 10);
+          if (w.date) return todayKey(w.date);
+          if (w.createdAt) return todayKey(w.createdAt);
+          return null;
+        })
+        .filter(Boolean),
     [workouts]
   );
   const streak = useMemo(() => computeStreak(workoutDates), [workoutDates]);
@@ -149,6 +178,8 @@ export default function useUserLogs(uid) {
     todayWorkouts,
     todayMeals,
     todayCalories,
+    todayBurned,
+    todayNetCalories,
     todayMacros,
     mealGroups,
     weeklyWeight,

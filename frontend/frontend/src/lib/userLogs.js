@@ -299,12 +299,18 @@ export function listenDated(uid, collectionName, cb) {
 }
 
 export function computeStreak(dates) {
-  const set = new Set((dates || []).filter(Boolean));
+  const set = new Set(
+    (dates || [])
+      .filter(Boolean)
+      .map((dt) => (typeof dt === "string" ? dt.slice(0, 10) : todayKey(dt)))
+  );
   let streak = 0;
   const d = new Date();
   d.setHours(12, 0, 0, 0);
   // Allow streak to continue if today's log is missing but yesterday exists
-  if (!set.has(todayKey(d))) d.setDate(d.getDate() - 1);
+  if (!set.has(todayKey(d))) {
+    d.setDate(d.getDate() - 1);
+  }
   while (set.has(todayKey(d))) {
     streak += 1;
     d.setDate(d.getDate() - 1);

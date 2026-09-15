@@ -14,6 +14,7 @@ import { generateCSS, FONT } from "../theme";
 import QuickActionsModal from "../components/QuickActionsModal";
 import WeightLogModal from "../components/WeightLogModal";
 import FeedbackModal from "../components/FeedbackModal";
+import WorkoutDetailModal from "../components/WorkoutDetailModal";
 import { getDefaultQuickActions, QA_THEMES, sanitizeActionsForUser } from "../config/quickActionsCatalog";
 
 // ─── Workout plans ────────────────────────────────────────────────────────────
@@ -117,7 +118,7 @@ export default function Dashboard() {
   const navigate  = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
   const { user, authUid, clearUser, loading, isMale, isFemale, bmi, calorieTarget, getCycleDay, getPhaseName, isPro, isAdmin, updateUser } = useUser();
-  const { ready: logsReady, weeklyWeight, calData, todayCalories, todayMacros, mealGroups, streak: liveStreak, workouts, weights, todayWorkouts } = useUserLogs(authUid);
+  const { ready: logsReady, weeklyWeight, calData, todayCalories, todayBurned, todayNetCalories, todayMacros, mealGroups, streak: liveStreak, workouts, weights, todayWorkouts } = useUserLogs(authUid);
   const { items: notifications, unread: unreadNotifications, markRead, markAllRead, requestPermission } = useAppNotifications(authUid);
 
   const [mounted,     setMounted]     = useState(false);
@@ -127,6 +128,16 @@ export default function Dashboard() {
   const [showQAModal, setShowQAModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedWorkoutLog, setSelectedWorkoutLog] = useState(null);
+  const displayStreak = Math.max(Number(liveStreak) || 0, Number(user?.streak) || 0);
+
+  // Keep user profile streak synchronized with live computed streak from workouts
+  useEffect(() => {
+    if (liveStreak > 0 && liveStreak !== user?.streak && updateUser) {
+      updateUser({ streak: liveStreak, lastWorkoutAt: todayKey() });
+    }
+  }, [liveStreak, user?.streak, updateUser]);
+
   const [customActions, setCustomActions] = useState(() => {
     try {
       const stored = localStorage.getItem("ashfitverse_custom_qa");
@@ -891,6 +902,34 @@ export default function Dashboard() {
     );
   };
 
+  const CalorieTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const data = payload[0]?.payload;
+    const consumed = data?.consumed || 0;
+    const burned = data?.burned || 0;
+    const net = Math.max(0, consumed - burned);
+    const diff = calGoal - net;
+    return (
+      <div className="ctt" style={{ minWidth: 175, padding: "12px 14px", backdropFilter: "blur(20px)", background: dark ? "rgba(10,12,24,0.96)" : "rgba(255,255,255,0.98)", border: `1px solid ${T.glassBorder}`, borderRadius: 14 }}>
+        <div style={{ fontFamily: FONT.display, fontWeight: 800, marginBottom: 8, borderBottom: `1px solid ${T.glassBorder}`, paddingBottom: 4, color: T.text }}>
+          {label} — Balance
+        </div>
+        <div style={{ color: T.accent, display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+          <span>🍏 Consumed:</span> <b>{consumed.toLocaleString()} kcal</b>
+        </div>
+        <div style={{ color: "#f97316", display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+          <span>🔥 Burned:</span> <b>-{burned.toLocaleString()} kcal</b>
+        </div>
+        <div style={{ color: T.green, display: "flex", justifyContent: "space-between", fontSize: 12.5, borderTop: `1px dashed ${T.glassBorder}`, paddingTop: 5, marginTop: 4 }}>
+          <span>⚡ Net Balance:</span> <b>{net.toLocaleString()} kcal</b>
+        </div>
+        <div style={{ fontSize: 10.5, color: diff >= 0 ? T.green : T.red, marginTop: 5, textAlign: "right", fontWeight: 700 }}>
+          {diff >= 0 ? `${diff.toLocaleString()} kcal under goal` : `${Math.abs(diff).toLocaleString()} kcal over goal`}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) return (
     <>
       <style>{css}</style>
@@ -937,12 +976,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {(user.streak||0) > 0 && (
+          {displayStreak > 0 && (
             <div className="sb-streak">
               <span>🔥</span>
-              <span style={{flex:1}}>{user.streak}d streak</span>
+              <span style={{flex:1}}>{displayStreak}d streak</span>
               <div className="sb-streak-bar">
-                <div className="sb-streak-fill" style={{width:`${Math.min((user.streak/30)*100,100)}%`}}/>
+                <div className="sb-streak-fill" style={{width:`${Math.min((displayStreak/30)*100,100)}%`}}/>
               </div>
             </div>
           )}
@@ -1048,7 +1087,7 @@ export default function Dashboard() {
                 <span>Feedback</span>
               </button>
 
-              {(user.streak||0) > 0 && <div className="streak-pill">🔥 {user.streak}-day streak</div>}
+              {displayStreak > 0 && <div className="streak-pill">🔥 {displayStreak}-day streak</div>}
               <div className="tb-notif-wrap">
                 <button className="tb-btn" title="Notifications" onClick={() => setShowNotifications(v => !v)}>
                   🔔{unreadNotifications > 0 && <span className="tb-notif-dot"/>}
@@ -1094,7 +1133,7 @@ export default function Dashboard() {
                             <span className="cc-pill lite-tag">🌱 LITE PLAN</span>
                           )}
                           {bmi && <span className="cc-pill">BMI {bmi}</span>}
-                          {user.streak>0 && <span className="cc-pill">🔥 {user.streak}d</span>}
+                          {displayStreak > 0 && <span className="cc-pill">🔥 {displayStreak}d</span>}
                           {user.weight && <span className="cc-pill">{user.weight}kg</span>}
                         </div>
                       </div>
@@ -1406,24 +1445,80 @@ export default function Dashboard() {
           {/* Charts row 2 */}
           <Reveal delay={0.13}>
             <div className="cr2">
-              <div className="cc2 gl">
-                <div className="cc2-title">Calorie Balance — This Week</div>
-                {!logsReady ? <div style={{height:210,display:"grid",placeItems:"center",fontSize:12,color:T.textMuted}}>Loading your entries…</div>
-                : !calData.some(d=>d.consumed||d.burned) ? <div style={{height:210,display:"grid",placeItems:"center",textAlign:"center",fontSize:12,color:T.textMuted,lineHeight:1.6}}>No nutrition or workout logs this week.<br/>Your real balance will appear here.</div>
-                : <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={calData} barGap={3} margin={{top:5,right:4,bottom:0,left:-24}}>
-                    <defs>
-                      <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={T.accent} stopOpacity={1}/><stop offset="100%" stopColor={T.accent} stopOpacity={0.4}/></linearGradient>
-                      <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={T.purple} stopOpacity={1}/><stop offset="100%" stopColor={T.purple} stopOpacity={0.4}/></linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"}/>
-                    <XAxis dataKey="day" tick={{fill:T.textSub,fontSize:10}} axisLine={false} tickLine={false}/>
-                    <YAxis tick={{fill:T.textSub,fontSize:10}} axisLine={false} tickLine={false}/>
-                    <Tooltip content={<CT/>}/>
-                    <Bar dataKey="consumed" name="Consumed" fill="url(#bg1)" radius={[6,6,0,0]}/>
-                    <Bar dataKey="burned"   name="Burned"   fill="url(#bg2)" radius={[6,6,0,0]}/>
-                  </BarChart>
-                </ResponsiveContainer>}
+              <div className="cc2 gl" style={{ position: "relative" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                  <div>
+                    <div className="cc2-title" style={{ marginBottom: 2 }}>Calorie Balance — This Week</div>
+                    <div style={{ fontSize: 11, color: T.textMuted }}>Consumed vs Burned vs Net Remaining</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, fontSize: 10.5, fontWeight: 700 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, color: T.accent }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.accent }} /> Consumed
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#f97316" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f97316" }} /> Burned
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, color: T.green }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.green }} /> Net Left
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3-metric live snapshot */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 12 }}>
+                  <div style={{ padding: "7px 8px", borderRadius: 10, background: T.accentSoft, border: `1px solid ${T.accent}20`, textAlign: "center" }}>
+                    <div style={{ fontSize: 9.5, color: T.textSub, fontWeight: 700, textTransform: "uppercase" }}>🍏 Consumed</div>
+                    <div style={{ fontFamily: FONT.display, fontSize: 13.5, fontWeight: 800, color: T.accent }}>
+                      {todayCalories.toLocaleString()} <span style={{ fontSize: 9, fontWeight: 500 }}>kcal</span>
+                    </div>
+                  </div>
+                  <div style={{ padding: "7px 8px", borderRadius: 10, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", textAlign: "center" }}>
+                    <div style={{ fontSize: 9.5, color: T.textSub, fontWeight: 700, textTransform: "uppercase" }}>🔥 Burned</div>
+                    <div style={{ fontFamily: FONT.display, fontSize: 13.5, fontWeight: 800, color: "#f97316" }}>
+                      {todayBurned.toLocaleString()} <span style={{ fontSize: 9, fontWeight: 500 }}>kcal</span>
+                    </div>
+                  </div>
+                  <div style={{ padding: "7px 8px", borderRadius: 10, background: `${T.green}12`, border: `1px solid ${T.green}25`, textAlign: "center" }}>
+                    <div style={{ fontSize: 9.5, color: T.textSub, fontWeight: 700, textTransform: "uppercase" }}>⚡ Net Left</div>
+                    <div style={{ fontFamily: FONT.display, fontSize: 13.5, fontWeight: 800, color: T.green }}>
+                      {Math.max(0, calGoal - todayNetCalories).toLocaleString()} <span style={{ fontSize: 9, fontWeight: 500 }}>kcal</span>
+                    </div>
+                  </div>
+                </div>
+
+                {!logsReady ? (
+                  <div style={{ height: 165, display: "grid", placeItems: "center", fontSize: 12, color: T.textMuted }}>Loading your entries…</div>
+                ) : !calData.some(d => d.consumed || d.burned) ? (
+                  <div style={{ height: 165, display: "grid", placeItems: "center", textAlign: "center", fontSize: 12, color: T.textMuted, lineHeight: 1.6 }}>
+                    No nutrition or workout logs this week.<br />Your real balance will appear here.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={165}>
+                    <BarChart data={calData} barGap={2} margin={{ top: 5, right: 4, bottom: 0, left: -24 }}>
+                      <defs>
+                        <linearGradient id="bgConsumed" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={T.accent} stopOpacity={1} />
+                          <stop offset="100%" stopColor={T.accent} stopOpacity={0.4} />
+                        </linearGradient>
+                        <linearGradient id="bgBurned" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f97316" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#ea580c" stopOpacity={0.4} />
+                        </linearGradient>
+                        <linearGradient id="bgNet" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={T.green} stopOpacity={1} />
+                          <stop offset="100%" stopColor={T.green} stopOpacity={0.4} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)"} />
+                      <XAxis dataKey="day" tick={{ fill: T.textSub, fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: T.textSub, fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CalorieTooltip />} />
+                      <Bar dataKey="consumed" name="Consumed" fill="url(#bgConsumed)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="burned" name="Burned" fill="url(#bgBurned)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="net" name="Net Balance" fill="url(#bgNet)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
               <div className="cc2 gl">
                 <div className="cc2-title">Today's Macro Split</div>
@@ -1466,15 +1561,55 @@ export default function Dashboard() {
                   <div className="wc-ex">Start a session and your real workout details, sets, duration, and volume will appear here.</div>
                   <button className="wc-btn" style={{background:`linear-gradient(135deg,${T.accent},${T.purple})`,color:"#fff"}}>Log Workout →</button>
                 </div>
-              ) : todayWorkouts.map((w,i) => (
-                <div key={w.id || i} className="wc gl" style={{"--wc":T.accent}} onClick={() => navigate("/workout-logger")}>
-                  <span className="wc-emo">🏋️</span>
-                  <div className="wc-name">{w.name || "Workout"}</div>
-                  <div className="wc-ex">{w.exercises?.length || 0} exercises · {w.sets || 0} sets · {w.duration ? `${Math.round(w.duration / 60)} min` : "Duration not logged"}</div>
-                  <span className="wc-tag" style={{background:`${T.green}13`,color:T.green,border:`1px solid ${T.green}25`}}>{Number(w.volume || 0).toLocaleString()} kg</span>
-                  <button className="wc-btn" style={{background:`linear-gradient(135deg,${T.accent},${T.purple})`,color:"#fff"}}>View Log →</button>
-                </div>
-              ))}
+              ) : todayWorkouts.map((w,i) => {
+                const isSports = w.category === "sports";
+                const isIntimacy = w.category === "intimacy";
+                const icon = isSports ? (w.sportIcon || "⚽") : isIntimacy ? "❤️" : "🏋️";
+                const burned = Number(w.caloriesBurned) || Math.round(((Number(w.duration) || 0) / 60) * 6);
+                return (
+                  <div
+                    key={w.id || i}
+                    className="wc gl"
+                    style={{ "--wc": isIntimacy ? "#f472b6" : isSports ? "#38bdf8" : T.accent, cursor: "pointer" }}
+                    onClick={() => setSelectedWorkoutLog(w)}
+                  >
+                    <span className="wc-emo">{icon}</span>
+                    <div className="wc-name">{w.name || "Workout"}</div>
+                    <div className="wc-ex">
+                      {isSports
+                        ? `${w.sport || "Sport"} · ${w.duration ? `${Math.round(w.duration / 60)} min` : ""} · ${w.intensity || "Active"}`
+                        : isIntimacy
+                        ? `Intimacy · ${w.duration ? `${Math.round(w.duration / 60)} min` : ""} · ${w.intensity || "Active"}`
+                        : `${w.exercises?.length || 0} exercises · ${w.sets || 0} sets · ${w.duration ? `${Math.round(w.duration / 60)} min` : "Completed"}`}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}>
+                      {Number(w.volume) > 0 && (
+                        <span className="wc-tag" style={{ background: `${T.green}13`, color: T.green, border: `1px solid ${T.green}25` }}>
+                          {Number(w.volume || 0).toLocaleString()} kg
+                        </span>
+                      )}
+                      {burned > 0 && (
+                        <span className="wc-tag" style={{ background: "rgba(249,115,22,0.12)", color: "#f97316", border: "1px solid rgba(249,115,22,0.25)" }}>
+                          🔥 {burned} kcal
+                        </span>
+                      )}
+                      <span className="wc-tag" style={{ background: isIntimacy ? "rgba(244,114,182,0.12)" : isSports ? "rgba(56,189,248,0.12)" : `${T.accent}12`, color: isIntimacy ? "#f472b6" : isSports ? "#38bdf8" : T.accent, border: `1px solid ${isIntimacy ? "rgba(244,114,182,0.25)" : isSports ? "rgba(56,189,248,0.25)" : `${T.accent}25`}` }}>
+                        {isSports ? "Sports" : isIntimacy ? "Intimacy" : "Strength"}
+                      </span>
+                    </div>
+                    <button
+                      className="wc-btn"
+                      style={{ background: isIntimacy ? "linear-gradient(135deg,#f472b6,#ec4899)" : `linear-gradient(135deg,${T.accent},${T.purple})`, color: "#fff" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedWorkoutLog(w);
+                      }}
+                    >
+                      View Log →
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </Reveal>
 
@@ -1626,6 +1761,18 @@ export default function Dashboard() {
         user={user}
         authUid={authUid}
         dark={dark}
+      />
+
+      <WorkoutDetailModal
+        isOpen={Boolean(selectedWorkoutLog)}
+        workout={selectedWorkoutLog}
+        onClose={() => setSelectedWorkoutLog(null)}
+        onViewAll={() => {
+          setSelectedWorkoutLog(null);
+          navigate("/workout-logger?tab=history");
+        }}
+        dark={dark}
+        T={T}
       />
     </>
   );

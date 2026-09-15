@@ -38,7 +38,7 @@ export default function DietLogger() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
   const { authUid, user, calorieTarget } = useUser();
-  const { todayMeals } = useUserLogs(authUid);
+  const { todayMeals, todayBurned } = useUserLogs(authUid);
   const [mounted, setMounted] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState("Breakfast");
   const [search, setSearch] = useState("");
@@ -347,9 +347,11 @@ export default function DietLogger() {
             <div className="side-card">
               <div className="side-title">Calorie Balance</div>
               {[
-                { k: "Goal", v: `${CALORIE_GOAL} kcal`, c: T.textSub },
-                { k: "Consumed", v: `${Math.round(totals.cal)} kcal`, c: T.accent },
-                { k: "Remaining", v: `${Math.max(0, CALORIE_GOAL - Math.round(totals.cal))} kcal`, c: T.green },
+                { k: "Daily Goal", v: `${CALORIE_GOAL.toLocaleString()} kcal`, c: T.textSub },
+                { k: "Consumed", v: `${Math.round(totals.cal).toLocaleString()} kcal`, c: T.accent },
+                { k: "Workouts Burned", v: `-${(todayBurned || 0).toLocaleString()} kcal`, c: "#f97316" },
+                { k: "Net Balance", v: `${Math.max(0, Math.round(totals.cal) - (todayBurned || 0)).toLocaleString()} kcal`, c: T.purple },
+                { k: "Remaining Budget", v: `${Math.max(0, CALORIE_GOAL - Math.max(0, Math.round(totals.cal) - (todayBurned || 0))).toLocaleString()} kcal`, c: T.green },
               ].map((r, i, a) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: i < a.length - 1 ? `1px solid ${T.glassBorder}` : "none", fontSize: 13 }}>
                   <span style={{ color: T.textSub }}>{r.k}</span>
