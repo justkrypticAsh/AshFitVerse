@@ -6,15 +6,16 @@ import useUser from "../hooks/useUser";
 import { generateCSS, FONT } from "../theme";
 
 const CLIPS = [
-  { src: "/videos/intro1.mp4", words: ["TRAIN", "LIKE", "YOU MEAN IT"], sub: "Chest · Back · Legs · Core — 500+ exercises, built for your goal", accent: "#4f8ef7", trans: "wipe-right" },
-  { src: "/videos/intro2.mp4", words: ["EAT", "WITH", "PURPOSE"], sub: "Personalised meal plans · macro tracking · diet logger", accent: "#34d399", trans: "wipe-up" },
-  { src: "/videos/intro3.mp4", words: ["CYCLE.", "PCOS.", "PREGNANCY."], sub: "Cycle tracker · PCOS guide · pregnancy & prenatal hub — built for her", accent: "#f472b6", trans: "wipe-left" },
-  { src: "/videos/intro4.mp4", words: ["TESTOSTERONE.", "SLEEP.", "MIND."], sub: "Testosterone health · HRV sleep · sexual wellness — built for him", accent: "#fb923c", trans: "wipe-down" },
-  { src: "/videos/intro5.mp4", words: ["TRACK", "EVERY", "WIN"], sub: "BMI · body fat % · calorie calculator · weight trends — 23 live metrics", accent: "#a78bfa", trans: "wipe-right" },
-  { src: "/videos/intro6.mp4", words: ["MIND", "BODY", "UNITED"], sub: "Mood tracker · CBT tools · stress management · daily mindfulness", accent: "#fbbf24", trans: "wipe-up" },
+  { src: "/videos/intro1.mp4", poster: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80", words: ["TRAIN", "LIKE", "YOU MEAN IT"], sub: "Chest · Back · Legs · Core — 500+ exercises, built for your goal", accent: "#4f8ef7", trans: "wipe-right" },
+  { src: "/videos/intro2.mp4", poster: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1400&q=80", words: ["EAT", "WITH", "PURPOSE"], sub: "Personalised meal plans · macro tracking · diet logger", accent: "#34d399", trans: "wipe-up" },
+  { src: "/videos/intro3.mp4", poster: "https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=1400&q=80", words: ["CYCLE.", "PCOS.", "PREGNANCY."], sub: "Cycle tracker · PCOS guide · pregnancy & prenatal hub — built for her", accent: "#f472b6", trans: "wipe-left" },
+  { src: "/videos/intro4.mp4", poster: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1400&q=80", words: ["TESTOSTERONE.", "SLEEP.", "MIND."], sub: "Testosterone health · HRV sleep · sexual wellness — built for him", accent: "#fb923c", trans: "wipe-down" },
+  { src: "/videos/intro5.mp4", poster: "https://images.unsplash.com/photo-1581009137042-c5c5dee9f50b?w=1400&q=80", words: ["TRACK", "EVERY", "WIN"], sub: "BMI · body fat % · calorie calculator · weight trends — 23 live metrics", accent: "#a78bfa", trans: "wipe-right" },
+  { src: "/videos/intro6.mp4", poster: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=1400&q=80", words: ["MIND", "BODY", "UNITED"], sub: "Mood tracker · CBT tools · stress management · daily mindfulness", accent: "#fbbf24", trans: "wipe-up" },
 ];
 
 const HERO_VID = "/videos/hero.mp4";
+const HERO_POSTER = "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1600&q=80";
 const HOLD_MS = 2600;
 const TRANS_MS = 680;
 
@@ -151,7 +152,34 @@ export default function LandingPage() {
   const canvasRef  = useRef(null);
   const rowRefs    = useRef([]);
   const isDarkRef  = useRef(isDark);
+  const heroVidRef = useRef(null);
+  const videoRefs  = useRef({});
   useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
+
+  // Safe playback for intro videos
+  useEffect(() => {
+    if (iPhase === "done") {
+      // Pause any intro videos when done
+      Object.values(videoRefs.current).forEach(el => el && el.pause());
+      if (heroVidRef.current) {
+        const p = heroVidRef.current.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      }
+      return;
+    }
+    const currentEl = videoRefs.current[clipIdx];
+    if (currentEl) {
+      currentEl.currentTime = 0;
+      const p = currentEl.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+    // Pause other clips to preserve CPU/GPU
+    Object.entries(videoRefs.current).forEach(([idx, el]) => {
+      if (el && Number(idx) !== clipIdx) {
+        el.pause();
+      }
+    });
+  }, [clipIdx, iPhase]);
 
   // Intro sequencer
   useEffect(() => {
@@ -250,11 +278,10 @@ export default function LandingPage() {
     ::-webkit-scrollbar{width:2px;}
     ::-webkit-scrollbar-thumb{background:${T.accent}66;border-radius:99px;}
 
-    .intro{position:fixed;inset:0;z-index:1000;overflow:hidden;background:#000;}
-    .iv-wrapper{position:absolute;inset:0;width:100%;height:100%;opacity:0;background:#000;transition:opacity 0.28s ease-in-out;}
-    .iv-wrapper.active{opacity:0.85;z-index:2;}
-    .iv{width:100%;height:100%;object-fit:cover;animation:kenBI 3.8s ease-out forwards;}
-    @keyframes kenBI{from{transform:scale(1.03);}to{transform:scale(1.0);}}
+    .intro{position:fixed;inset:0;z-index:1000;overflow:hidden;background:#050712;}
+    .iv-wrapper{position:absolute;inset:0;width:100%;height:100%;opacity:0;background-size:cover;background-position:center;background-repeat:no-repeat;transition:opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);will-change:opacity;}
+    .iv-wrapper.active{opacity:1;z-index:2;}
+    .iv{width:100%;height:100%;object-fit:cover;display:block;}
     .io1{position:absolute;inset:0;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,.4) 0%,rgba(0,0,0,.1) 40%,rgba(0,0,0,.75) 100%);}
     .io2{position:absolute;inset:0;z-index:3;background:linear-gradient(135deg,rgba(0,0,0,.3) 0%,transparent 62%);}
     .io3{position:absolute;inset:0;z-index:3;mix-blend-mode:soft-light;opacity:.38;background:var(--ac);}
@@ -546,11 +573,29 @@ export default function LandingPage() {
       {/* Intro sequence */}
       {!isDone && (
         <div className={`intro${isOut ? ` tr-${clip.trans}` : ""}`} style={{ "--ac": clip.accent }}>
-          {CLIPS.map((c, i) => (
-            <div key={i} className={`iv-wrapper ${i === clipIdx ? "active" : ""}`}>
-              {i === clipIdx && <video className="iv" src={c.src} autoPlay muted playsInline loop/>}
-            </div>
-          ))}
+          {CLIPS.map((c, i) => {
+            const isBuffered = Math.abs(i - clipIdx) <= 1 || (clipIdx === CLIPS.length - 1 && i === 0);
+            return (
+              <div
+                key={i}
+                className={`iv-wrapper ${i === clipIdx ? "active" : ""}`}
+                style={{ backgroundImage: `url(${c.poster})` }}
+              >
+                {isBuffered && (
+                  <video
+                    ref={el => { videoRefs.current[i] = el; }}
+                    className="iv"
+                    src={c.src}
+                    poster={c.poster}
+                    muted
+                    playsInline
+                    loop
+                    preload="auto"
+                  />
+                )}
+              </div>
+            );
+          })}
           <div className="io1"/><div className="io2"/><div className="io3"/>
           <div className="itxt" key={clipIdx}>
             <div>
@@ -596,7 +641,17 @@ export default function LandingPage() {
 
         {/* Hero */}
         <section className="hero">
-          <video className="hero-vid" src={HERO_VID} autoPlay muted playsInline loop/>
+          <video
+            ref={heroVidRef}
+            className="hero-vid"
+            src={HERO_VID}
+            poster={HERO_POSTER}
+            autoPlay
+            muted
+            playsInline
+            loop
+            preload="auto"
+          />
           <div className="hero-vid-ov"/>
           <div className="hero-tint"/>
           <div className="hero-body" style={{ opacity:heroOpacity, transform:`translateY(${heroTY}px)`, transition:"opacity .06s" }}>

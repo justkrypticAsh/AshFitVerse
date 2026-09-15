@@ -2,10 +2,12 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
-  OAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore"; 
@@ -26,23 +28,43 @@ const app = initializeApp(firebaseConfig);
 // 2. Ab 'app' use karne waale saare services iske niche initialize honge
 export const auth = getAuth(app);
 export const db = getFirestore(app); 
-export const storage = getStorage(app); // ✅ Fixed: Ab 'app' pehle se available hai
+export const storage = getStorage(app);
 
 // ── Providers & Methods ──────────────────────────────────────────────────────
 
-// Google
-const googleProvider = new GoogleAuthProvider();
-export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
+// Google Provider configuration
+export const googleProvider = new GoogleAuthProvider();
+// Force account chooser so users can pick account cleanly
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
-// Apple
-const appleProvider = new OAuthProvider("apple.com");
-export const loginWithApple = () => signInWithPopup(auth, appleProvider);
+// Google Sign-In with automatic redirect fallback if popup is blocked
+export const loginWithGoogle = async () => {
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    // If popup is blocked by browser or environment, fallback to redirect
+    if (
+      error.code === "auth/popup-blocked" ||
+      error.code === "auth/cancelled-popup-request"
+    ) {
+      console.warn("Popup blocked or cancelled, attempting redirect sign-in...", error);
+      return await signInWithRedirect(auth, googleProvider);
+    }
+    throw error;
+  }
+};
 
-// Email/Password
+export const loginWithGoogleRedirect = () => signInWithRedirect(auth, googleProvider);
+export const getRedirectResultAuth = () => getRedirectResult(auth);
+
+// Email / Password
 export const registerWithEmail = (email, password) =>
   createUserWithEmailAndPassword(auth, email, password);
 
 export const loginWithEmail = (email, password) =>
   signInWithEmailAndPassword(auth, email, password);
+
+export const resetPassword = (email) =>
+  sendPasswordResetEmail(auth, email);
 
 export const logoutUser = () => signOut(auth);
