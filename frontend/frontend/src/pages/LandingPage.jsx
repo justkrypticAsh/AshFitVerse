@@ -108,12 +108,12 @@ const MARQUEE = [
 ];
 
 const WHY = [
-  { ico:"🧬", t:"Biology-First, Always",      d:"Separate deep health stacks for female and male biology — cycle-synced plans, testosterone optimisation, hormone nutrition. Not just different colours.", c:"#f472b6" },
-  { ico:"🤰", t:"Pregnancy & PCOS Hub",        d:"Full prenatal guide and PCOS management with dedicated diet, workout modifications, supplements and symptom tracking — found nowhere else.", c:"#a78bfa" },
-  { ico:"❤️", t:"Sexual Wellness — Both",      d:"Honest, adult education on sexual health for men and women. Performance nutrition, contraception awareness, curated wellness products.", c:"#fb923c" },
-  { ico:"📊", t:"23 Live Health Metrics",       d:"BMI, body fat %, TDEE, calorie targets, weight trends, sleep quality, HRV, mood scores — every number that matters, synced in real time.", c:"#4f8ef7" },
-  { ico:"🔒", t:"Private by Default",           d:"Your health data is yours. No ads, no data selling, no third-party sharing. End-to-end encrypted and confidential. Ever.", c:"#34d399" },
-  { ico:"⚡", t:"Ready in 3 Minutes",           d:"Complete onboarding in under 3 minutes. Gender-personalised dashboard, workout plan and diet targets — live immediately after signup.", c:"#fbbf24" },
+  { num:"01", t:"Biology-First, Always",      d:"Separate deep health stacks for female and male biology — cycle-synced plans, testosterone optimisation, hormone nutrition. Not just different colours.", c:"#f472b6" },
+  { num:"02", t:"Pregnancy & PCOS Hub",        d:"Full prenatal guide and PCOS management with dedicated diet, workout modifications, supplements and symptom tracking — found nowhere else.", c:"#a78bfa" },
+  { num:"03", t:"Sexual Wellness — Both",      d:"Honest, adult education on sexual health for men and women. Performance nutrition, contraception awareness, curated wellness products.", c:"#fb923c" },
+  { num:"04", t:"23 Live Health Metrics",       d:"BMI, body fat %, TDEE, calorie targets, weight trends, sleep quality, HRV, mood scores — every number that matters, synced in real time.", c:"#4f8ef7" },
+  { num:"05", t:"Private by Default",           d:"Your health data is yours. No ads, no data selling, no third-party sharing. End-to-end encrypted and confidential. Ever.", c:"#34d399" },
+  { num:"06", t:"Ready in 3 Minutes",           d:"Complete onboarding in under 3 minutes. Gender-personalised dashboard, workout plan and diet targets — live immediately after signup.", c:"#fbbf24" },
 ];
 
 const GENDER_CARDS = [
@@ -156,30 +156,34 @@ export default function LandingPage() {
   const videoRefs  = useRef({});
   useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
 
-  // Safe playback for intro videos
+  // Safe playback for intro videos — only start/reset when clipIdx changes or intro finishes
   useEffect(() => {
     if (iPhase === "done") {
-      // Pause any intro videos when done
-      Object.values(videoRefs.current).forEach(el => el && el.pause());
+      Object.values(videoRefs.current).forEach((el) => el && el.pause());
       if (heroVidRef.current) {
         const p = heroVidRef.current.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
       }
-      return;
     }
+  }, [iPhase]);
+
+  useEffect(() => {
+    if (iPhase === "done") return;
     const currentEl = videoRefs.current[clipIdx];
     if (currentEl) {
-      currentEl.currentTime = 0;
+      if (currentEl.readyState >= 2) {
+        try { currentEl.currentTime = 0; } catch (_) {}
+      }
       const p = currentEl.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
-    // Pause other clips to preserve CPU/GPU
+    // Pause other clips to preserve GPU/CPU
     Object.entries(videoRefs.current).forEach(([idx, el]) => {
       if (el && Number(idx) !== clipIdx) {
-        el.pause();
+        try { el.pause(); } catch (_) {}
       }
     });
-  }, [clipIdx, iPhase]);
+  }, [clipIdx]);
 
   // Intro sequencer
   useEffect(() => {
@@ -188,7 +192,7 @@ export default function LandingPage() {
     if (iPhase === "in")   t = setTimeout(() => setIPhase("hold"), 260);
     if (iPhase === "hold") t = setTimeout(() => setIPhase("out"), HOLD_MS);
     if (iPhase === "out")  t = setTimeout(() => {
-      if (clipIdx < CLIPS.length - 1) { setClipIdx(c => c + 1); setIPhase("in"); }
+      if (clipIdx < CLIPS.length - 1) { setClipIdx((c) => c + 1); setIPhase("in"); }
       else setIPhase("done");
     }, TRANS_MS);
     return () => clearTimeout(t);
@@ -573,29 +577,25 @@ export default function LandingPage() {
       {/* Intro sequence */}
       {!isDone && (
         <div className={`intro${isOut ? ` tr-${clip.trans}` : ""}`} style={{ "--ac": clip.accent }}>
-          {CLIPS.map((c, i) => {
-            const isBuffered = Math.abs(i - clipIdx) <= 1 || (clipIdx === CLIPS.length - 1 && i === 0);
-            return (
-              <div
-                key={i}
-                className={`iv-wrapper ${i === clipIdx ? "active" : ""}`}
-                style={{ backgroundImage: `url(${c.poster})` }}
-              >
-                {isBuffered && (
-                  <video
-                    ref={el => { videoRefs.current[i] = el; }}
-                    className="iv"
-                    src={c.src}
-                    poster={c.poster}
-                    muted
-                    playsInline
-                    loop
-                    preload="auto"
-                  />
-                )}
-              </div>
-            );
-          })}
+          {CLIPS.map((c, i) => (
+            <div
+              key={i}
+              className={`iv-wrapper ${i === clipIdx ? "active" : ""}`}
+              style={{ backgroundImage: `url(${c.poster})` }}
+            >
+              <video
+                ref={(el) => { videoRefs.current[i] = el; }}
+                className="iv"
+                src={c.src}
+                poster={c.poster}
+                muted
+                playsInline
+                loop
+                preload={i === clipIdx || i === (clipIdx + 1) % CLIPS.length ? "auto" : "none"}
+                disablePictureInPicture
+              />
+            </div>
+          ))}
           <div className="io1"/><div className="io2"/><div className="io3"/>
           <div className="itxt" key={clipIdx}>
             <div>
@@ -623,7 +623,13 @@ export default function LandingPage() {
           </div>
           <div className="nr">
             <button className="tt" onClick={toggleTheme} aria-label="Toggle theme">
-              <div className="tk">{isDark ? "🌙" : "☀️"}</div>
+              <div className="tk">
+                {isDark ? (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                ) : (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                )}
+              </div>
             </button>
             {hasAuthed ? (
               <>
@@ -736,7 +742,7 @@ export default function LandingPage() {
           <div className="wgrid">
             {WHY.map((w, i) => (
               <div key={i} className="wcard" style={{ "--wc":w.c, "--wcs":w.c+"18", "--wcb":w.c+"30" }}>
-                <div className="wico">{w.ico}</div>
+                <div className="wico">{w.num}</div>
                 <div className="wtitle">{w.t}</div>
                 <div className="wdesc">{w.d}</div>
               </div>

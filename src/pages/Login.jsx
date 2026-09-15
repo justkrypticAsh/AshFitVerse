@@ -1,11 +1,48 @@
 // src/pages/Login.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginWithEmail, loginWithGoogle, loginWithApple } from "../firebase";
-import useTheme from "../hooks/useTheme";
+import { loginWithEmail, loginWithGoogle, logoutUser, auth, db, getRedirectResultAuth, resetPassword } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import useTheme from "../hooks/usetheme";
 import { generateCSS, BG_IMAGES, FONT } from "../theme";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { DEFAULT_USER } from "../hooks/useUser";
+import { isUserAdmin } from "../config/authConfig";
+
+const formatAuthError = (err) => {
+  if (!err) return "Authentication failed. Please try again.";
+  const code = err.code || "";
+  const msg = err.message || "";
+
+  switch (code) {
+    case "auth/unauthorized-domain":
+      return "Current domain is not authorized in Firebase Console! Please add this host in Firebase Console > Authentication > Settings > Authorized domains.";
+    case "auth/operation-not-allowed":
+      return "Google Sign-In is not enabled in your Firebase project. Please enable it in Firebase Console > Authentication > Sign-in method.";
+    case "auth/popup-blocked":
+      return "Sign-in popup was blocked by your browser. Please allow popups for this site, or try again.";
+    case "auth/popup-closed-by-user":
+      return "Sign-in was cancelled because the popup was closed before completing.";
+    case "auth/cancelled-popup-request":
+      return "Sign-in request in progress. Please click once and wait.";
+    case "auth/user-not-found":
+      return "No account found with this email. Click 'Join Now' to register.";
+    case "auth/wrong-password":
+      return "Incorrect password. Try again or click 'Forgot password?'.";
+    case "auth/invalid-credential":
+      return "Invalid email or password. Please verify your details.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/too-many-requests":
+      return "Too many failed attempts. Please wait a moment before trying again.";
+    case "auth/network-request-failed":
+      return "Network error. Check your internet connection.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with the same email using a different sign-in method.";
+    default:
+      return msg.includes("Firebase:") ? msg.replace(/^Firebase:\s*/, "") : (msg || "Sign-in failed. Please try again.");
+  }
+};
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,40 +50,158 @@ export default function Login() {
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [currentSessionEmail, setCurrentSessionEmail] = useState("");
 
-  useEffect(() => { setMounted(true); }, []);
+  // Forgot password modal state
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStatus, setForgotStatus] = useState({ msg: "", type: "" });
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u?.email) {
+        setCurrentSessionEmail(u.email);
+      } else {
+        const local = localStorage.getItem("ashfitverse_email");
+        if (local) setCurrentSessionEmail(local);
+        else setCurrentSessionEmail("");
+      }
+    });
+
+    // Check if user returned from a redirect sign-in
+    getRedirectResultAuth()
+      .then(async (result) => {
+        if (result && result.user) {
+          setLoading(true);
+          await establishUserSession(result.user, result.user.email || "");
+        }
+      })
+      .catch((err) => {
+        console.error("Redirect login error:", err);
+        setError(formatAuthError(err));
+      });
+
+    return () => unsub();
+  }, []);
+
+  const handleQuickLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (e) {
+      console.warn("Logout error:", e);
+    }
+    localStorage.removeItem("ashfitverse_user");
+    localStorage.removeItem("ashfitverse_onboarded");
+    localStorage.removeItem("ashfitverse_uid");
+    localStorage.removeItem("ashfitverse_email");
+    localStorage.removeItem("ashfitverse_signup_name");
+    localStorage.removeItem("ashfitverse_custom_qa");
+    setCurrentSessionEmail("");
+    setEmail("");
+    setPassword("");
+    setError("");
+  };
+
+  const establishUserSession = async (userObj, fallbackEmail) => {
+    const cleanEmail = (userObj?.email || fallbackEmail || "").trim().toLowerCase();
+    const uid = userObj?.uid || "athlete";
+    localStorage.setItem("ashfitverse_email", cleanEmail);
+    localStorage.setItem("ashfitverse_uid", uid);
+
+    try {
+      const snap = await getDoc(doc(db, "users", uid));
+      let userData = snap.exists() ? snap.data() : null;
+
+      if (!userData) {
+        const admin = isUserAdmin(null, userObj);
+        userData = {
+          ...DEFAULT_USER,
+          name: admin ? "Ashish Sharma" : userObj?.displayName || "Athlete",
+          email: cleanEmail,
+          plan: admin ? "pro" : "free",
+          sex: "male",
+          goal: "muscle",
+          streak: 1,
+          createdAt: new Date().toISOString(),
+        };
+        try {
+          await setDoc(doc(db, "users", uid), userData, { merge: true });
+        } catch (e) {
+          console.warn("Firestore user sync error:", e);
+        }
+      }
+
+      localStorage.setItem("ashfitverse_user", JSON.stringify(userData));
+    } catch (e) {
+      console.warn("User fetch error:", e);
+      const admin = isUserAdmin({ email: cleanEmail }, userObj);
+      const fallbackData = {
+        ...DEFAULT_USER,
+        name: admin ? "Ashish Sharma" : "Athlete",
+        email: cleanEmail,
+        plan: admin ? "pro" : "free",
+        sex: "male",
+      };
+      localStorage.setItem("ashfitverse_user", JSON.stringify(fallbackData));
+    }
+
+    localStorage.setItem("ashfitverse_onboarded", "true");
+    navigate("/dashboard");
+  };
 
   const handleLogin = async () => {
     if (!email || !password) { setError("Please enter your email and password."); return; }
     setLoading(true); setError("");
     try {
       const cred = await loginWithEmail(email, password);
-
-      // Fetch user profile from Firestore to decide where to send them
-      const snap = await getDoc(doc(db, "users", cred.user.uid));
-      if (snap.exists()) {
-        localStorage.setItem("ashfitverse_user", JSON.stringify(snap.data()));
-        localStorage.setItem("ashfitverse_onboarded", "true");
-        navigate("/dashboard");
-      } else {
-        // First-time login — onboarding not completed yet
-        navigate("/onboarding");
-      }
+      await establishUserSession(cred.user, email);
     } catch (err) {
       console.error("Login error:", err.code, err.message);
-      const msgs = {
-        "auth/user-not-found":    "No account found with this email.",
-        "auth/wrong-password":    "Incorrect password. Try again.",
-        "auth/invalid-credential":"Invalid email or password.",
-        "auth/invalid-email":     "Please enter a valid email address.",
-        "auth/too-many-requests": "Too many attempts. Please wait.",
-        "auth/network-request-failed": "Network error. Check your connection.",
-      };
-      setError(msgs[err.code] || "Login failed. Please try again.");
+      setError(formatAuthError(err));
     } finally { setLoading(false); }
+  };
+
+  const handleSocial = async (providerFn) => {
+    setLoading(true); setError("");
+    try {
+      const cred = await providerFn();
+      if (cred?.user) {
+        await establishUserSession(cred.user, cred.user.email || "");
+      }
+    } catch (err) {
+      console.error("Social login error:", err);
+      setError(formatAuthError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setForgotStatus({ msg: "Please enter your registered email address.", type: "error" });
+      return;
+    }
+    setForgotLoading(true);
+    setForgotStatus({ msg: "", type: "" });
+    try {
+      await resetPassword(forgotEmail.trim().toLowerCase());
+      setForgotStatus({
+        msg: "Password reset link sent to your email! Please check your inbox and spam folder.",
+        type: "success",
+      });
+    } catch (err) {
+      console.error("Password reset error:", err);
+      setForgotStatus({ msg: formatAuthError(err), type: "error" });
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   const css = generateCSS(T, dark) + `
@@ -71,7 +226,7 @@ export default function Login() {
     /* ── Main card ── */
     .lcard {
       position: relative; z-index: 10; width: 100%;
-      max-width: 1160px; height: 860px; border-radius: 32px;
+      max-width: 1160px; height: min(880px, 92vh); border-radius: 32px;
       overflow: hidden; display: grid; grid-template-columns: 1fr 1fr;
       border: 1px solid ${T.glassBorder};
       box-shadow:
@@ -377,22 +532,63 @@ export default function Login() {
       letter-spacing: 0.12em; text-transform: uppercase; font-family: ${FONT.body};
     }
 
-    /* Social buttons */
-    .sgrd { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
-    .sbtn {
-      height: 52px; border-radius: 14px;
+    /* Social buttons — Single full-width Google button */
+    .sbtn-google {
+      width: 100%; height: 52px; border-radius: 14px;
       border: 1.5px solid ${T.glassBorder};
-      background: ${T.glass}; color: ${T.textSub};
-      font-size: 13px; font-weight: 700; font-family: ${FONT.body};
-      cursor: pointer; letter-spacing: 0.04em;
+      background: ${T.glass}; color: ${T.text};
+      font-size: 14px; font-weight: 700; font-family: ${FONT.body};
+      cursor: pointer; letter-spacing: 0.02em;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
       transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
     }
-    .sbtn:hover {
-      background: ${T.glassHover}; border-color: ${T.glassBorderHover};
-      color: ${T.text}; transform: translateY(-3px);
-      box-shadow: 0 10px 28px rgba(0,0,0,${dark ? "0.22" : "0.07"});
+    .sbtn-google:hover:not(:disabled) {
+      background: ${T.glassHover}; border-color: ${T.accent};
+      color: ${T.text}; transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0,0,0,${dark ? "0.26" : "0.08"}), 0 0 20px ${T.accentSoft};
     }
+    .sbtn-google:disabled {
+      opacity: 0.6; cursor: not-allowed; transform: none;
+    }
+
+    /* Password field with toggle */
+    .pw-wrap {
+      position: relative; display: flex; align-items: center; width: 100%;
+    }
+    .pw-wrap .linp {
+      padding-right: 46px; width: 100%;
+    }
+    .pw-eye {
+      position: absolute; right: 14px; background: none; border: none;
+      cursor: pointer; font-size: 16px; color: ${T.textMuted};
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.2s; padding: 4px;
+    }
+    .pw-eye:hover { color: ${T.text}; }
+
+    /* Modal Backdrop */
+    .fmodal-ov {
+      position: fixed; inset: 0; z-index: 999;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      animation: fadeIn 0.25s ease both;
+    }
+    .fmodal-box {
+      width: 100%; max-width: 440px; border-radius: 24px;
+      background: ${dark ? "rgba(14,16,30,0.98)" : "rgba(255,255,255,0.98)"};
+      border: 1px solid ${T.glassBorder};
+      box-shadow: 0 24px 60px rgba(0,0,0,${dark ? "0.6" : "0.2"}), 0 0 40px ${T.accentSoft};
+      padding: 32px 28px; position: relative;
+    }
+    .fmodal-close {
+      position: absolute; top: 18px; right: 18px;
+      background: rgba(255,255,255,0.06); border: 1px solid ${T.glassBorder};
+      color: ${T.textMuted}; border-radius: 50%; width: 32px; height: 32px;
+      cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .fmodal-close:hover { color: ${T.text}; background: rgba(255,255,255,0.12); }
 
     /* Footer */
     .ffoot {
@@ -489,6 +685,62 @@ export default function Login() {
                 with a modern fitness ecosystem.
               </p>
 
+              {/* Active Session Notice if already authed */}
+              {currentSessionEmail && (
+                <div style={{
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  background: "rgba(79,142,247,0.12)",
+                  border: "1px solid rgba(79,142,247,0.32)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  marginBottom: 16,
+                  flexWrap: "wrap",
+                }}>
+                  <div style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>👤 Active session:</span>
+                    <strong style={{ color: "#4f8ef7" }}>{currentSessionEmail}</strong>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard")}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 8,
+                        background: "#4f8ef7",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Dashboard →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleQuickLogout}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 8,
+                        background: "rgba(255,255,255,0.08)",
+                        color: T.textSub,
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                      title="Sign out from this session to use another account"
+                    >
+                      Sign Out ⎋
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flds">
                 <div>
                   <label className="flbl">Email Address</label>
@@ -500,13 +752,36 @@ export default function Login() {
                 <div>
                   <div className="flblr">
                     <label className="flbl" style={{ marginBottom: 0 }}>Password</label>
-                    <button className="fgtlnk">Forgot password?</button>
+                    <button
+                      type="button"
+                      className="fgtlnk"
+                      onClick={() => {
+                        setForgotEmail(email);
+                        setForgotStatus({ msg: "", type: "" });
+                        setForgotOpen(true);
+                      }}
+                    >
+                      Forgot password?
+                    </button>
                   </div>
-                  <input
-                    type="password" placeholder="••••••••••••" className="linp"
-                    value={password} onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleLogin()}
-                  />
+                  <div className="pw-wrap">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••••••"
+                      className="linp"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && handleLogin()}
+                    />
+                    <button
+                      type="button"
+                      className="pw-eye"
+                      onClick={() => setShowPassword(p => !p)}
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? "👁️" : "🙈"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="actrow">
@@ -518,13 +793,13 @@ export default function Login() {
                     />
                     Remember me
                   </label>
-                  <button className="trmbtn">Terms & Privacy</button>
+                  <button type="button" className="trmbtn">Terms & Privacy</button>
                 </div>
 
                 {error && <div className="errbox">⚠ {error}</div>}
 
                 {/* Blue CTA */}
-                <button className="sinbtn" onClick={handleLogin} disabled={loading}>
+                <button type="button" className="sinbtn" onClick={handleLogin} disabled={loading}>
                   {loading ? "Signing in…" : "Sign In →"}
                 </button>
 
@@ -534,18 +809,20 @@ export default function Login() {
                   <div className="dvdrln" />
                 </div>
 
-                <div className="sgrd">
-                  <button className="sbtn" onClick={async () => {
-                    try { await loginWithGoogle(); navigate("/dashboard"); }
-                    catch { setError("Google sign-in failed."); }
-                  }}>
-                    🔵 Google
-                  </button>
-                  <button className="sbtn" onClick={async () => {
-                    try { await loginWithApple(); navigate("/dashboard"); }
-                    catch { setError("Apple sign-in failed."); }
-                  }}>
-                    🍎 Apple
+                <div>
+                  <button
+                    type="button"
+                    className="sbtn-google"
+                    onClick={() => handleSocial(loginWithGoogle)}
+                    disabled={loading}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span>{loading ? "Connecting to Google…" : "Continue with Google"}</span>
                   </button>
                 </div>
               </div>
@@ -555,6 +832,57 @@ export default function Login() {
           </div>
 
         </div>
+
+        {/* Forgot Password Modal */}
+        {forgotOpen && (
+          <div className="fmodal-ov" onClick={() => setForgotOpen(false)}>
+            <div className="fmodal-box" onClick={e => e.stopPropagation()}>
+              <button className="fmodal-close" onClick={() => setForgotOpen(false)}>✕</button>
+              <h3 style={{ fontSize: 22, fontWeight: 800, color: T.text, marginBottom: 8, fontFamily: FONT.display }}>
+                Reset <span style={{ color: T.accent }}>Password</span>
+              </h3>
+              <p style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
+                Enter the email address registered with your AshFitVerse account. We'll send you an official reset link.
+              </p>
+              <form onSubmit={handleForgotPassword}>
+                <div style={{ marginBottom: 16 }}>
+                  <label className="flbl">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@example.com"
+                    className="linp"
+                    value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                  />
+                </div>
+                {forgotStatus.msg && (
+                  <div style={{
+                    padding: "11px 14px",
+                    borderRadius: 12,
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    marginBottom: 16,
+                    background: forgotStatus.type === "success" ? "rgba(52,211,153,0.12)" : T.redSoft,
+                    color: forgotStatus.type === "success" ? "#34d399" : T.red,
+                    border: `1px solid ${forgotStatus.type === "success" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
+                  }}>
+                    {forgotStatus.type === "success" ? "✓ " : "⚠ "} {forgotStatus.msg}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  className="sinbtn"
+                  style={{ height: 48, fontSize: 13 }}
+                  disabled={forgotLoading}
+                >
+                  {forgotLoading ? "Sending Link…" : "Send Reset Email →"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
       </div>
     </>
   );

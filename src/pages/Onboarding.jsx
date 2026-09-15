@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
-import useTheme from "../hooks/useTheme";
+import useTheme from "../hooks/usetheme";
 import { generateCSS, FONT } from "../theme";
 
 const TOTAL_STEPS = 6;

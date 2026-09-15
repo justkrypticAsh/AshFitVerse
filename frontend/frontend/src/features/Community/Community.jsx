@@ -13,6 +13,12 @@ import {
 import AthleteProfileModal from "../../components/AthleteProfileModal";
 import PostCreatorModal from "../../components/PostCreatorModal";
 import ArticleReaderModal from "../../components/ArticleReaderModal";
+import {
+  Activity, Users, Trophy, MessageSquare, Plus, Search,
+  Image as ImageIcon, Video, BookOpen, Award, Moon, Sun,
+  Heart, Share2, MoreHorizontal, Check, X, Shield, ArrowLeft,
+  Send, Filter, Sparkles, MessageCircle, Flame
+} from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function timeAgo(ts) {
@@ -36,20 +42,20 @@ function getYouTubeEmbedUrl(url) {
 }
 
 const POST_COLORS = {
-  workout: { bg: "rgba(10,132,255,0.1)", border: "rgba(10,132,255,0.25)", tag: "#0a84ff", label: "💪 Workout" },
-  diet: { bg: "rgba(48,209,88,0.1)", border: "rgba(48,209,88,0.25)", tag: "#30d158", label: "🥗 Nutrition" },
-  pr: { bg: "rgba(191,90,242,0.1)", border: "rgba(191,90,242,0.25)", tag: "#bf5af2", label: "🏆 New PR" },
-  wellness: { bg: "rgba(255,55,95,0.1)", border: "rgba(255,55,95,0.25)", tag: "#ff375f", label: "🧘 Wellness" },
-  milestone: { bg: "rgba(255,159,10,0.1)", border: "rgba(255,159,10,0.25)", tag: "#ff9f0a", label: "🏅 Milestone" },
-  discussion: { bg: "rgba(56,189,248,0.1)", border: "rgba(56,189,248,0.25)", tag: "#38bdf8", label: "💬 Discussion" },
+  workout: { bg: "rgba(10,132,255,0.1)", border: "rgba(10,132,255,0.25)", tag: "#0a84ff", label: "Workout" },
+  diet: { bg: "rgba(48,209,88,0.1)", border: "rgba(48,209,88,0.25)", tag: "#30d158", label: "Nutrition" },
+  pr: { bg: "rgba(191,90,242,0.1)", border: "rgba(191,90,242,0.25)", tag: "#bf5af2", label: "Personal Record" },
+  wellness: { bg: "rgba(255,55,95,0.1)", border: "rgba(255,55,95,0.25)", tag: "#ff375f", label: "Wellness" },
+  milestone: { bg: "rgba(255,159,10,0.1)", border: "rgba(255,159,10,0.25)", tag: "#ff9f0a", label: "Milestone" },
+  discussion: { bg: "rgba(56,189,248,0.1)", border: "rgba(56,189,248,0.25)", tag: "#38bdf8", label: "Discussion" },
 };
 
 const FORMAT_BADGES = {
-  photo: { label: "📸 Photo Post", color: "#38bdf8", bg: "rgba(56,189,248,0.12)", border: "rgba(56,189,248,0.3)" },
-  video: { label: "🎥 Video Clip", color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.3)" },
-  blog: { label: "📝 Story & Article", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.3)" },
-  pr: { label: "🏆 PR Milestone", color: "#ec4899", bg: "rgba(236,72,153,0.12)", border: "rgba(236,72,153,0.3)" },
-  quick: { label: "💬 Community Update", color: "#06b6d4", bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.3)" },
+  photo: { label: "Photo Post", color: "#38bdf8", bg: "rgba(56,189,248,0.12)", border: "rgba(56,189,248,0.3)" },
+  video: { label: "Video Clip", color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.3)" },
+  blog: { label: "Article & Story", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.3)" },
+  pr: { label: "Personal Record", color: "#ec4899", bg: "rgba(236,72,153,0.12)", border: "rgba(236,72,153,0.3)" },
+  quick: { label: "Update", color: "#06b6d4", bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.3)" },
 };
 
 function getPostFormatInfo(post) {
@@ -97,12 +103,12 @@ const REPORT_REASONS = [
 ];
 
 const DEFAULT_CHALLENGES = [
-  { id: "default_1", title: "30-Day Push-up Challenge", emoji: "💪", color: "#0a84ff", totalDays: 30, daysLeft: 22, description: "Do at least 50 push-ups every day for 30 days. Track your reps and build upper body strength!", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_2", title: "10K Steps Daily", emoji: "🚶", color: "#30d158", totalDays: 14, daysLeft: 9, description: "Walk 10,000 steps every day. Consistency beats intensity!", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_3", title: "Clean Eating Week", emoji: "🥗", color: "#bf5af2", totalDays: 7, daysLeft: 4, description: "No junk food, no sugar, no processed meals for 7 days. Home-cooked only!", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_4", title: "21-Day Plank Challenge", emoji: "🧱", color: "#ff9f0a", totalDays: 21, daysLeft: 18, description: "Hold a plank for at least 60 seconds every day. Build solid core strength!", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_5", title: "5AM Club — 7 Days", emoji: "🌅", color: "#ffd60a", totalDays: 7, daysLeft: 5, description: "Wake up at 5 AM and complete a 30-min morning routine. Discipline starts at dawn!", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_6", title: "3L Water Daily", emoji: "💧", color: "#5ac8fa", totalDays: 14, daysLeft: 11, description: "Drink at least 3 litres of water every day. Stay hydrated and sharp!", createdBy: "AshFitVerse", official: true, participants: [] },
+  { id: "default_1", title: "30-Day Push-up Protocol", color: "#0a84ff", totalDays: 30, daysLeft: 22, description: "Execute minimum 50 push-ups daily for 30 consecutive days to build chest and triceps endurance.", createdBy: "AshFitVerse", official: true, participants: [] },
+  { id: "default_2", title: "10K Steps Daily Volume", color: "#30d158", totalDays: 14, daysLeft: 9, description: "Hit 10,000 steps daily. Elevate NEAT and active metabolic recovery across 2 full weeks.", createdBy: "AshFitVerse", official: true, participants: [] },
+  { id: "default_3", title: "Clean Nutrition Sprint", color: "#bf5af2", totalDays: 7, daysLeft: 4, description: "Zero processed sugar or refined foods for 7 days. Focus strictly on whole, balanced nutrition.", createdBy: "AshFitVerse", official: true, participants: [] },
+  { id: "default_4", title: "21-Day Core Stability Challenge", color: "#ff9f0a", totalDays: 21, daysLeft: 18, description: "Maintain static plank holds for at least 60 seconds every day to build midline rigidity.", createdBy: "AshFitVerse", official: true, participants: [] },
+  { id: "default_5", title: "Dawn Discipline — 7 Days", color: "#ffd60a", totalDays: 7, daysLeft: 5, description: "Wake up at 5:00 AM and complete a 30-minute structured morning mobility and focus routine.", createdBy: "AshFitVerse", official: true, participants: [] },
+  { id: "default_6", title: "Optimal Hydration — 3L Daily", color: "#5ac8fa", totalDays: 14, daysLeft: 11, description: "Target at least 3 liters of water intake daily to sustain performance, focus, and digestion.", createdBy: "AshFitVerse", official: true, participants: [] },
 ];
 
 const CHALLENGE_STORAGE_KEY = "ashfitverse_challenge_progress";
@@ -189,6 +195,8 @@ export default function Community() {
 
   // Post & Modals State
   const [showPostCreator, setShowPostCreator] = useState(false);
+  const [creatorFormat, setCreatorFormat] = useState("photo");
+  const [creatorCategory, setCreatorCategory] = useState("workout");
   const [selectedAthlete, setSelectedAthlete] = useState(null);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [searchQ, setSearchQ] = useState("");
@@ -809,174 +817,184 @@ export default function Community() {
     .cm{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};
       opacity:${mounted?1:0};transition:opacity 0.6s ease,background 0.4s;}
 
-    /* ── STICKY MODERN HEADER ── */
-    .cm-hd{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 32px;
-      background:${dark?"rgba(8,11,20,0.88)":"rgba(255,255,255,0.88)"};
+    /* ── UNIFIED EXECUTIVE HEADER ── */
+    .cm-header{
+      position:sticky;top:0;z-index:50;width:100%;
+      background:${dark?"rgba(8,11,20,0.85)":"rgba(255,255,255,0.85)"};
       border-bottom:1px solid ${T.glassBorder};
-      backdrop-filter:blur(36px);
-      position:sticky;top:0;z-index:40;
+      backdrop-filter:blur(32px);
     }
-    .cm-hd-left{display:flex;align-items:center;gap:14px;}
+    .cm-header-inner{
+      max-width:1200px;margin:0 auto;width:100%;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:16px;padding:12px 24px;box-sizing:border-box;
+    }
+    .cm-header-left{display:flex;align-items:center;gap:14px;}
     .cm-back-btn{
-      display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;
-      border:1px solid ${T.glassBorder};
-      background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};
-      color:${T.textSub};font-size:13px;font-weight:700;cursor:pointer;
-      font-family:${FONT.body};transition:all 0.16s;
+      display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:10px;
+      border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)"};
+      color:${T.textSub};font-size:12.5px;font-weight:700;cursor:pointer;
+      font-family:${FONT.body};transition:all 0.16s ease;
     }
     .cm-back-btn:hover{color:${T.accent};border-color:${T.accent}40;background:${T.accentSoft};}
-    .cm-brand{font-family:${FONT.display};font-size:20px;font-weight:800;color:${T.text};display:flex;align-items:center;gap:8px;}
-    .cm-brand span{color:${T.accent};}
-    .cm-brand-tag{font-size:10px;font-weight:800;letter-spacing:0.08em;padding:3px 8px;border-radius:6px;background:${T.accentSoft};color:${T.accent};text-transform:uppercase;}
+    .cm-brand{display:flex;align-items:center;gap:8px;}
+    .cm-brand-title{font-family:${FONT.display};font-size:19px;font-weight:800;color:${T.text};letter-spacing:-0.02em;}
+    .cm-brand-title span{color:${T.accent};}
+    .cm-brand-badge{
+      font-size:9.5px;font-weight:800;letter-spacing:0.08em;padding:2px 7px;border-radius:6px;
+      background:${T.accentSoft};color:${T.accent};text-transform:uppercase;
+    }
 
-    .cm-hd-right{display:flex;align-items:center;gap:10px;}
+    /* Center Nav Tabs */
+    .cm-nav-tabs{
+      display:flex;align-items:center;gap:6px;
+      background:${dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.03)"};
+      padding:4px;border-radius:14px;border:1px solid ${T.glassBorder};
+    }
+    .cm-nav-pill{
+      display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;
+      border:1px solid transparent;background:transparent;color:${T.textSub};
+      font-size:12.5px;font-weight:700;cursor:pointer;transition:all 0.18s ease;
+      white-space:nowrap;font-family:${FONT.body};
+    }
+    .cm-nav-pill:hover{color:${T.text};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};}
+    .cm-nav-pill.active{
+      background:${T.accent};color:#fff;font-weight:800;
+      box-shadow:0 2px 10px ${T.accent}40;
+    }
+    .cm-tab-badge{
+      font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:99px;
+      background:#ef4444;color:#fff;margin-left:2px;
+    }
+
+    /* Right Controls */
+    .cm-header-right{display:flex;align-items:center;gap:10px;}
+    .cm-search-wrapper{
+      display:flex;align-items:center;position:relative;
+    }
+    .cm-search-icon{position:absolute;left:10px;color:${T.textMuted};pointer-events:none;}
+    .cm-search-input{
+      height:36px;border-radius:10px;border:1px solid ${T.glassBorder};
+      background:${dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)"};
+      color:${T.text};padding:0 30px 0 32px;font-size:12.5px;outline:none;
+      width:180px;transition:width 0.2s ease,border-color 0.2s ease;
+    }
+    .cm-search-input:focus{width:220px;border-color:${T.accent}60;}
+    .cm-search-clear{
+      position:absolute;right:8px;background:none;border:none;color:${T.textMuted};
+      cursor:pointer;padding:2px;display:flex;align-items:center;
+    }
+
+    .cm-online-badge{
+      display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;
+      background:${dark?"rgba(34,197,94,0.10)":"rgba(34,197,94,0.08)"};
+      border:1px solid rgba(34,197,94,0.25);font-size:11.5px;font-weight:700;color:#22c55e;
+      white-space:nowrap;
+    }
+    .cm-pulse-dot{
+      width:7px;height:7px;border-radius:50%;background:#22c55e;
+      box-shadow:0 0 8px #22c55e;animation:gpulse 2s ease infinite;
+    }
+
     .cm-create-post-btn{
-      padding:9px 18px;border-radius:12px;border:none;
-      background:linear-gradient(135deg,${T.accent},${T.purple});
-      color:#fff;font-size:13px;font-weight:800;cursor:pointer;
-      display:flex;align-items:center;gap:6px;box-shadow:0 4px 16px ${T.accent}30;
-      transition:transform 0.16s ease,box-shadow 0.16s ease;
+      padding:8px 16px;border-radius:10px;border:none;
+      background:linear-gradient(135deg,${T.accent},#0055d4);
+      color:#fff;font-size:12.5px;font-weight:800;cursor:pointer;
+      display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 12px ${T.accent}35;
+      transition:transform 0.16s ease,box-shadow 0.16s ease;white-space:nowrap;
     }
-    .cm-create-post-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px ${T.accent}45;}
+    .cm-create-post-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px ${T.accent}50;}
 
-    .cm-online-pill{
-      display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;
-      background:${dark?"rgba(48,209,88,0.10)":"rgba(48,209,88,0.08)"};
-      border:1px solid rgba(48,209,88,0.25);font-size:12px;font-weight:700;color:#30d158;
-    }
-    .g-dot{width:8px;height:8px;border-radius:50%;background:#30d158;
-      box-shadow:0 0 8px #30d158;animation:gpulse 2s ease infinite;}
-    @keyframes gpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.85);}}
-
-    .cm-icon-btn{
-      width:38px;height:38px;border-radius:12px;
-      border:1px solid ${T.glassBorder};
-      background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};
+    .cm-theme-btn{
+      width:36px;height:36px;border-radius:10px;border:1px solid ${T.glassBorder};
+      background:${dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)"};
       color:${T.text};display:flex;align-items:center;justify-content:center;
-      cursor:pointer;font-size:15px;position:relative;transition:all 0.15s;
+      cursor:pointer;transition:all 0.16s ease;
     }
-    .cm-icon-btn:hover{border-color:${T.accent}40;color:${T.accent};}
-    .cm-ndot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#ff375f;}
-
-    /* ── SUB-NAVBAR & TAB SWITCHER ── */
-    .sub-nav{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:12px 32px;
-      border-bottom:1px solid ${T.glassBorder};
-      background:${dark?"rgba(6,9,16,0.6)":"rgba(250,250,252,0.6)"};
-      backdrop-filter:blur(20px);
-      gap:16px;flex-wrap:wrap;
-    }
-    .nav-tabs{display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:2px;}
-    .nav-tab-btn{
-      padding:8px 16px;border-radius:12px;border:1px solid transparent;
-      background:transparent;color:${T.textSub};font-size:13px;font-weight:700;
-      cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;
-      transition:all 0.18s ease;font-family:${FONT.body};
-    }
-    .nav-tab-btn:hover{color:${T.text};background:${dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)"};}
-    .nav-tab-btn.act{
-      background:${T.accentSoft};color:${T.accent};border-color:${T.accent}40;
-    }
-    .nav-badge{
-      font-size:10px;font-weight:800;padding:2px 6px;border-radius:99px;
-      background:${T.accent};color:#fff;margin-left:2px;
-    }
+    .cm-theme-btn:hover{border-color:${T.accent}40;color:${T.accent};}
 
     /* ── LAYOUT BODY ── */
-    .cm-body{display:grid;grid-template-columns:1fr 340px;gap:26px;max-width:1200px;margin:0 auto;padding:26px 32px 60px;}
+    .cm-body{
+      display:grid;grid-template-columns:1fr 340px;gap:28px;
+      max-width:1200px;margin:0 auto;padding:24px;box-sizing:border-box;width:100%;
+    }
 
-    /* ── ACTIVE RICH INLINE COMPOSER ── */
-    .inline-composer{
-      background:${T.glass};border:1px solid ${T.glassBorder};border-radius:22px;
-      padding:18px 22px;margin-bottom:22px;backdrop-filter:blur(30px);
-      box-shadow:0 10px 32px rgba(0,0,0,0.14);display:flex;flex-direction:column;gap:14px;
-      transition:border-color 0.2s ease;
+    /* ── SLEEK CREATE POST TRIGGER CARD ── */
+    .cm-composer-trigger{
+      background:${T.glass};border:1px solid ${T.glassBorder};border-radius:20px;
+      padding:16px 20px;margin-bottom:22px;backdrop-filter:blur(30px);
+      box-shadow:0 8px 26px rgba(0,0,0,0.12);transition:border-color 0.2s ease;
     }
-    .inline-composer:focus-within{border-color:${T.accent}60;}
-    .ic-format-tabs{display:flex;align-items:center;gap:6px;overflow-x:auto;padding-bottom:2px;}
-    .ic-tab-btn{
-      padding:8px 13px;border-radius:12px;border:1px solid ${T.glassBorder};
+    .cm-composer-trigger:hover{border-color:${T.accent}50;}
+    .cm-ct-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .cm-ct-input-box{
+      flex:1;height:42px;border-radius:12px;border:1px solid ${T.glassBorder};
       background:${dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.02)"};
-      color:${T.textSub};font-size:12px;font-weight:700;cursor:pointer;
-      display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.18s ease;
+      color:${T.textMuted};padding:0 14px;font-size:13px;display:flex;
+      align-items:center;cursor:pointer;transition:all 0.18s ease;
     }
-    .ic-tab-btn:hover{color:${T.text};border-color:${T.accent}40;}
-    .ic-tab-btn.active{
-      background:${T.accentSoft};color:${T.accent};border-color:${T.accent};
-      box-shadow:0 2px 10px ${T.accent}25;
+    .cm-ct-input-box:hover{
+      background:${dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.04)"};
+      border-color:${T.accent}40;color:${T.text};
     }
-    .ic-status-bar{
-      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
-      padding:8px 14px;border-radius:12px;
-      background:${dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.02)"};
-      border:1px solid ${T.glassBorder};
+    .cm-ct-publish-btn{
+      padding:10px 16px;border-radius:12px;border:none;
+      background:linear-gradient(135deg,${T.accent},#0055d4);color:#fff;
+      font-size:12.5px;font-weight:800;cursor:pointer;display:inline-flex;
+      align-items:center;gap:6px;box-shadow:0 3px 12px ${T.accent}35;
+      white-space:nowrap;transition:transform 0.16s ease;
     }
-    .ic-status-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${T.textSub};}
-    .ic-cat-pills{display:flex;align-items:center;gap:6px;overflow-x:auto;}
-    .ic-cat-pill{
-      padding:4px 10px;border-radius:8px;border:1px solid ${T.glassBorder};
-      background:transparent;font-size:11px;font-weight:700;cursor:pointer;
-      color:${T.textMuted};transition:all 0.15s ease;white-space:nowrap;
+    .cm-ct-publish-btn:hover{transform:translateY(-1px);}
+
+    .cm-ct-shortcuts{
+      display:flex;align-items:center;gap:8px;padding-top:10px;
+      border-top:1px solid ${T.glassBorder};flex-wrap:wrap;
     }
-    .ic-cat-pill:hover{color:${T.text};border-color:rgba(255,255,255,0.25);}
-    .ic-cat-pill.active{
-      background:${dark?"rgba(255,255,255,0.12)":"rgba(0,0,0,0.08)"};
-      color:${T.text};border-color:currentColor;
-    }
-    .ic-media-zone{display:flex;flex-direction:column;gap:10px;}
-    .ic-caption-area{
-      width:100%;min-height:80px;border-radius:14px;border:1px solid ${T.glassBorder};
+    .cm-ct-shortcut-btn{
+      padding:6px 12px;border-radius:8px;border:1px solid ${T.glassBorder};
       background:${dark?"rgba(255,255,255,0.02)":"rgba(0,0,0,0.01)"};
-      padding:12px 14px;color:${T.text};font-size:13.5px;line-height:1.55;
-      font-family:${FONT.body};resize:vertical;outline:none;transition:border-color 0.2s ease;
+      color:${T.textSub};font-size:12px;font-weight:700;cursor:pointer;
+      display:inline-flex;align-items:center;gap:6px;transition:all 0.16s ease;
     }
-    .ic-caption-area:focus{border-color:${T.accent}80;}
-    .ic-bottom{
-      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
-      padding-top:4px;
+    .cm-ct-shortcut-btn:hover{
+      color:${T.text};border-color:${T.accent}40;background:${T.accentSoft};
     }
-    .ic-emojis{display:flex;align-items:center;gap:6px;}
-    .ic-emoji-btn{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;border-radius:6px;transition:transform 0.12s;}
-    .ic-emoji-btn:hover{transform:scale(1.25);}
 
     /* ── HIGH VISIBILITY FEED FILTER BAR ── */
     .feed-filter-bar{
-      background:${T.glass};border:1px solid ${T.glassBorder};border-radius:20px;
+      background:${T.glass};border:1px solid ${T.glassBorder};border-radius:18px;
       padding:14px 18px;margin-bottom:22px;backdrop-filter:blur(24px);
-      box-shadow:0 6px 24px rgba(0,0,0,0.12);
+      box-shadow:0 6px 20px rgba(0,0,0,0.10);
     }
     .ff-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
     .ff-title{
       font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;
       color:${T.textMuted};display:flex;align-items:center;gap:6px;
     }
-    .ff-count-tag{font-size:11px;font-weight:700;color:${T.textSub};}
+    .ff-count-tag{font-size:11.5px;font-weight:700;color:${T.textSub};}
     .ff-chips-row{
       display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:4px;
       scrollbar-width:thin;
     }
     .ff-chip{
-      padding:7px 14px;border-radius:11px;border:1px solid ${T.glassBorder};
+      padding:7px 14px;border-radius:10px;border:1px solid ${T.glassBorder};
       background:${dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.02)"};
       color:${T.textSub};font-size:12px;font-weight:700;cursor:pointer;
-      display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.2s ease;
+      display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.18s ease;
     }
     .ff-chip:hover{
       color:${T.text};border-color:${T.accent}50;
       background:${dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.05)"};
     }
     .ff-chip.active{
-      background:${T.accentSoft};border-color:${T.accent};color:${T.accent};
-      box-shadow:0 4px 14px ${T.accent}30;
+      background:${T.accent};border-color:${T.accent};color:#fff;
+      box-shadow:0 3px 12px ${T.accent}40;
     }
     .ff-chip-count{
       font-size:10px;font-weight:800;padding:2px 6px;border-radius:99px;
       background:${dark?"rgba(255,255,255,0.12)":"rgba(0,0,0,0.08)"};color:${T.textSub};
     }
-    .ff-chip.active .ff-chip-count{background:${T.accent};color:#fff;}
+    .ff-chip.active .ff-chip-count{background:rgba(255,255,255,0.25);color:#fff;}
 
     /* ── POST CARD ── */
     .post-card{
@@ -1121,91 +1139,95 @@ export default function Community() {
         {/* Share toast */}
         {shareToast && <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: dark ? "rgba(8,11,20,0.96)" : "#ffffff", border: "1px solid #22c55e", padding: "10px 22px", borderRadius: 99, color: "#22c55e", fontWeight: 700, zIndex: 99999, boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>✓ Post link copied to clipboard!</div>}
 
-        {/* ── TOP NAV HEADER ── */}
-        <div className="cm-hd">
-          <div className="cm-hd-left">
-            <button className="cm-back-btn" onClick={() => navigate("/dashboard")}>
-              ← Dashboard
-            </button>
-            <div className="cm-brand">
-              Fit<span>Verse</span>
-              <span className="cm-brand-tag">Community</span>
-            </div>
-          </div>
-
-          <div className="cm-hd-right">
-            <button className="cm-create-post-btn" onClick={() => setShowPostCreator(true)}>
-              <span>＋</span> Create Post
-            </button>
-
-            <div className="cm-online-pill">
-              <div className="g-dot" />
-              {onlineCount + 1} online
+        {/* ── UNIFIED EXECUTIVE HEADER ── */}
+        <header className="cm-header">
+          <div className="cm-header-inner">
+            {/* Left: Back to Dashboard + Brand */}
+            <div className="cm-header-left">
+              <button className="cm-back-btn" onClick={() => navigate("/dashboard")} title="Back to Dashboard">
+                <ArrowLeft size={15} />
+                <span>Dashboard</span>
+              </button>
+              <div className="cm-brand">
+                <div className="cm-brand-title">
+                  AshFit<span>Verse</span>
+                </div>
+                <span className="cm-brand-badge">COMMUNITY</span>
+              </div>
             </div>
 
-            <button className="cm-icon-btn" onClick={toggleTheme}>
-              {dark ? "🌙" : "☀️"}
-            </button>
+            {/* Center: Segmented Navigation Switcher */}
+            <nav className="cm-nav-tabs">
+              {[
+                { id: "feed", label: "Feed", icon: Activity },
+                { id: "members", label: "Athletes", icon: Users },
+                { id: "challenges", label: "Challenges", icon: Trophy },
+                { id: "messages", label: "Messages", icon: MessageSquare, badge: unreadDMs },
+              ].map((t) => {
+                const IconComponent = t.icon;
+                const isActive = activeTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    className={`cm-nav-pill ${isActive ? "active" : ""}`}
+                    onClick={() => {
+                      setActiveTab(t.id);
+                      setSearchParams({ tab: t.id });
+                    }}
+                  >
+                    <IconComponent size={14} />
+                    <span>{t.label}</span>
+                    {t.badge > 0 && <span className="cm-tab-badge">{t.badge}</span>}
+                  </button>
+                );
+              })}
+            </nav>
 
-            <div style={{ cursor: "pointer" }} onClick={() => setSelectedAthlete(user)}>
-              <Avatar src={user?.avatar} name={user?.name} size={36} />
-            </div>
-          </div>
-        </div>
+            {/* Right: Search, Live Status, Create Post, Theme Toggle, Avatar */}
+            <div className="cm-header-right">
+              <div className="cm-search-wrapper">
+                <Search size={14} className="cm-search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search community…"
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  className="cm-search-input"
+                />
+                {searchQ && (
+                  <button onClick={() => setSearchQ("")} className="cm-search-clear">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
 
-        {/* ── SUB-NAVBAR TABS ── */}
-        <div className="sub-nav">
-          <div className="nav-tabs">
-            {[
-              { id: "feed", label: "📢 All Feed", icon: "📢" },
-              { id: "members", label: "👥 Athletes Directory", icon: "👥" },
-              { id: "challenges", label: "⚡ Challenges & Quests", icon: "⚡" },
-              { id: "messages", label: "💬 Messages", icon: "💬", badge: unreadDMs },
-            ].map((t) => (
+              <div className="cm-online-badge" title={`${onlineCount + 1} athletes currently online`}>
+                <span className="cm-pulse-dot" />
+                <span>{onlineCount + 1} online</span>
+              </div>
+
               <button
-                key={t.id}
-                className={`nav-tab-btn ${activeTab === t.id ? "act" : ""}`}
+                className="cm-create-post-btn"
                 onClick={() => {
-                  setActiveTab(t.id);
-                  setSearchParams({ tab: t.id });
+                  setCreatorFormat("photo");
+                  setCreatorCategory("workout");
+                  setShowPostCreator(true);
                 }}
               >
-                <span>{t.icon}</span>
-                <span>{t.label}</span>
-                {t.badge > 0 && <span className="nav-badge">{t.badge}</span>}
+                <Plus size={15} strokeWidth={2.5} />
+                <span>Create Post</span>
               </button>
-            ))}
-          </div>
 
-          {/* Quick Search */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 220 }}>
-            <input
-              type="text"
-              placeholder="Search feed, athletes, blogs…"
-              value={searchQ}
-              onChange={(e) => setSearchQ(e.target.value)}
-              style={{
-                height: 38,
-                borderRadius: 10,
-                border: `1px solid ${T.glassBorder}`,
-                background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                color: T.text,
-                padding: "0 12px",
-                fontSize: 12.5,
-                outline: "none",
-                width: "100%",
-              }}
-            />
-            {searchQ && (
-              <button
-                onClick={() => setSearchQ("")}
-                style={{ background: "none", border: "none", color: T.textMuted, cursor: "pointer", fontSize: 13 }}
-              >
-                ✕
+              <button className="cm-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
+                {dark ? <Moon size={15} /> : <Sun size={15} />}
               </button>
-            )}
+
+              <div style={{ cursor: "pointer" }} onClick={() => setSelectedAthlete(user)} title="View profile">
+                <Avatar src={user?.avatar} name={user?.name} size={36} />
+              </div>
+            </div>
           </div>
-        </div>
+        </header>
 
         {/* ── BODY ── */}
         <div className="cm-body">
@@ -1214,377 +1236,57 @@ export default function Community() {
             {/* ════════════ TAB 1: FEED ════════════ */}
             {activeTab === "feed" && (
               <>
-                {/* Active Rich Inline Composer */}
-                <div className="inline-composer">
-                  {/* Top: Athlete info & Format Switcher */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <Avatar src={user?.avatar} name={user?.name} size={40} />
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>
-                          {user?.name || "Athlete"}
-                        </div>
-                        <div style={{ fontSize: 11, color: T.textMuted }}>
-                          Share updates with community
-                        </div>
-                      </div>
+                {/* Sleek Create Post Trigger Card */}
+                <div className="cm-composer-trigger">
+                  <div className="cm-ct-top">
+                    <Avatar src={user?.avatar} name={user?.name} size={40} />
+                    <div
+                      className="cm-ct-input-box"
+                      onClick={() => {
+                        setCreatorFormat("photo");
+                        setCreatorCategory("workout");
+                        setShowPostCreator(true);
+                      }}
+                    >
+                      <span>Share a workout, milestone, or fitness insight with the squad…</span>
                     </div>
+                    <button
+                      className="cm-ct-publish-btn"
+                      onClick={() => {
+                        setCreatorFormat("photo");
+                        setCreatorCategory("workout");
+                        setShowPostCreator(true);
+                      }}
+                    >
+                      <Plus size={15} strokeWidth={2.5} />
+                      <span>Create Post</span>
+                    </button>
+                  </div>
 
-                    {/* Format Selector Tabs */}
-                    <div className="ic-format-tabs">
-                      {[
-                        { id: "photo", label: "📸 Photo" },
-                        { id: "video", label: "🎥 Video" },
-                        { id: "blog", label: "📝 Article" },
-                        { id: "pr", label: "🏆 New PR" },
-                        { id: "quick", label: "💬 Update" },
-                      ].map((fmt) => (
+                  <div className="cm-ct-shortcuts">
+                    {[
+                      { format: "photo", label: "Photo", icon: ImageIcon, color: "#38bdf8" },
+                      { format: "video", label: "Video Clip", icon: Video, color: "#a855f7" },
+                      { format: "blog", label: "Article & Guide", icon: BookOpen, color: "#f59e0b" },
+                      { format: "pr", label: "Personal Record", icon: Award, color: "#ec4899" },
+                    ].map((sc) => {
+                      const Icon = sc.icon;
+                      return (
                         <button
-                          key={fmt.id}
+                          key={sc.format}
                           type="button"
-                          className={`ic-tab-btn ${inlineFormat === fmt.id ? "active" : ""}`}
+                          className="cm-ct-shortcut-btn"
                           onClick={() => {
-                            setInlineFormat(fmt.id);
-                            if (fmt.id === "pr") setInlineCategory("pr");
+                            setCreatorFormat(sc.format);
+                            setCreatorCategory(sc.format === "pr" ? "pr" : "workout");
+                            setShowPostCreator(true);
                           }}
                         >
-                          {fmt.label}
+                          <Icon size={15} color={sc.color} />
+                          <span>{sc.label}</span>
                         </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Status Banner & Topic Selector */}
-                  <div className="ic-status-bar">
-                    <div className="ic-status-badge">
-                      <span>✨ Drafting:</span>
-                      <span
-                        style={{
-                          background: T.accentSoft,
-                          color: T.accent,
-                          padding: "2px 8px",
-                          borderRadius: 6,
-                          fontWeight: 800,
-                        }}
-                      >
-                        {inlineFormat === "photo" && "📸 Photo Post"}
-                        {inlineFormat === "video" && "🎥 Video Clip"}
-                        {inlineFormat === "blog" && "📝 Fitness Article"}
-                        {inlineFormat === "pr" && "🏆 PR Milestone"}
-                        {inlineFormat === "quick" && "💬 Quick Update"}
-                      </span>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted }}>Topic:</span>
-                      <div className="ic-cat-pills">
-                        {[
-                          { id: "workout", label: "💪 Workout" },
-                          { id: "diet", label: "🥗 Nutrition" },
-                          { id: "pr", label: "🏆 New PR" },
-                          { id: "wellness", label: "🧘 Wellness" },
-                          { id: "milestone", label: "🏅 Milestone" },
-                          { id: "discussion", label: "💬 Discussion" },
-                        ].map((cat) => (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            className={`ic-cat-pill ${inlineCategory === cat.id ? "active" : ""}`}
-                            onClick={() => setInlineCategory(cat.id)}
-                          >
-                            {cat.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Dynamic Format Inputs */}
-                  {/* 1. Photo Mode */}
-                  {inlineFormat === "photo" && (
-                    <div className="ic-media-zone">
-                      <input
-                        type="file"
-                        ref={inlineFileInputRef}
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        onChange={handleInlineImageFile}
-                      />
-                      {!inlineImagePreview && !inlineMediaUrl ? (
-                        <div
-                          onClick={() => inlineFileInputRef.current?.click()}
-                          style={{
-                            border: `1.5px dashed ${T.accent}50`,
-                            borderRadius: 14,
-                            padding: "16px 20px",
-                            textAlign: "center",
-                            cursor: "pointer",
-                            background: dark ? "rgba(10,132,255,0.04)" : "rgba(10,132,255,0.02)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 12,
-                          }}
-                        >
-                          <span style={{ fontSize: 24 }}>📸</span>
-                          <div style={{ textAlign: "left" }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>
-                              {inlineUploading ? "Optimizing image…" : "Click to select a photo from your device"}
-                            </div>
-                            <div style={{ fontSize: 11, color: T.textMuted }}>
-                              PNG, JPG, WEBP · Auto-compressed for instant loading
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", maxHeight: 220 }}>
-                          <img
-                            src={inlineImagePreview || inlineMediaUrl}
-                            alt="Selected preview"
-                            style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setInlineImagePreview("");
-                              setInlineMediaUrl("");
-                            }}
-                            style={{
-                              position: "absolute",
-                              top: 8,
-                              right: 8,
-                              padding: "4px 10px",
-                              borderRadius: 8,
-                              border: "none",
-                              background: "rgba(0,0,0,0.7)",
-                              color: "#fff",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              backdropFilter: "blur(4px)",
-                            }}
-                          >
-                            ✕ Remove Photo
-                          </button>
-                        </div>
-                      )}
-                      <input
-                        type="text"
-                        placeholder="Or paste direct image URL (https://...)"
-                        value={inlineMediaUrl}
-                        onChange={(e) => {
-                          setInlineMediaUrl(e.target.value);
-                          setInlineImagePreview(e.target.value);
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 36,
-                          borderRadius: 10,
-                          border: `1px solid ${T.glassBorder}`,
-                          background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                          color: T.text,
-                          padding: "0 12px",
-                          fontSize: 12,
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* 2. Video Mode */}
-                  {inlineFormat === "video" && (
-                    <div className="ic-media-zone">
-                      <input
-                        type="text"
-                        placeholder="Paste YouTube video link (e.g. https://www.youtube.com/watch?v=...) or MP4 URL"
-                        value={inlineVideoUrl}
-                        onChange={(e) => setInlineVideoUrl(e.target.value)}
-                        style={{
-                          width: "100%",
-                          height: 40,
-                          borderRadius: 10,
-                          border: `1px solid ${T.glassBorder}`,
-                          background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                          color: T.text,
-                          padding: "0 12px",
-                          fontSize: 12.5,
-                          outline: "none",
-                        }}
-                      />
-                      {getYouTubeEmbedUrl(inlineVideoUrl) && (
-                        <div style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "16/9", maxHeight: 240 }}>
-                          <iframe
-                            src={getYouTubeEmbedUrl(inlineVideoUrl)}
-                            title="Video Preview"
-                            style={{ width: "100%", height: "100%", border: "none" }}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 3. Blog Mode */}
-                  {inlineFormat === "blog" && (
-                    <div className="ic-media-zone">
-                      <input
-                        type="text"
-                        placeholder="Article Headline / Title (e.g. How I Gained 5kg Clean Muscle)"
-                        value={inlineBlogTitle}
-                        onChange={(e) => setInlineBlogTitle(e.target.value)}
-                        style={{
-                          width: "100%",
-                          height: 42,
-                          borderRadius: 10,
-                          border: `1px solid ${T.glassBorder}`,
-                          background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-                          color: T.text,
-                          padding: "0 12px",
-                          fontSize: 13.5,
-                          fontWeight: 700,
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Cover Image URL (optional)"
-                        value={inlineMediaUrl}
-                        onChange={(e) => setInlineMediaUrl(e.target.value)}
-                        style={{
-                          width: "100%",
-                          height: 36,
-                          borderRadius: 10,
-                          border: `1px solid ${T.glassBorder}`,
-                          background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                          color: T.text,
-                          padding: "0 12px",
-                          fontSize: 12,
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* 4. PR Mode */}
-                  {inlineFormat === "pr" && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                      <input
-                        type="text"
-                        placeholder="Exercise (e.g. Bench Press / Squat)"
-                        value={inlinePrExercise}
-                        onChange={(e) => setInlinePrExercise(e.target.value)}
-                        style={{
-                          height: 40,
-                          borderRadius: 10,
-                          border: `1px solid ${T.glassBorder}`,
-                          background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                          color: T.text,
-                          padding: "0 12px",
-                          fontSize: 12.5,
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Record Stat (e.g. 140 kg x 3 reps)"
-                        value={inlinePrWeight}
-                        onChange={(e) => setInlinePrWeight(e.target.value)}
-                        style={{
-                          height: 40,
-                          borderRadius: 10,
-                          border: `1px solid ${T.glassBorder}`,
-                          background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                          color: T.text,
-                          padding: "0 12px",
-                          fontSize: 12.5,
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Caption Textarea */}
-                  <textarea
-                    className="ic-caption-area"
-                    rows={inlineFormat === "blog" ? 5 : 3}
-                    placeholder={
-                      inlineFormat === "photo"
-                        ? "Add caption or notes for this workout photo…"
-                        : inlineFormat === "video"
-                        ? "Describe your form, technique, or reps for this clip…"
-                        : inlineFormat === "blog"
-                        ? "Write your full fitness guide, nutrition advice, or story…"
-                        : inlineFormat === "pr"
-                        ? "How did you achieve this record? Share your workout breakdown…"
-                        : "What's on your fitness mind? Share tips, progress, or motivation with the squad…"
-                    }
-                    value={inlineCaption}
-                    onChange={(e) => setInlineCaption(e.target.value)}
-                  />
-
-                  {/* Bottom: Emojis + Actions */}
-                  <div className="ic-bottom">
-                    <div className="ic-emojis">
-                      {["🔥", "💪", "🏋️", "🥗", "🏆", "⚡", "💯"].map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          className="ic-emoji-btn"
-                          onClick={() => setInlineCaption((c) => c + emoji)}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowPostCreator(true)}
-                        style={{
-                          background: "transparent",
-                          border: `1px solid ${T.glassBorder}`,
-                          color: T.textSub,
-                          padding: "7px 14px",
-                          borderRadius: 10,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        ⛶ Fullscreen Modal
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleInlineSubmit}
-                        disabled={inlinePosting || inlineUploading}
-                        style={{
-                          background: `linear-gradient(135deg, ${T.accent}, #0060df)`,
-                          border: "none",
-                          color: "#fff",
-                          padding: "8px 18px",
-                          borderRadius: 10,
-                          fontSize: 13,
-                          fontWeight: 800,
-                          cursor: inlinePosting ? "not-allowed" : "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          boxShadow: `0 4px 14px ${T.accent}40`,
-                        }}
-                      >
-                        {inlinePosting ? (
-                          "Publishing…"
-                        ) : (
-                          <>
-                            <span>🚀</span>
-                            <span>Publish {inlineFormat === "photo" ? "Photo" : inlineFormat === "video" ? "Video" : inlineFormat === "blog" ? "Article" : inlineFormat === "pr" ? "PR" : "Post"}</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1592,8 +1294,8 @@ export default function Community() {
                 <div className="feed-filter-bar">
                   <div className="ff-header">
                     <div className="ff-title">
-                      <span>⚡</span>
-                      <span>Filter Community Feed</span>
+                      <Filter size={13} />
+                      <span>Explore Community Feed</span>
                     </div>
                     <div className="ff-count-tag">
                       Showing {filteredPosts.length} of {posts.length} posts
@@ -1601,14 +1303,14 @@ export default function Community() {
                   </div>
                   <div className="ff-chips-row">
                     {[
-                      { id: "all", label: "🌟 All Feed", count: filterCounts.all },
-                      { id: "photos", label: "📸 Photos", count: filterCounts.photos },
-                      { id: "videos", label: "🎥 Videos", count: filterCounts.videos },
-                      { id: "blogs", label: "📝 Articles", count: filterCounts.blogs },
-                      { id: "workout", label: "💪 Workouts", count: filterCounts.workout },
-                      { id: "diet", label: "🥗 Nutrition", count: filterCounts.diet },
-                      { id: "pr", label: "🏆 PR Records", count: filterCounts.pr },
-                      { id: "wellness", label: "🧘 Wellness", count: filterCounts.wellness },
+                      { id: "all", label: "All Content", count: filterCounts.all },
+                      { id: "photos", label: "Photos", count: filterCounts.photos },
+                      { id: "videos", label: "Videos", count: filterCounts.videos },
+                      { id: "blogs", label: "Articles", count: filterCounts.blogs },
+                      { id: "workout", label: "Workouts", count: filterCounts.workout },
+                      { id: "diet", label: "Nutrition", count: filterCounts.diet },
+                      { id: "pr", label: "Records", count: filterCounts.pr },
+                      { id: "wellness", label: "Wellness", count: filterCounts.wellness },
                     ].map((f) => (
                       <button
                         key={f.id}
@@ -1630,7 +1332,9 @@ export default function Community() {
                   </div>
                 ) : filteredPosts.length === 0 ? (
                   <div className="post-card" style={{ textAlign: "center", padding: "48px 20px" }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>📢</div>
+                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: `${T.accent}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", color: T.accent }}>
+                      <Activity size={26} />
+                    </div>
                     <div style={{ fontFamily: FONT.display, fontSize: 18, fontWeight: 800 }}>
                       No community posts found
                     </div>
@@ -1642,7 +1346,7 @@ export default function Community() {
                       style={{ margin: "0 auto" }}
                       onClick={() => setShowPostCreator(true)}
                     >
-                      ＋ Create First Post
+                      <Plus size={15} strokeWidth={2.5} /> Create First Post
                     </button>
                   </div>
                 ) : (
@@ -1719,7 +1423,8 @@ export default function Community() {
                                 {p.content?.length > 180 ? `${p.content.slice(0, 180)}…` : p.content}
                               </div>
                               <div className="blog-read-btn">
-                                📖 Read Full Article ({p.readTime || "2 min read"}) →
+                                <BookOpen size={14} style={{ marginRight: 4 }} />
+                                Read Full Article ({p.readTime || "2 min read"}) →
                               </div>
                             </div>
                           </div>
@@ -1771,7 +1476,7 @@ export default function Community() {
                             className={`act-btn ${isLiked ? "liked" : ""}`}
                             onClick={() => toggleLike(p.id, isLiked)}
                           >
-                            <span>{isLiked ? "❤️" : "🤍"}</span>
+                            <Heart size={15} fill={isLiked ? "#ff375f" : "none"} color={isLiked ? "#ff375f" : "currentColor"} />
                             <span>{likeCount}</span>
                           </button>
 
@@ -1781,18 +1486,18 @@ export default function Community() {
                               setExpandedComments((prev) => ({ ...prev, [p.id]: !prev[p.id] }))
                             }
                           >
-                            <span>💬</span>
+                            <MessageCircle size={15} />
                             <span>{commentList.length > 0 ? `${commentList.length} Comments` : "Comment"}</span>
                           </button>
 
                           {p.uid !== myUid && (
                             <button className="act-btn" onClick={() => openDMWithUser(p.uid)}>
-                              <span>✉️</span> Message
+                              <MessageSquare size={14} /> Message
                             </button>
                           )}
 
                           <button className="act-btn" onClick={() => handleShare(p)}>
-                            <span>↗</span> Share
+                            <Share2 size={14} /> Share
                           </button>
 
                           {p.uid !== myUid && (
@@ -1804,8 +1509,9 @@ export default function Community() {
                                 setReportReason("");
                                 setReportSent(false);
                               }}
+                              title="Report post"
                             >
-                              ⚑
+                              <Shield size={13} />
                             </button>
                           )}
                         </div>
@@ -1926,8 +1632,8 @@ export default function Community() {
                           }}
                         >
                           <span style={{ fontSize: 12, color: T.textSub }}>Current Streak:</span>
-                          <span style={{ fontFamily: FONT.display, fontSize: 14, fontWeight: 800, color: "#f97316" }}>
-                            🔥 {m.streak || 0} days
+                          <span style={{ fontFamily: FONT.display, fontSize: 13, fontWeight: 800, color: "#f97316", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                            <Flame size={14} color="#f97316" /> {m.streak || 0} days
                           </span>
                         </div>
 
@@ -1947,9 +1653,13 @@ export default function Community() {
                             fontWeight: 700,
                             cursor: "pointer",
                             transition: "all 0.15s ease",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
                           }}
                         >
-                          💬 Send Direct Message
+                          <MessageSquare size={14} /> Send Direct Message
                         </button>
                       </div>
                     ))
@@ -1964,10 +1674,10 @@ export default function Community() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                   <div>
                     <h2 style={{ fontFamily: FONT.display, fontSize: 22, fontWeight: 800, margin: 0 }}>
-                      Community Challenges
+                      Active Challenges ({filteredChallenges.length})
                     </h2>
                     <div style={{ fontSize: 13, color: T.textSub, marginTop: 4 }}>
-                      Join daily habit quests, build accountability, and track your streaks.
+                      Join daily habit protocols, build accountability, and track your streaks.
                     </div>
                   </div>
                   <button
@@ -1981,9 +1691,12 @@ export default function Community() {
                       fontSize: 12.5,
                       fontWeight: 700,
                       cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
-                    ＋ Create Challenge
+                    <Plus size={15} strokeWidth={2.5} /> Create Challenge
                   </button>
                 </div>
 
@@ -1995,7 +1708,9 @@ export default function Community() {
                     style={{ cursor: c.activated ? "pointer" : "default" }}
                   >
                     <div className="ch-hd">
-                      <span className="ch-emoji">{c.emoji || "⚡"}</span>
+                      <div style={{ width: 42, height: 42, borderRadius: 12, background: `${c.color || T.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Trophy size={20} color={c.color || T.accent} />
+                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <div className="ch-title">{c.title}</div>
@@ -2258,7 +1973,10 @@ export default function Community() {
           <div style={{ position: "sticky", top: 120, height: "fit-content" }}>
             {/* Online Squad */}
             <div className="side-card">
-              <div className="side-title">🟢 Active Athletes ({onlineCount})</div>
+              <div className="side-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Users size={14} color={T.accent} />
+                <span>ONLINE ATHLETES ({onlineCount})</span>
+              </div>
               {members.filter((m) => m.online).length === 0 ? (
                 <div style={{ fontSize: 12.5, color: T.textMuted }}>No athletes online right now</div>
               ) : (
@@ -2303,7 +2021,10 @@ export default function Community() {
 
             {/* Active Quests Preview */}
             <div className="side-card">
-              <div className="side-title">⚡ Daily Quests</div>
+              <div className="side-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Trophy size={14} color={T.accent} />
+                <span>ACTIVE CHALLENGES</span>
+              </div>
               {challenges.slice(0, 3).map((c) => (
                 <div
                   key={c.id}
@@ -2314,7 +2035,7 @@ export default function Community() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span>{c.emoji || "⚡"}</span>
+                    <Award size={16} color={c.color || T.accent} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>{c.title}</div>
                       <div style={{ fontSize: 10.5, color: T.textSub }}>{c.totalDays} Days Quest</div>
@@ -2322,6 +2043,19 @@ export default function Community() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Community Standards Card */}
+            <div className="side-card">
+              <div className="side-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Shield size={14} color={T.accent} />
+                <span>COMMUNITY STANDARDS</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12, color: T.textSub, lineHeight: 1.5 }}>
+                <div>• Respect fellow athletes and maintain supportive discourse</div>
+                <div>• Evidence-based fitness and health discussions only</div>
+                <div>• Celebrate consistency, personal records, and recovery</div>
+              </div>
             </div>
           </div>
         </div>
@@ -2333,8 +2067,8 @@ export default function Community() {
           onClose={() => setShowPostCreator(false)}
           user={user}
           myUid={myUid}
-          initialFormat={inlineFormat}
-          initialCategory={inlineCategory}
+          initialFormat={creatorFormat}
+          initialCategory={creatorCategory}
           onPostSuccess={(newP) => {
             setPosts((prev) => [newP, ...prev]);
             setActiveTab("feed");

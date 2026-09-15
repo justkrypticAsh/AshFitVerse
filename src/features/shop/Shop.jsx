@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useState } from "react";
 import PageWrapper from "../../components/PageWrapper";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
 import { FONT } from "../../theme";
 
 // ─────────────────────────────────────────────────────────────

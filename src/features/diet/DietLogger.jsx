@@ -1,69 +1,106 @@
+// src/features/diet/DietLogger.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import useTheme from "../../hooks/useTheme";
+import useTheme from "../../hooks/usetheme";
+import useUser from "../../hooks/useUser";
+import useUserLogs from "../../hooks/useUserLogs";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
-
-const FOOD_DB = [
-  { name: "Chicken Breast (100g)", cal: 165, protein: 31, carbs: 0, fats: 3.6 },
-  { name: "Brown Rice (100g)", cal: 216, protein: 5, carbs: 45, fats: 1.8 },
-  { name: "Whole Eggs (1 large)", cal: 78, protein: 6, carbs: 0.6, fats: 5 },
-  { name: "Whey Protein (30g)", cal: 120, protein: 24, carbs: 3, fats: 2 },
-  { name: "Oats (100g)", cal: 389, protein: 17, carbs: 66, fats: 7 },
-  { name: "Banana (1 medium)", cal: 105, protein: 1.3, carbs: 27, fats: 0.4 },
-  { name: "Salmon (100g)", cal: 208, protein: 20, carbs: 0, fats: 13 },
-  { name: "Sweet Potato (100g)", cal: 86, protein: 1.6, carbs: 20, fats: 0.1 },
-  { name: "Greek Yogurt (170g)", cal: 100, protein: 17, carbs: 6, fats: 0.7 },
-  { name: "Almonds (30g)", cal: 174, protein: 6, carbs: 6, fats: 15 },
-  { name: "Quinoa (100g)", cal: 120, protein: 4.4, carbs: 22, fats: 1.9 },
-  { name: "Broccoli (100g)", cal: 34, protein: 2.8, carbs: 7, fats: 0.4 },
-  { name: "Avocado (1/2)", cal: 160, protein: 2, carbs: 9, fats: 15 },
-  { name: "Cottage Cheese (100g)", cal: 98, protein: 11, carbs: 3.4, fats: 4.3 },
-  { name: "Peanut Butter (2 tbsp)", cal: 188, protein: 8, carbs: 6, fats: 16 },
-  { name: "Milk 2% (240ml)", cal: 122, protein: 8, carbs: 12, fats: 5 },
-];
+import { addLog, deleteLog, todayKey, addAppNotification, getEffectiveUid } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack", "Pre-Workout", "Post-Workout"];
 const MEAL_COLORS = {
   Breakfast: "#4f8ef7", Lunch: "#a78bfa", Dinner: "#34d399",
   Snack: "#fb923c", "Pre-Workout": "#f472b6", "Post-Workout": "#fbbf24",
 };
-const CALORIE_GOAL = 2400;
-const PROTEIN_GOAL = 160;
-const CARBS_GOAL = 270;
-const FATS_GOAL = 67;
+
+const FOOD_DB = [
+  { name: "Oatmeal with Berries", cal: 320, protein: 12, carbs: 54, fats: 6, serving: "1 bowl (250g)" },
+  { name: "Scrambled Eggs (3 eggs)", cal: 230, protein: 19, carbs: 2, fats: 16, serving: "3 whole eggs" },
+  { name: "Grilled Chicken Breast", cal: 280, protein: 52, carbs: 0, fats: 6, serving: "200g cooked" },
+  { name: "Brown Rice", cal: 215, protein: 5, carbs: 45, fats: 2, serving: "1 cup (195g)" },
+  { name: "Salmon Fillet", cal: 365, protein: 34, carbs: 0, fats: 24, serving: "180g" },
+  { name: "Whey Protein Shake", cal: 130, protein: 25, carbs: 3, fats: 1.5, serving: "1 scoop (32g)" },
+  { name: "Sweet Potato", cal: 160, protein: 3, carbs: 37, fats: 0.2, serving: "1 large (180g)" },
+  { name: "Greek Yogurt (0%)", cal: 130, protein: 22, carbs: 9, fats: 0, serving: "200g" },
+  { name: "Almonds", cal: 164, protein: 6, carbs: 6, fats: 14, serving: "1 handful (28g)" },
+  { name: "Banana", cal: 105, protein: 1.3, carbs: 27, fats: 0.3, serving: "1 medium (118g)" },
+  { name: "Broccoli (Steamed)", cal: 55, protein: 4, carbs: 11, fats: 0.6, serving: "150g" },
+  { name: "Avocado", cal: 240, protein: 3, carbs: 12, fats: 22, serving: "1 medium (150g)" },
+  { name: "Peanut Butter", cal: 190, protein: 8, carbs: 7, fats: 16, serving: "2 tbsp (32g)" },
+  { name: "Paneer (Raw)", cal: 265, protein: 18, carbs: 3, fats: 20, serving: "100g" },
+  { name: "Dal (Cooked Lentils)", cal: 198, protein: 14, carbs: 32, fats: 1, serving: "1 cup (200g)" },
+  { name: "Roti (Whole Wheat)", cal: 104, protein: 3.5, carbs: 22, fats: 0.5, serving: "1 piece (35g)" },
+];
 
 export default function DietLogger() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
+  const { authUid, user, calorieTarget } = useUser();
+  const { todayMeals, todayBurned } = useUserLogs(authUid);
   const [mounted, setMounted] = useState(false);
-
-  const [logs, setLogs] = useState([
-    { id: 1, meal: "Breakfast", food: "Oats (100g)", cal: 389, protein: 17, carbs: 66, fats: 7, qty: 1 },
-    { id: 2, meal: "Breakfast", food: "Whey Protein (30g)", cal: 120, protein: 24, carbs: 3, fats: 2, qty: 1 },
-    { id: 3, meal: "Lunch", food: "Chicken Breast (100g)", cal: 165, protein: 31, carbs: 0, fats: 3.6, qty: 2 },
-    { id: 4, meal: "Lunch", food: "Brown Rice (100g)", cal: 216, protein: 5, carbs: 45, fats: 1.8, qty: 1 },
-  ]);
-
-  const [showAdd, setShowAdd] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState("Breakfast");
   const [search, setSearch] = useState("");
-  const [qty, setQty] = useState(1);
   const [selectedFood, setSelectedFood] = useState(null);
+  const [qty, setQty] = useState(1);
+  const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
+  const logs = todayMeals;
+  const CALORIE_GOAL = calorieTarget || 2000;
+  const PROTEIN_GOAL = calorieTarget ? Math.round(calorieTarget * 0.3 / 4) : 150;
+  const CARBS_GOAL = calorieTarget ? Math.round(calorieTarget * 0.45 / 4) : 220;
+  const FATS_GOAL = calorieTarget ? Math.round(calorieTarget * 0.25 / 9) : 55;
+
   const totals = logs.reduce((acc, l) => ({
-    cal: acc.cal + l.cal * l.qty, protein: acc.protein + l.protein * l.qty,
-    carbs: acc.carbs + l.carbs * l.qty, fats: acc.fats + l.fats * l.qty,
+    cal: acc.cal + (l.cal || 0) * (l.qty || 1), protein: acc.protein + (l.protein || 0) * (l.qty || 1),
+    carbs: acc.carbs + (l.carbs || 0) * (l.qty || 1), fats: acc.fats + (l.fats || 0) * (l.qty || 1),
   }), { cal: 0, protein: 0, carbs: 0, fats: 0 });
 
-  const addLog = () => {
+  const addMealEntry = async () => {
     if (!selectedFood) return;
-    setLogs([...logs, { id: Date.now(), meal: selectedMeal, food: selectedFood.name, qty, ...selectedFood }]);
-    setShowAdd(false); setSearch(""); setSelectedFood(null); setQty(1);
+    const effectiveUid = authUid || getEffectiveUid();
+    try {
+      await addLog(effectiveUid, "meals", {
+        date: todayKey(),
+        meal: selectedMeal,
+        food: selectedFood.name,
+        qty,
+        cal: selectedFood.cal,
+        protein: selectedFood.protein,
+        carbs: selectedFood.carbs,
+        fats: selectedFood.fats,
+      });
+      if (logs.length === 0) {
+        try {
+          await addAppNotification(effectiveUid, {
+            text: `First meal logged today: ${selectedFood.name}`,
+            type: "diet",
+            path: "/diet-logger",
+          });
+        } catch {}
+      }
+      showDonePopup({
+        title: "Done!",
+        message: `${selectedFood.name} logged & synced to your Dashboard!`,
+        subtext: `${selectedMeal} · ${Math.round(selectedFood.cal * qty)} kcal · ${Math.round(selectedFood.protein * qty)}g protein`,
+        color: "#22c55e",
+      });
+    } catch (err) {
+      console.error("addMealEntry error:", err);
+    } finally {
+      setShowAdd(false);
+      setSearch("");
+      setSelectedFood(null);
+      setQty(1);
+    }
   };
-  const removeLog = (id) => setLogs(logs.filter(l => l.id !== id));
+  const removeMeal = (id) => {
+    const effectiveUid = authUid || getEffectiveUid();
+    deleteLog(effectiveUid, "meals", id);
+  };
   const filteredFoods = FOOD_DB.filter(f => f.name.toLowerCase().includes(search.toLowerCase()));
   const mealGroups = MEAL_TYPES.map(m => ({ meal: m, items: logs.filter(l => l.meal === m), color: MEAL_COLORS[m] })).filter(g => g.items.length > 0);
   const macroChartData = [
@@ -84,9 +121,15 @@ export default function DietLogger() {
   const css = generateCSS(T, dark) + `
     .root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};opacity:${mounted?1:0};transition:opacity 0.7s,background 0.5s,color 0.5s;position:relative;overflow-x:hidden;}
 
-    .header{display:flex;align-items:center;justify-content:space-between;padding:24px 40px;border-bottom:1px solid ${T.glassBorder};background:${dark?"rgba(7,8,15,0.88)":"rgba(242,244,252,0.88)"};backdrop-filter:blur(30px);position:sticky;top:0;z-index:50;}
-    .h-logo{font-family:${FONT.display};font-size:20px;font-weight:800;color:${T.text};}
+    /* UNIFIED HEADER BAR WITH MATCHING NAVIGATION BUTTON */
+    .header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;position:sticky;top:0;z-index:50;border-bottom:1px solid ${T.glassBorder};background:${dark?"rgba(8,8,12,0.85)":"rgba(255,255,255,0.85)"};backdrop-filter:blur(40px);}
+    .pr-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};color:${T.text};font-size:13px;font-weight:600;cursor:pointer;font-family:${FONT.body};transition:all 0.15s ease;}
+    .pr-back:hover{background:${T.accentSoft};border-color:${T.accent}40;color:${T.accent};}
+    .h-logo{font-family:${FONT.display};font-size:18px;font-weight:800;color:${T.text};}
     .h-logo span{color:${T.accent};}
+
+    .theme-toggle{width:48px;height:26px;border-radius:99px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"};cursor:pointer;position:relative;}
+    .toggle-thumb{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:${T.accent};display:flex;align-items:center;justify-content:center;font-size:10px;transition:left .2s ease;left:${dark?"24px":"2px"};}
 
     .layout{max-width:1200px;margin:0 auto;padding:32px 40px;display:grid;grid-template-columns:1fr 340px;gap:24px;position:relative;z-index:1;}
     .page-title{font-family:${FONT.display};font-size:30px;font-weight:800;letter-spacing:-0.02em;color:${T.text};margin-bottom:4px;}
@@ -163,7 +206,7 @@ export default function DietLogger() {
 
     @keyframes scaleIn{from{opacity:0;transform:scale(0.9);}to{opacity:1;transform:scale(1);}}
     @media(max-width:960px){.layout{grid-template-columns:1fr;}.macro-summary{grid-template-columns:repeat(2,1fr);}}
-    @media(max-width:600px){.layout{padding:20px 16px;}.macro-summary{grid-template-columns:1fr 1fr;}.modal{width:95%;padding:20px;}}
+    @media(max-width:600px){.layout{padding:20px 16px;}.header{padding:0 16px;}.macro-summary{grid-template-columns:1fr 1fr;}.modal{width:95%;padding:20px;}}
   `;
 
   return (
@@ -203,14 +246,15 @@ export default function DietLogger() {
               </div>
               <div className="modal-btns">
                 <button className="modal-cancel" onClick={() => setShowAdd(false)}>Cancel</button>
-                <button className="modal-add" disabled={!selectedFood} onClick={addLog}>Add to {selectedMeal} +</button>
+                <button className="modal-add" disabled={!selectedFood} onClick={addMealEntry}>Add to {selectedMeal} +</button>
               </div>
             </div>
           </div>
         )}
 
+        {/* HEADER BAR WITH UNIFIED BACK BUTTON */}
         <div className="header">
-          <button className="back-btn" onClick={() => navigate("/dashboard")}>← Dashboard</button>
+          <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
           <div className="h-logo">AshFit<span>Verse</span></div>
           <button className="theme-toggle" onClick={toggleTheme}>
             <div className="toggle-thumb">{dark ? "🌙" : "☀️"}</div>
@@ -263,7 +307,7 @@ export default function DietLogger() {
                         <span className="macro-chip" style={{ background: "#fb923c20", color: "#fb923c" }}>F {Math.round(item.fats * item.qty)}g</span>
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 700, color: g.color, marginRight: 12, minWidth: 60, textAlign: "right" }}>{Math.round(item.cal * item.qty)} kcal</span>
-                      <button className="food-remove" onClick={() => removeLog(item.id)}>✕</button>
+                      <button className="food-remove" onClick={() => removeMeal(item.id)}>✕</button>
                     </div>
                   ))}
                 </div>
@@ -303,9 +347,11 @@ export default function DietLogger() {
             <div className="side-card">
               <div className="side-title">Calorie Balance</div>
               {[
-                { k: "Goal", v: `${CALORIE_GOAL} kcal`, c: T.textSub },
-                { k: "Consumed", v: `${Math.round(totals.cal)} kcal`, c: T.accent },
-                { k: "Remaining", v: `${Math.max(0, CALORIE_GOAL - Math.round(totals.cal))} kcal`, c: T.green },
+                { k: "Daily Goal", v: `${CALORIE_GOAL.toLocaleString()} kcal`, c: T.textSub },
+                { k: "Consumed", v: `${Math.round(totals.cal).toLocaleString()} kcal`, c: T.accent },
+                { k: "Workouts Burned", v: `-${(todayBurned || 0).toLocaleString()} kcal`, c: "#f97316" },
+                { k: "Net Balance", v: `${Math.max(0, Math.round(totals.cal) - (todayBurned || 0)).toLocaleString()} kcal`, c: T.purple },
+                { k: "Remaining Budget", v: `${Math.max(0, CALORIE_GOAL - Math.max(0, Math.round(totals.cal) - (todayBurned || 0))).toLocaleString()} kcal`, c: T.green },
               ].map((r, i, a) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: i < a.length - 1 ? `1px solid ${T.glassBorder}` : "none", fontSize: 13 }}>
                   <span style={{ color: T.textSub }}>{r.k}</span>
