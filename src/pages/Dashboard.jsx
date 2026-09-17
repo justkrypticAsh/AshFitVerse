@@ -16,6 +16,13 @@ import WeightLogModal from "../components/WeightLogModal";
 import FeedbackModal from "../components/FeedbackModal";
 import WorkoutDetailModal from "../components/WorkoutDetailModal";
 import { getDefaultQuickActions, QA_THEMES, sanitizeActionsForUser } from "../config/quickActionsCatalog";
+import {
+  DEFAULT_CHALLENGES,
+  loadChallengeProgress,
+  saveChallengeProgress,
+  todayStr,
+  getChallengeStats,
+} from "../config/challengesConfig";
 
 // ─── Workout plans ────────────────────────────────────────────────────────────
 function getWorkouts(goal, equipment) {
@@ -177,6 +184,50 @@ export default function Dashboard() {
     return () => clearInterval(iv);
   }, []);
 
+  // Challenge habit progress & sync
+  const [challengeProgress, setChallengeProgress] = useState(() => loadChallengeProgress());
+  const [challengeToast, setChallengeToast] = useState(null);
+
+  useEffect(() => {
+    const syncProg = () => setChallengeProgress(loadChallengeProgress());
+    window.addEventListener("storage", syncProg);
+    window.addEventListener("focus", syncProg);
+    return () => {
+      window.removeEventListener("storage", syncProg);
+      window.removeEventListener("focus", syncProg);
+    };
+  }, []);
+
+  const activeChallenges = React.useMemo(() => {
+    return DEFAULT_CHALLENGES.map((c) => {
+      const stats = getChallengeStats(c, challengeProgress);
+      return { ...c, ...stats };
+    }).filter((c) => c.joined);
+  }, [challengeProgress]);
+
+  const handleDashboardCheckIn = (challengeId) => {
+    const today = todayStr();
+    const c = DEFAULT_CHALLENGES.find((item) => item.id === challengeId);
+    if (!c) return;
+    const prog = challengeProgress[challengeId] || {};
+    if (prog.lastCheckIn === today) return;
+    const daysCompleted = Math.min((prog.daysCompleted || 0) + 1, c.totalDays);
+    const updated = {
+      ...challengeProgress,
+      [challengeId]: {
+        ...prog,
+        joinedAt: prog.joinedAt || today,
+        daysCompleted,
+        lastCheckIn: today,
+        streak: (prog.streak || daysCompleted - 1) + 1,
+      },
+    };
+    setChallengeProgress(updated);
+    saveChallengeProgress(updated);
+    setChallengeToast({ title: c.title, day: daysCompleted });
+    setTimeout(() => setChallengeToast(null), 3500);
+  };
+
   const calGoal    = calorieTarget || 2000;
   const macroTotal = todayMacros.protein + todayMacros.carbs + todayMacros.fats;
   const MACROS = macroTotal ? [
@@ -209,6 +260,19 @@ export default function Dashboard() {
   ];
   const checkDone = checklist.filter(c=>c.done).length;
   const checkPct  = Math.round((checkDone/checklist.length)*100);
+  const isChecklistComplete = checkDone >= checklist.length;
+  const [checklistDismissed, setChecklistDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("ashfitverse_checklist_dismissed") === "true";
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (isChecklistComplete && !checklistDismissed) {
+      setChecklistDismissed(true);
+      try { localStorage.setItem("ashfitverse_checklist_dismissed", "true"); } catch {}
+    }
+  }, [isChecklistComplete, checklistDismissed]);
 
   const greeting   = getGreeting(now.getHours());
   const firstName  = user.name?.split(" ")[0] || "Athlete";
@@ -295,222 +359,257 @@ export default function Dashboard() {
     .gl>*{position:relative;z-index:1;}
 
     /* ══════════════════════════════════════════════
-       SIDEBAR
+       SIDEBAR — Luxury Executive Architecture
     ══════════════════════════════════════════════ */
     .sb{
-      width:240px;min-height:100vh;flex-shrink:0;
+      width:252px;min-height:100vh;flex-shrink:0;
       position:sticky;top:0;height:100vh;
-      overflow-y:auto;overflow-x:hidden;z-index:20;
-      background:${SB_BG};
-      border-right:1px solid ${GB_BORDER};
-      backdrop-filter:blur(50px) saturate(180%);
+      overflow-y:auto;overflow-x:hidden;z-index:30;
+      background:${dark ? "#090c15" : "#ffffff"};
+      border-right:1.5px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"};
+      box-shadow:${dark ? "4px 0 24px rgba(0,0,0,0.35)" : "2px 0 16px rgba(15,23,42,0.04)"};
       display:flex;flex-direction:column;
-      padding:0 0 18px;
-      transition:background 0.5s;
+      padding:0 0 16px;
+      transition:background 0.3s, border-color 0.3s;
     }
-    .sb::-webkit-scrollbar{width:0;}
+    .sb::-webkit-scrollbar{width:4px;}
+    .sb::-webkit-scrollbar-thumb{background:${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"};border-radius:99px;}
 
-    .sb-strip{
+    .sb-top-accent{
       height:3px;width:100%;flex-shrink:0;
-      background:linear-gradient(90deg,${T.accent},${T.purple},#f472b6);
+      background:linear-gradient(90deg,#3b82f6,#8b5cf6,#ec4899);
     }
 
     .sb-head{
-      padding:22px 20px 18px;
-      border-bottom:1px solid ${GB_BORDER};
-      position:relative;
+      padding:18px 16px 14px;
+      display:flex;align-items:center;justify-content:space-between;
+      border-bottom:1px solid ${dark ? "rgba(255,255,255,0.07)" : "#f1f5f9"};
     }
-    .sb-logo{
-      font-family:${FONT.display};font-size:21px;font-weight:800;
-      letter-spacing:-0.02em;color:${T.text};line-height:1;
+    .sb-brand-wrap{
+      display:flex;align-items:center;gap:10px;cursor:pointer;
     }
-    .sb-logo span{color:${T.accent};}
-    .sb-tagline{
-      font-size:9px;color:${T.textMuted};letter-spacing:0.18em;
-      text-transform:uppercase;font-weight:600;margin-top:3px;
+    .sb-logo-badge{
+      width:34px;height:34px;border-radius:10px;
+      background:linear-gradient(135deg,#2563eb,#7c3aed);
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:900;font-size:15px;
+      box-shadow:0 4px 12px rgba(37,99,235,0.35);
+      border:1px solid rgba(255,255,255,0.25);
+    }
+    .sb-brand-title{
+      font-family:${FONT.display};font-size:17.5px;font-weight:900;
+      letter-spacing:-0.03em;color:${dark ? "#f8fafc" : "#0f172a"};line-height:1.1;
+    }
+    .sb-brand-title span{
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+    .sb-edition-pill{
+      font-size:9px;font-weight:800;letter-spacing:0.06em;
+      padding:2px 6px;border-radius:6px;
+      background:${dark ? "rgba(59,130,246,0.15)" : "#eff6ff"};
+      color:#2563eb;border:1px solid ${dark ? "rgba(59,130,246,0.3)" : "#bfdbfe"};
+      text-transform:uppercase;
     }
 
-    .sb-user-card{
-      margin:14px 12px 0;
-      padding:12px 13px;
+    /* Athlete Telemetry Card */
+    .sb-athlete-card{
+      margin:12px 12px 0;
+      padding:11px 12px;
       border-radius:16px;
-      background:${dark?"linear-gradient(135deg,rgba(79,142,247,0.10),rgba(167,139,250,0.06))":"linear-gradient(135deg,rgba(79,142,247,0.08),rgba(167,139,250,0.04))"};
-      border:1px solid ${T.accent}22;
-      display:flex;align-items:center;gap:10px;cursor:pointer;
-      transition:all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+      background:${dark ? "#0f1322" : "#f8fafc"};
+      border:1.5px solid ${dark ? "rgba(255,255,255,0.10)" : "#e2e8f0"};
+      display:flex;align-items:center;gap:11px;cursor:pointer;
+      transition:all 0.2s cubic-bezier(0.2,0,0,1);
       position:relative;
-      min-width:0;
+      box-shadow:${dark ? "0 4px 14px rgba(0,0,0,0.25)" : "0 2px 8px rgba(15,23,42,0.04)"};
     }
-    .sb-user-card::before{
-      content:'';position:absolute;inset:0;border-radius:16px;
-      background:linear-gradient(135deg,rgba(255,255,255,${dark?"0.08":"0.45"}) 0%,transparent 50%);
-      pointer-events:none;z-index:0;
+    .sb-athlete-card:hover{
+      transform:translateY(-1.5px);
+      border-color:${T.accent}60;
+      box-shadow:0 6px 20px ${T.accentGlow}30;
     }
-    .sb-user-card>*{position:relative;z-index:1;}
-    .sb-user-card:hover{
-      transform:translateY(-2px);
-      border-color:${T.accent}40;
-      box-shadow:0 8px 28px ${T.accentGlow}22;
+    .sb-ava-wrap{
+      position:relative;width:40px;height:40px;flex-shrink:0;
     }
-    .sb-ava{
-      width:38px;height:38px;border-radius:50%;flex-shrink:0;
-      background:linear-gradient(135deg,${T.accent},${T.purple});
+    .sb-ava-img{
+      width:40px;height:40px;border-radius:50%;object-fit:cover;
+      border:2px solid ${dark ? "rgba(255,255,255,0.16)" : "#ffffff"};
+      box-shadow:0 2px 8px rgba(0,0,0,0.18);
+    }
+    .sb-ava-fallback{
+      width:40px;height:40px;border-radius:50%;
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6);
       display:flex;align-items:center;justify-content:center;
-      font-size:14px;font-weight:800;color:#fff;
-      border:2px solid rgba(255,255,255,${dark?"0.18":"0.60"});
-      box-shadow:0 0 0 3px ${T.accentGlow}30,0 4px 14px ${T.accentGlow};
+      color:#fff;font-size:15px;font-weight:900;
+      border:2px solid ${dark ? "rgba(255,255,255,0.16)" : "#ffffff"};
+      box-shadow:0 2px 8px rgba(59,130,246,0.3);
     }
-    .sb-user-info{
+    .sb-online-dot{
+      position:absolute;bottom:0;right:0;width:10px;height:10px;
+      border-radius:50%;background:#10b981;border:2px solid ${dark ? "#0f1322" : "#ffffff"};
+    }
+    .sb-athlete-details{
       min-width:0;flex:1;overflow:hidden;
     }
-    .sb-name{
-      font-size:13px;font-weight:700;color:${T.text};
-      letter-spacing:-0.01em;
+    .sb-name-row{
+      display:flex;align-items:center;gap:6px;
+    }
+    .sb-athlete-name{
+      font-size:13.5px;font-weight:800;color:${dark ? "#f8fafc" : "#0f172a"};
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      font-family:${FONT.display};
+    }
+    .sb-athlete-handle{
+      font-size:11px;color:${dark ? T.textMuted : "#64748b"};font-weight:600;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
-    .sb-goal-tag{
-      display:inline-flex;align-items:center;gap:4px;
-      margin-top:4px;padding:2px 8px;border-radius:99px;
-      background:${T.accentSoft};font-size:9.5px;font-weight:700;
-      color:${T.accent};text-transform:capitalize;
-      max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    .sb-meta-badges{
+      display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:nowrap;
+    }
+    .sb-goal-badge{
+      font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;
+      background:${dark ? "rgba(59,130,246,0.15)" : "#eff6ff"};
+      color:#2563eb;text-transform:capitalize;
+      max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .sb-tier-badge{
+      font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;
+      background:linear-gradient(135deg,#f59e0b,#ea580c);
+      color:#fff;letter-spacing:0.04em;
     }
 
-    .sb-streak{
-      margin:10px 12px 0;
-      padding:9px 14px;border-radius:12px;
-      background:${dark?"rgba(251,146,60,0.09)":"rgba(200,130,50,0.07)"};
-      border:1px solid rgba(251,146,60,0.20);
-      display:flex;align-items:center;gap:8px;
+    /* Streak widget */
+    .sb-streak-card{
+      margin:8px 12px 0;padding:9px 12px;border-radius:13px;
+      background:${dark ? "rgba(249,115,22,0.08)" : "#fff7ed"};
+      border:1px solid ${dark ? "rgba(249,115,22,0.22)" : "#fed7aa"};
+      display:flex;align-items:center;gap:9px;
       font-size:12px;font-weight:800;color:${T.orange};
     }
     .sb-streak-bar{
-      flex:1;height:4px;background:${dark?"rgba(251,146,60,0.15)":"rgba(200,130,50,0.12)"};
+      flex:1;height:5px;background:${dark ? "rgba(249,115,22,0.18)" : "#ffedd5"};
       border-radius:99px;overflow:hidden;
     }
     .sb-streak-fill{
-      height:100%;background:${T.orange};border-radius:99px;
-      transition:width 1.5s cubic-bezier(0.4,0,0.2,1);
+      height:100%;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:99px;
+      transition:width 1.2s cubic-bezier(0.4,0,0.2,1);
     }
 
-    .sb-sec{
-      font-size:9px;font-weight:800;letter-spacing:0.20em;text-transform:uppercase;
-      color:${T.textMuted};padding:16px 20px 5px;
+    /* Section titles */
+    .sb-nav-section{
+      font-size:9.5px;font-weight:900;letter-spacing:0.16em;text-transform:uppercase;
+      color:${dark ? T.textMuted : "#64748b"};padding:16px 16px 5px;
     }
 
-    .sb-ni{
-      display:flex;align-items:center;gap:10px;
-      margin:1px 8px;padding:10px 12px;border-radius:13px;
-      cursor:pointer;font-size:13px;font-weight:500;color:${T.textSub};
-      transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    /* Nav items */
+    .sb-nav-item{
+      display:flex;align-items:center;gap:11px;
+      margin:2px 8px;padding:9px 12px;border-radius:12px;
+      cursor:pointer;font-size:13px;font-weight:600;
+      color:${dark ? T.textSub : "#334155"};
+      transition:all 0.18s ease;
       border:1px solid transparent;position:relative;
     }
-    .sb-ni:hover{
-      color:${T.text};
-      background:${dark?"rgba(255,255,255,0.06)":"rgba(255,252,245,0.80)"};
-      border-color:${GB_BORDER};
+    .sb-nav-item:hover{
+      color:${dark ? "#f8fafc" : "#0f172a"};
+      background:${dark ? "rgba(255,255,255,0.05)" : "#f1f5f9"};
+      border-color:${dark ? "rgba(255,255,255,0.06)" : "#e2e8f0"};
+      transform:translateX(2px);
     }
-    .sb-ni.na{
-      background:linear-gradient(135deg,${T.accentSoft},${T.purpleSoft});
-      color:${T.accent};border-color:${T.accent}25;font-weight:700;
-      box-shadow:0 3px 14px ${T.accentGlow}22,inset 0 1px 0 rgba(255,255,255,${dark?"0.14":"0.65"});
+    .sb-nav-item.active{
+      background:${dark ? "rgba(59,130,246,0.12)" : "#eff6ff"};
+      color:#2563eb;font-weight:800;
+      border-color:${dark ? "rgba(59,130,246,0.3)" : "#bfdbfe"};
     }
-    .sb-ni.na::after{
-      content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
-      width:3px;height:60%;background:${T.accent};border-radius:0 3px 3px 0;
+    .sb-nav-item.active::before{
+      content:'';position:absolute;left:0;top:20%;bottom:20%;
+      width:3.5px;background:#2563eb;border-radius:0 3px 3px 0;
     }
-    .sb-ni-ico{font-size:16px;width:20px;text-align:center;flex-shrink:0;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);}
-    .sb-ni:hover .sb-ni-ico{transform:scale(1.15);}
-    .sb-ni-txt{flex:1;white-space:nowrap;}
-    .sb-badge{
-      padding:1px 7px;background:linear-gradient(135deg,${T.accent},${T.purple});
-      color:#fff;border-radius:99px;font-size:9px;font-weight:800;
+    .sb-nav-icon{
+      width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;font-size:14px;
     }
-
-    .sb-div{height:1px;background:linear-gradient(90deg,transparent,${GB_BORDER},transparent);margin:8px 12px;}
-
-    .sb-ti{
-      display:flex;align-items:center;gap:9px;
-      margin:0 8px 1px;padding:8px 12px;border-radius:10px;
-      cursor:pointer;font-size:12px;font-weight:500;color:${T.textSub};
-      transition:all 0.18s;
-    }
-    .sb-ti:hover{
-      color:${T.text};
-      background:${dark?"rgba(255,255,255,0.05)":"rgba(255,252,245,0.70)"};
-    }
-    .sb-ti-ico{font-size:13px;width:18px;text-align:center;flex-shrink:0;transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1);}
-    .sb-ti:hover .sb-ti-ico{transform:scale(1.15);}
-    .sb-tool-sec{
-      font-size:8.5px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;
-      color:${T.textMuted};padding:10px 20px 3px;margin-top:2px;
+    .sb-nav-label{flex:1;white-space:nowrap;}
+    .sb-nav-badge{
+      padding:2px 7px;border-radius:99px;font-size:9.5px;font-weight:800;
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;
     }
 
-    .sb-footer{margin-top:auto;padding-top:8px;}
-    .sb-pro-card{
-      margin:0 12px 10px;
+    /* Tool item */
+    .sb-tool-item{
+      display:flex;align-items:center;gap:10px;
+      margin:1px 8px;padding:7.5px 12px;border-radius:10px;
+      cursor:pointer;font-size:12.5px;font-weight:600;
+      color:${dark ? T.textSub : "#475569"};
+      transition:all 0.16s ease;
+    }
+    .sb-tool-item:hover{
+      color:${dark ? "#f8fafc" : "#0f172a"};
+      background:${dark ? "rgba(255,255,255,0.05)" : "#f1f5f9"};
+      transform:translateX(2px);
+    }
+    .sb-tool-icon{
+      font-size:13.5px;width:18px;text-align:center;flex-shrink:0;
+    }
+
+    .sb-divider{
+      height:1px;background:${dark ? "rgba(255,255,255,0.07)" : "#f1f5f9"};
+      margin:10px 14px;
+    }
+
+    /* Pro Upgrade Box */
+    .sb-pro-box{
+      margin:10px 12px 6px;
       padding:14px 14px 12px;
       border-radius:16px;
       background:${dark
-        ?"linear-gradient(160deg,rgba(79,142,247,0.14),rgba(167,139,250,0.10))"
-        :"linear-gradient(160deg,rgba(79,142,247,0.10),rgba(167,139,250,0.07))"};
-      border:1px solid ${T.accent}28;
+        ? "linear-gradient(145deg, #111526 0%, #0d101e 100%)"
+        : "linear-gradient(145deg, #eff6ff 0%, #faf5ff 100%)"};
+      border:1.5px solid ${dark ? "rgba(59,130,246,0.3)" : "#bfdbfe"};
       position:relative;overflow:hidden;
-      box-shadow:0 4px 20px ${T.accentGlow}18;
+      box-shadow:${dark ? "0 8px 24px rgba(0,0,0,0.3)" : "0 4px 14px rgba(37,99,235,0.08)"};
     }
-    .sb-pro-card::before{
-      content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;
-      border-radius:50%;background:radial-gradient(circle,${T.purple}30,transparent 70%);
-      pointer-events:none;
+    .sb-pro-head{
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;
     }
-    .sb-pro-card::after{
-      content:'';position:absolute;inset:0;border-radius:16px;
-      background:linear-gradient(135deg,rgba(255,255,255,${dark?"0.06":"0.40"}) 0%,transparent 50%);
-      pointer-events:none;
-    }
-    .sb-pro-card>*{position:relative;z-index:1;}
-    .sb-pro-tag{
-      display:inline-block;padding:3px 8px;border-radius:6px;
-      background:linear-gradient(135deg,${T.accent},${T.purple});
-      font-size:8px;font-weight:800;letter-spacing:0.12em;color:#fff;
-      margin-bottom:8px;
+    .sb-pro-badge{
+      font-size:8.5px;font-weight:900;letter-spacing:0.10em;padding:2px 7px;border-radius:6px;
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;
     }
     .sb-pro-title{
-      font-family:${FONT.display};font-size:14px;font-weight:800;
-      color:${T.text};line-height:1.2;margin-bottom:4px;
+      font-family:${FONT.display};font-size:13.5px;font-weight:900;color:${dark ? "#f8fafc" : "#0f172a"};
+      margin-bottom:3px;
     }
-    .sb-pro-desc{
-      font-size:10.5px;color:${T.textSub};line-height:1.45;margin-bottom:12px;
+    .sb-pro-sub{
+      font-size:11px;color:${dark ? T.textSub : "#64748b"};line-height:1.45;margin-bottom:10px;
     }
-    .sb-pro-cta{
-      width:100%;padding:10px 0;border-radius:11px;border:none;
-      background:linear-gradient(135deg,${T.accent},${T.purple});
-      color:#fff;font-size:12px;font-weight:800;font-family:${FONT.body};
-      cursor:pointer;transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);
-      box-shadow:0 4px 16px ${T.accentGlow};
-      display:block;text-align:center;line-height:1;
+    .sb-pro-button{
+      width:100%;padding:8px 0;border-radius:10px;border:none;
+      background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;
+      font-size:11.5px;font-weight:800;cursor:pointer;
+      box-shadow:0 3px 12px rgba(37,99,235,0.35);
+      transition:transform 0.16s ease;
     }
-    .sb-pro-cta:hover{
-      transform:translateY(-2px);
-      box-shadow:0 8px 24px ${T.accentGlow};
-      filter:brightness(1.06);
-    }
-    .sb-pro-cta:active{transform:translateY(0);}
-    .sb-pro-note{
-      margin-top:8px;font-size:9.5px;color:${T.textMuted};
-      text-align:center;line-height:1.3;
-    }
+    .sb-pro-button:hover{transform:translateY(-1px);}
 
-    .sb-out{
-      margin:0 12px;
-      padding:10px 14px;border-radius:12px;
-      border:1px solid ${dark?"rgba(255,69,58,0.16)":"rgba(220,60,50,0.12)"};
-      background:${dark?"rgba(255,69,58,0.06)":"rgba(255,69,58,0.04)"};
-      color:${T.red};font-size:12px;font-weight:700;font-family:${FONT.body};
-      cursor:pointer;transition:all 0.22s;
-      display:flex;align-items:center;gap:8px;
+    /* Bottom logout / profile dock */
+    .sb-dock{
+      display:flex;align-items:center;gap:8px;padding:8px 12px 0;margin-top:auto;
     }
-    .sb-out:hover{background:${dark?"rgba(255,69,58,0.14)":"rgba(220,60,50,0.10)"};transform:translateY(-2px);border-color:${T.red}35;}
+    .sb-dock-btn{
+      flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+      padding:8px 10px;border-radius:11px;
+      border:1px solid ${dark ? "rgba(255,255,255,0.09)" : "#e2e8f0"};
+      background:${dark ? "rgba(255,255,255,0.04)" : "#f8fafc"};
+      color:${dark ? T.textSub : "#475569"};font-size:12px;font-weight:700;
+      cursor:pointer;transition:all 0.16s ease;
+    }
+    .sb-dock-btn:hover{
+      color:${dark ? "#f8fafc" : "#0f172a"};
+      background:${dark ? "rgba(255,255,255,0.08)" : "#f1f5f9"};
+      border-color:${dark ? "rgba(255,255,255,0.18)" : "#cbd5e1"};
+    }
 
     /* ── MAIN ── */
     .mn{flex:1;overflow-y:auto;padding:32px 36px 60px;position:relative;z-index:1;}
@@ -686,25 +785,88 @@ export default function Dashboard() {
       border:1px solid ${T.accent}22;cursor:pointer;transition:all 0.25s;}
     .banner-male:hover{transform:translateY(-2px);}
 
-    /* Quick actions */
-    .qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:28px;}
-    .qa-btn{padding:18px 10px 14px;border-radius:18px;border:1px solid ${GB_BORDER};
-      background:${GB};backdrop-filter:blur(40px);
-      cursor:pointer;font-family:${FONT.body};font-size:11px;font-weight:700;
-      color:${T.textSub};text-align:center;position:relative;overflow:hidden;
-      transition:all 0.30s cubic-bezier(0.34,1.56,0.64,1);
-      box-shadow:inset 0 1.5px 0 ${GB_TOP},0 2px 8px rgba(0,0,0,${dark?"0.14":"0.04"});}
-    .qa-btn::before{content:'';position:absolute;inset:0;border-radius:inherit;
-      background:linear-gradient(128deg,rgba(255,255,255,${dark?"0.07":"0.42"}) 0%,transparent 30%);pointer-events:none;}
-    .qa-btn:hover{border-color:var(--qa-color, ${T.accent});color:var(--qa-color, ${T.accent});
-      transform:translateY(-6px) scale(1.03);
-      box-shadow:0 16px 38px var(--qa-glow, ${T.accentGlow}38),inset 0 1.5px 0 rgba(255,255,255,${dark?"0.18":"0.78"});}
-    .qa-ico{font-size:27px;display:block;margin-bottom:10px;
-      transition:transform 0.30s cubic-bezier(0.34,1.56,0.64,1);}
-    .qa-btn:hover .qa-ico{transform:scale(1.20) rotate(-6deg);}
+    /* ── EXECUTIVE QUICK ACCESS COMMAND BAR ── */
+    .qa-bar-head{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:14px;
+    }
+    .qa-tag-title{
+      display:flex;align-items:center;gap:8px;
+    }
+    .qa-title-txt{
+      font-family:${FONT.display};font-size:15px;font-weight:900;
+      color:${dark ? "#f8fafc" : "#0f172a"};letter-spacing:-0.01em;
+    }
+    .qa-title-pill{
+      font-size:10px;font-weight:800;letter-spacing:0.06em;
+      padding:2px 8px;border-radius:99px;
+      background:${dark ? "rgba(59,130,246,0.14)" : "#eff6ff"};
+      color:#2563eb;border:1px solid ${dark ? "rgba(59,130,246,0.25)" : "#bfdbfe"};
+      text-transform:uppercase;
+    }
+    .qa-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+      gap:12px;
+      margin-bottom:28px;
+    }
+    .qa-card{
+      padding:16px 14px;
+      border-radius:18px;
+      border:1.5px solid ${dark ? "rgba(255,255,255,0.10)" : "#e2e8f0"};
+      background:${dark ? "#0f1322" : "#ffffff"};
+      cursor:pointer;
+      font-family:${FONT.body};
+      text-align:left;
+      position:relative;
+      overflow:hidden;
+      box-shadow:${dark ? "0 6px 20px rgba(0,0,0,0.3)" : "0 2px 10px rgba(15,23,42,0.04)"};
+      transition:all 0.22s cubic-bezier(0.2,0,0,1);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:105px;
+    }
+    .qa-card:hover{
+      transform:translateY(-4px);
+      border-color:var(--qa-color, #3b82f6);
+      box-shadow:0 12px 28px var(--qa-glow, rgba(59,130,246,0.25)), 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .qa-ico-row{
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+    }
+    .qa-ico-circle{
+      width:38px;height:38px;border-radius:12px;
+      background:var(--qa-color-soft, rgba(59,130,246,0.12));
+      border:1px solid var(--qa-color-border, rgba(59,130,246,0.25));
+      display:flex;align-items:center;justify-content:center;
+      font-size:19px;
+      transition:transform 0.24s ease;
+    }
+    .qa-card:hover .qa-ico-circle{
+      transform:scale(1.12);
+    }
+    .qa-arrow{
+      font-size:12px;color:${dark ? T.textMuted : "#94a3b8"};
+      transition:transform 0.2s ease, color 0.2s ease;
+    }
+    .qa-card:hover .qa-arrow{
+      transform:translateX(2px);
+      color:var(--qa-color, #3b82f6);
+    }
+    .qa-card-lbl{
+      font-family:${FONT.display};font-size:12.5px;font-weight:800;
+      color:${dark ? "#f8fafc" : "#0f172a"};
+      line-height:1.25;margin-bottom:3px;
+    }
+    .qa-card-desc{
+      font-size:10.5px;color:${dark ? T.textMuted : "#64748b"};
+      line-height:1.3;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
 
-    .qa-customize-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.04)"};color:${T.textSub};cursor:pointer;transition:all 0.22s cubic-bezier(0.22,1,0.36,1);}
-    .qa-customize-btn:hover{border-color:var(--qa-color, ${T.accent});color:var(--qa-color, ${T.accent});background:var(--qa-glow, ${T.accentGlow});transform:scale(1.04);}
+    .qa-customize-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border:1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"};background:${dark?"rgba(255,255,255,0.06)":"#f8fafc"};color:${dark ? T.textSub : "#334155"};cursor:pointer;transition:all 0.22s cubic-bezier(0.22,1,0.36,1);}
+    .qa-customize-btn:hover{border-color:var(--qa-color, ${T.accent});color:var(--qa-color, ${T.accent});background:var(--qa-glow, ${T.accentGlow});transform:scale(1.03);}
 
     /* Pro banner */
     .pro-banner{border-radius:22px;padding:26px 30px;margin-bottom:28px;
@@ -957,84 +1119,115 @@ export default function Dashboard() {
             SIDEBAR — Redesigned
         ══════════════════════════════════════════════ */}
         <aside className="sb">
-          <div className="sb-strip"/>
+          <div className="sb-top-accent" />
 
           <div className="sb-head">
-            <div className="sb-logo" onClick={() => navigate("/dashboard")}>
-              AshFit<span>Verse</span>
+            <div className="sb-brand-wrap" onClick={() => navigate("/dashboard")}>
+              <div className="sb-logo-badge">⚡</div>
+              <div>
+                <div className="sb-brand-title">
+                  AshFit<span>Verse</span>
+                </div>
+              </div>
             </div>
-            <div className="sb-tagline">Premium Fitness OS</div>
+            <span className="sb-edition-pill">PRO OS</span>
           </div>
 
-          <div className="sb-user-card" onClick={() => navigate("/profile")}>
-            <div className="sb-ava">{user.name?.[0]?.toUpperCase()||"A"}</div>
-            <div className="sb-user-info">
-              <div className="sb-name">{user.name||"Athlete"}</div>
-              <div className="sb-goal-tag">
-                {user.goal?.replace(/_/g," ")||"Fitness"}
+          <div className="sb-athlete-card" onClick={() => navigate("/profile")} title="View & Edit Profile">
+            <div className="sb-ava-wrap">
+              {user.avatar ? (
+                <img src={user.avatar} alt="" className="sb-ava-img" />
+              ) : (
+                <div className="sb-ava-fallback">{user.name?.[0]?.toUpperCase() || "A"}</div>
+              )}
+              <div className="sb-online-dot" />
+            </div>
+            <div className="sb-athlete-details">
+              <div className="sb-name-row">
+                <div className="sb-athlete-name">{user.name || "Athlete"}</div>
+              </div>
+              <div className="sb-athlete-handle">
+                @{user.username || (user.name ? user.name.toLowerCase().replace(/\s+/g, "_") : "athlete")}
+              </div>
+              <div className="sb-meta-badges">
+                <span className="sb-goal-badge">{user.goal?.replace(/_/g, " ") || "General"}</span>
+                {isPro && <span className="sb-tier-badge">PRO</span>}
               </div>
             </div>
           </div>
 
           {displayStreak > 0 && (
-            <div className="sb-streak">
-              <span>🔥</span>
-              <span style={{flex:1}}>{displayStreak}d streak</span>
+            <div className="sb-streak-card">
+              <span style={{ fontSize: 16 }}>🔥</span>
+              <span style={{ flex: 1 }}>{displayStreak}d active streak</span>
               <div className="sb-streak-bar">
-                <div className="sb-streak-fill" style={{width:`${Math.min((displayStreak/30)*100,100)}%`}}/>
+                <div className="sb-streak-fill" style={{ width: `${Math.min((displayStreak / 30) * 100, 100)}%` }} />
               </div>
             </div>
           )}
 
-          <div className="sb-sec">Navigate</div>
-          {NAV_MAIN.map(n => (
-            <div key={n.label}
-              className={`sb-ni ${activeNav===n.label?"na":""}`}
-              style={activeNav===n.label&&n.color?{color:n.color,borderColor:`${n.color}22`,background:`${n.color}12`}:{}}
-              onClick={() => { setActiveNav(n.label); if(n.path) navigate(n.path); }}>
-              <span className="sb-ni-ico">{n.icon}</span>
-              <span className="sb-ni-txt">{n.label}</span>
-              {n.badge && <span className="sb-badge">{n.badge}</span>}
+          <div className="sb-nav-section">Core Navigation</div>
+          {NAV_MAIN.map((n) => (
+            <div
+              key={n.label}
+              className={`sb-nav-item ${activeNav === n.label ? "active" : ""}`}
+              style={activeNav === n.label && n.color ? { color: n.color, borderColor: `${n.color}35`, background: `${n.color}15` } : {}}
+              onClick={() => {
+                setActiveNav(n.label);
+                if (n.path) navigate(n.path);
+              }}
+            >
+              <span className="sb-nav-icon">{n.icon}</span>
+              <span className="sb-nav-label">{n.label}</span>
+              {n.badge && <span className="sb-nav-badge">{n.badge}</span>}
             </div>
           ))}
 
-          <div className="sb-div"/>
+          <div className="sb-divider" />
 
-          <div className="sb-sec">Tools</div>
-          {TOOL_SECTIONS.map(sec => (
+          <div className="sb-nav-section">Tools & Tracking</div>
+          {TOOL_SECTIONS.map((sec) => (
             <React.Fragment key={sec.title}>
-              <div className="sb-tool-sec">{sec.title}</div>
-              {sec.items.map(t => (
-                <div key={t.label} className="sb-ti" onClick={() => {
-                  if (t.action === "feedback") {
-                    setShowFeedbackModal(true);
-                  } else if (t.path) {
-                    navigate(t.path);
-                  }
-                }}>
-                  <span className="sb-ti-ico">{t.icon}</span>
-                  <span>{t.label}</span>
+              {sec.items.map((t) => (
+                <div
+                  key={t.label}
+                  className="sb-tool-item"
+                  onClick={() => {
+                    if (t.action === "feedback") {
+                      setShowFeedbackModal(true);
+                    } else if (t.path) {
+                      navigate(t.path);
+                    }
+                  }}
+                >
+                  <span className="sb-tool-icon">{t.icon}</span>
+                  <span style={{ flex: 1 }}>{t.label}</span>
                 </div>
               ))}
             </React.Fragment>
           ))}
 
-          <div className="sb-div"/>
+          <div className="sb-divider" />
 
-          <div className="sb-footer">
-            {!isPro && (
-              <div className="sb-pro-card">
-                <div className="sb-pro-tag">PRO</div>
-                <div className="sb-pro-title">Unlock Full Access</div>
-                <div className="sb-pro-desc">AI workout & diet plans, deep analytics, and premium health tools.</div>
-                <button className="sb-pro-cta" onClick={() => navigate("/pricing")}>
-                  Upgrade · ₹199/mo
-                </button>
-                <div className="sb-pro-note">Cancel anytime</div>
+          {!isPro && (
+            <div className="sb-pro-box">
+              <div className="sb-pro-head">
+                <span className="sb-pro-badge">PRO ACCESS</span>
               </div>
-            )}
+              <div className="sb-pro-title">Unlock Full Potential</div>
+              <div className="sb-pro-sub">Hormone AI, custom workout splits & deep metabolic analytics.</div>
+              <button className="sb-pro-button" onClick={() => navigate("/pricing")}>
+                Upgrade · ₹199/mo
+              </button>
+            </div>
+          )}
 
-            <button className="sb-out" onClick={() => { clearUser(); navigate("/"); }}>
+          <div className="sb-dock">
+            <button className="sb-dock-btn" onClick={() => navigate("/profile")} title="Profile Settings">
+              <span>👤</span>
+              <span>Profile</span>
+            </button>
+            <button className="sb-dock-btn" onClick={() => { clearUser(); navigate("/"); }} title="Sign Out">
               <span>⎋</span>
               <span>Logout</span>
             </button>
@@ -1250,36 +1443,37 @@ export default function Dashboard() {
             </Reveal>
           )}
 
-          {/* Quick Actions */}
+          {/* Quick Access Command Bar */}
           <Reveal delay={0.05}>
-            <div className="sdiv" style={{ alignItems: "center" }}>
-              <div className="sdiv-line" />
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div className="sdiv-txt">Quick Actions</div>
-                <button
-                  className="qa-customize-btn"
-                  style={{
-                    "--qa-color": currentQaTheme.color,
-                    "--qa-glow": currentQaTheme.glow,
-                  }}
-                  onClick={() => setShowQAModal(true)}
-                  title="Customize your dashboard shortcuts"
-                >
-                  ⚙️ Customize
-                </button>
+            <div className="qa-bar-head">
+              <div className="qa-tag-title">
+                <span className="qa-title-txt">Quick Access</span>
+                <span className="qa-title-pill">Command Shortcuts</span>
               </div>
-              <div className="sdiv-line" />
+              <button
+                className="qa-customize-btn"
+                style={{
+                  "--qa-color": currentQaTheme.color,
+                  "--qa-glow": currentQaTheme.glow,
+                }}
+                onClick={() => setShowQAModal(true)}
+                title="Customize your dashboard command shortcuts"
+              >
+                ⚙️ Customize Shortcuts
+              </button>
             </div>
             <div className="qa-grid" style={{
               gridTemplateColumns: `repeat(${Math.min(currentActions.length, 6)}, minmax(0, 1fr))`
             }}>
               {currentActions.map((t, i) => (
-                <button
+                <div
                   key={t.id || i}
-                  className="qa-btn"
+                  className="qa-card"
                   style={{
-                    "--qa-color": currentQaTheme.color,
-                    "--qa-glow": currentQaTheme.glow,
+                    "--qa-color": t.color || currentQaTheme.color,
+                    "--qa-glow": `${t.color || currentQaTheme.color}35`,
+                    "--qa-color-soft": `${t.color || currentQaTheme.color}15`,
+                    "--qa-color-border": `${t.color || currentQaTheme.color}30`,
                   }}
                   onClick={() => {
                     if (t.id === "weight-checkin") {
@@ -1291,8 +1485,15 @@ export default function Dashboard() {
                     }
                   }}
                 >
-                  <span className="qa-ico">{t.icon}</span>{t.label}
-                </button>
+                  <div className="qa-ico-row">
+                    <div className="qa-ico-circle">{t.icon}</div>
+                    <span className="qa-arrow">→</span>
+                  </div>
+                  <div>
+                    <div className="qa-card-lbl">{t.label}</div>
+                    <div className="qa-card-desc">{t.desc || "Quick command"}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </Reveal>
@@ -1613,6 +1814,255 @@ export default function Dashboard() {
             </div>
           </Reveal>
 
+          {/* Active Challenges & Daily Habit Check-In */}
+          <Reveal delay={0.16}>
+            <div className="sdiv" style={{ alignItems: "center" }}>
+              <div className="sdiv-line" />
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="sdiv-txt">Active Challenges & Daily Habits 🏆</div>
+                <button
+                  onClick={() => navigate("/community?tab=challenges")}
+                  style={{
+                    background: "transparent",
+                    border: `1px solid ${T.accent}35`,
+                    color: T.accent,
+                    padding: "3px 10px",
+                    borderRadius: 99,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  Browse Quests →
+                </button>
+              </div>
+              <div className="sdiv-line" />
+            </div>
+
+            {activeChallenges.length === 0 ? (
+              <div
+                className="gl"
+                style={{
+                  padding: "24px 28px",
+                  borderRadius: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 16,
+                  cursor: "pointer",
+                  background: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                  border: `1.5px solid ${dark ? "rgba(255,255,255,0.08)" : "#cbd5e1"}`,
+                }}
+                onClick={() => navigate("/community?tab=challenges")}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 16, maxWidth: 640 }}>
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 16,
+                      background: "rgba(59,130,246,0.12)",
+                      border: "1.5px solid rgba(59,130,246,0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 26,
+                      flexShrink: 0,
+                    }}
+                  >
+                    🏆
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>
+                      Start a 30-Day Fitness & Habit Quest
+                    </div>
+                    <div style={{ fontSize: 12.5, color: T.textSub, lineHeight: 1.5 }}>
+                      Enroll in Push-up Protocol, 10K Steps, Dawn Discipline, or Core Stability. Build unbroken daily streaks and track your progress here.
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 12,
+                    border: "none",
+                    background: `linear-gradient(135deg, ${T.accent}, ${T.purple})`,
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 4px 14px rgba(59,130,246,0.3)",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/community?tab=challenges");
+                  }}
+                >
+                  Explore Challenges →
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                  gap: 14,
+                }}
+              >
+                {activeChallenges.map((c) => {
+                  const isCheckedInToday = c.lastCheckIn === todayStr();
+                  const accentColor = c.color || "#2563eb";
+                  return (
+                    <div
+                      key={c.id}
+                      className="gl"
+                      style={{
+                        padding: "20px 22px",
+                        borderRadius: 20,
+                        borderLeft: `5px solid ${accentColor}`,
+                        background: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                        borderTop: `1.5px solid ${dark ? "rgba(255,255,255,0.08)" : "#cbd5e1"}`,
+                        borderRight: `1.5px solid ${dark ? "rgba(255,255,255,0.08)" : "#cbd5e1"}`,
+                        borderBottom: `1.5px solid ${dark ? "rgba(255,255,255,0.08)" : "#cbd5e1"}`,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        gap: 14,
+                        boxShadow: dark
+                          ? "0 4px 20px rgba(0,0,0,0.25)"
+                          : "0 4px 16px -2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)",
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 22 }}>{c.emoji || "⚡"}</span>
+                            <div>
+                              <div style={{ fontFamily: FONT.display, fontSize: 15.5, fontWeight: 800, color: T.text }}>
+                                {c.title}
+                              </div>
+                              <div style={{ fontSize: 11.5, color: T.textSub, marginTop: 2 }}>
+                                Day {c.daysCompleted || 1} of {c.totalDays} · {c.daysLeft}d left
+                              </div>
+                            </div>
+                          </div>
+
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 800,
+                              padding: "3px 9px",
+                              borderRadius: 8,
+                              background: "rgba(249,115,22,0.12)",
+                              color: "#f97316",
+                              border: "1px solid rgba(249,115,22,0.25)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            🔥 {c.streak || c.daysCompleted || 1}d streak
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div style={{ marginTop: 10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: T.textMuted, marginBottom: 5 }}>
+                            <span>Progress</span>
+                            <span style={{ fontWeight: 700, color: accentColor }}>{c.pct || 0}%</span>
+                          </div>
+                          <div style={{ height: 7, borderRadius: 99, background: dark ? "rgba(255,255,255,0.08)" : "#e2e8f0", overflow: "hidden" }}>
+                            <div
+                              style={{
+                                height: "100%",
+                                width: `${c.pct || 0}%`,
+                                background: `linear-gradient(90deg, ${accentColor}, #10b981)`,
+                                borderRadius: 99,
+                                transition: "width 0.4s ease",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Check-in Button */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        {isCheckedInToday ? (
+                          <div
+                            style={{
+                              flex: 1,
+                              padding: "10px 14px",
+                              borderRadius: 12,
+                              background: "rgba(16,185,129,0.12)",
+                              border: "1.5px solid rgba(16,185,129,0.35)",
+                              color: "#10b981",
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              textAlign: "center",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <span>✓</span>
+                            <span>Done Today (Streak Active)</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleDashboardCheckIn(c.id)}
+                            style={{
+                              flex: 1,
+                              padding: "10px 14px",
+                              borderRadius: 12,
+                              border: "none",
+                              background: `linear-gradient(135deg, ${accentColor}, #059669)`,
+                              color: "#fff",
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 6,
+                              boxShadow: "0 3px 12px rgba(16,185,129,0.28)",
+                              transition: "transform 0.16s ease",
+                            }}
+                          >
+                            <span>⚡</span>
+                            <span>Check In for Today (Day {(c.daysCompleted || 0) + 1})</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => navigate(`/community?tab=challenges&challenge=${c.id}`)}
+                          title="View quest roadmap & details in Community"
+                          style={{
+                            padding: "10px 12px",
+                            borderRadius: 12,
+                            border: `1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"}`,
+                            background: dark ? "rgba(255,255,255,0.05)" : "#f8fafc",
+                            color: dark ? T.textSub : "#475569",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Details →
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Reveal>
+
           {/* Diet */}
           <Reveal delay={0.17}>
             <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Today's Nutrition</div><div className="sdiv-line"/></div>
@@ -1638,24 +2088,46 @@ export default function Dashboard() {
             </div>
           </Reveal>
 
-          {/* Checklist */}
-          <Reveal delay={0.19}>
-            <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Getting Started</div><div className="sdiv-line"/></div>
-            <div className="cl gl">
-              <div className="cl-hd">
-                <div className="cl-t">Setup Checklist 📋</div>
-                <div className="cl-pct">{checkDone}/{checklist.length} · {checkPct}%</div>
-              </div>
-              <div className="cl-prog"><div className="cl-fill" style={{width:`${checkPct}%`}}/></div>
-              {checklist.map((c,i) => (
-                <div key={i} className="cl-item" onClick={() => !c.done && navigate(c.path)}>
-                  <div className={`cl-ico ${c.done?"dn":"td"}`}>{c.done?"✓":"○"}</div>
-                  <span className={`cl-txt ${c.done?"dn":"td"}`}>{c.text}</span>
-                  {!c.done && <span style={{fontSize:11,color:T.textMuted}}>→</span>}
+          {/* Checklist — Auto-dismisses when all setups complete */}
+          {!isChecklistComplete && !checklistDismissed && (
+            <Reveal delay={0.19}>
+              <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-txt">Getting Started</div><div className="sdiv-line"/></div>
+              <div className="cl gl">
+                <div className="cl-hd">
+                  <div className="cl-t">Setup Checklist 📋</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div className="cl-pct">{checkDone}/{checklist.length} · {checkPct}%</div>
+                    <button
+                      onClick={() => {
+                        setChecklistDismissed(true);
+                        try { localStorage.setItem("ashfitverse_checklist_dismissed", "true"); } catch {}
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: dark ? T.textMuted : "#64748b",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        padding: "2px 6px",
+                      }}
+                      title="Dismiss checklist"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </Reveal>
+                <div className="cl-prog"><div className="cl-fill" style={{width:`${checkPct}%`}}/></div>
+                {checklist.map((c,i) => (
+                  <div key={i} className="cl-item" onClick={() => !c.done && navigate(c.path)}>
+                    <div className={`cl-ico ${c.done?"dn":"td"}`}>{c.done?"✓":"○"}</div>
+                    <span className={`cl-txt ${c.done?"dn":"td"}`}>{c.text}</span>
+                    {!c.done && <span style={{fontSize:11,color:T.textMuted}}>→</span>}
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          )}
 
           {/* Achievements */}
           <Reveal delay={0.21}>
@@ -1774,6 +2246,32 @@ export default function Dashboard() {
         dark={dark}
         T={T}
       />
+
+      {challengeToast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 28,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: dark ? "#0f172a" : "#ffffff",
+            border: "1.5px solid #10b981",
+            color: "#10b981",
+            padding: "12px 24px",
+            borderRadius: 99,
+            fontWeight: 800,
+            fontSize: 13.5,
+            zIndex: 99999,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>⚡</span>
+          <span>Checked in for {challengeToast.title} (Day {challengeToast.day})!</span>
+        </div>
+      )}
     </>
   );
 }

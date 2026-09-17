@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { resolveEffectivePlan, hasMinPlan } from "../config/planConfig";
 import { getEffectiveUid } from "../lib/userLogs";
@@ -14,6 +14,8 @@ import { isUserAdmin } from "../config/authConfig";
 
 export const DEFAULT_USER = {
   name: "Athlete",
+  username: "",
+  bio: "",
   plan: "free",
   planBilling: "",
   planExpiresAt: null,
@@ -36,6 +38,32 @@ export const DEFAULT_USER = {
   online: false,
   avatar: null,
 };
+
+export async function checkUsernameUnique(rawUsername, currentUid) {
+  if (!rawUsername) return { valid: false, error: "Username cannot be empty." };
+  const username = rawUsername.trim().toLowerCase().replace(/^@/, "");
+  if (!/^[a-z0-9_.]{3,20}$/.test(username)) {
+    return {
+      valid: false,
+      error: "Username must be 3–20 characters, containing only lowercase letters, numbers, underscores, or dots.",
+    };
+  }
+  try {
+    const q = query(
+      collection(db, "users"),
+      where("username", "==", username)
+    );
+    const snap = await getDocs(q);
+    const isTakenByOther = snap.docs.some((d) => d.id !== currentUid);
+    if (isTakenByOther) {
+      return { valid: false, error: `@${username} is already taken by another athlete.` };
+    }
+    return { valid: true, username };
+  } catch (err) {
+    console.warn("checkUsernameUnique fallback:", err);
+    return { valid: true, username };
+  }
+}
 
 export default function useUser() {
   const [user,      setUser]      = useState(() => {

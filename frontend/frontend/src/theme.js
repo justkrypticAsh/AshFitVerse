@@ -259,7 +259,7 @@ export const generateCSS = (T, dark) => {
   @keyframes orbMFloat3 { 0%,100%{transform:translate(0,0);} 50%{transform:translate(35px,-30px);} }
 
   /* ── Unified Liquid Glass Cards ── */
-  .glass-card, .gc, .composer, .post-card, .mem-card, .ch-card, .chat-win, .side-card, .stat-card, .glass-panel {
+  .glass-card, .gc, .composer, .chat-win, .stat-card, .glass-panel {
     background: ${GLASS_BG};
     border: 1px solid ${GLASS_BORDER};
     backdrop-filter: blur(40px) saturate(190%) brightness(${dark ? "1.03" : "1.01"});
@@ -274,11 +274,11 @@ export const generateCSS = (T, dark) => {
       0 8px 30px -4px ${T.shadow};
     transition: border-color 0.28s cubic-bezier(0.16,1,0.3,1), box-shadow 0.28s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1);
   }
-  .glass-card::before, .gc::before, .composer::before, .post-card::before, .mem-card::before, .ch-card::before, .stat-card::before {
+  .glass-card::before, .gc::before, .composer::before, .stat-card::before {
     content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
     background: linear-gradient(135deg, rgba(255,255,255,${dark ? "0.05" : "0.55"}) 0%, transparent 45%);
   }
-  .glass-card:hover, .gc:hover, .post-card:hover, .mem-card:hover, .ch-card:hover, .stat-card:hover {
+  .glass-card:hover, .gc:hover, .stat-card:hover {
     border-color: ${GLASS_BORDER_H};
     box-shadow:
       inset 0 1px 0 ${dark ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.95)"},

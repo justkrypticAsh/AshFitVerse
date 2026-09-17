@@ -11,8 +11,17 @@ import {
   where, serverTimestamp, getDoc, setDoc,
 } from "firebase/firestore";
 import AthleteProfileModal from "../../components/AthleteProfileModal";
+import EditAthleteModal from "../../components/EditAthleteModal";
 import PostCreatorModal from "../../components/PostCreatorModal";
 import ArticleReaderModal from "../../components/ArticleReaderModal";
+import {
+  DEFAULT_CHALLENGES,
+  CHALLENGE_STORAGE_KEY,
+  loadChallengeProgress,
+  saveChallengeProgress,
+  todayStr,
+  getChallengeStats,
+} from "../../config/challengesConfig";
 import {
   Activity, Users, Trophy, MessageSquare, Plus, Search,
   Image as ImageIcon, Video, BookOpen, Award, Moon, Sun,
@@ -153,34 +162,6 @@ const REPORT_REASONS = [
   "Other",
 ];
 
-const DEFAULT_CHALLENGES = [
-  { id: "default_1", title: "30-Day Push-up Protocol", color: "#2563eb", totalDays: 30, daysLeft: 22, description: "Execute minimum 50 push-ups daily for 30 consecutive days to build chest and triceps endurance.", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_2", title: "10K Steps Daily Volume", color: "#059669", totalDays: 14, daysLeft: 9, description: "Hit 10,000 steps daily. Elevate NEAT and active metabolic recovery across 2 full weeks.", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_3", title: "Clean Nutrition Sprint", color: "#7c3aed", totalDays: 7, daysLeft: 4, description: "Zero processed sugar or refined foods for 7 days. Focus strictly on whole, balanced nutrition.", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_4", title: "21-Day Core Stability Challenge", color: "#ea580c", totalDays: 21, daysLeft: 18, description: "Maintain static plank holds for at least 60 seconds every day to build midline rigidity.", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_5", title: "Dawn Discipline — 7 Days", color: "#d97706", totalDays: 7, daysLeft: 5, description: "Wake up at 5:00 AM and complete a 30-minute structured morning mobility and focus routine.", createdBy: "AshFitVerse", official: true, participants: [] },
-  { id: "default_6", title: "Optimal Hydration — 3L Daily", color: "#0284c7", totalDays: 14, daysLeft: 11, description: "Target at least 3 liters of water intake daily to sustain performance, focus, and digestion.", createdBy: "AshFitVerse", official: true, participants: [] },
-];
-
-const CHALLENGE_STORAGE_KEY = "ashfitverse_challenge_progress";
-function loadChallengeProgress() {
-  try { return JSON.parse(localStorage.getItem(CHALLENGE_STORAGE_KEY) || "{}"); } catch { return {}; }
-}
-function saveChallengeProgress(data) {
-  localStorage.setItem(CHALLENGE_STORAGE_KEY, JSON.stringify(data));
-}
-function todayStr() { return new Date().toISOString().slice(0, 10); }
-
-function getChallengeStats(c, progress) {
-  const prog = progress[c.id];
-  if (!prog?.joinedAt) return { joined: false, daysCompleted: 0, daysLeft: c.daysLeft, pct: 0 };
-  const elapsed = Math.floor((Date.now() - new Date(prog.joinedAt)) / 86400000);
-  const daysCompleted = prog.daysCompleted || Math.min(elapsed + 1, c.totalDays);
-  const daysLeft = Math.max(0, c.totalDays - daysCompleted);
-  const pct = Math.min(100, Math.round((daysCompleted / Math.max(c.totalDays, 1)) * 100));
-  return { joined: true, daysCompleted, daysLeft, pct, lastCheckIn: prog.lastCheckIn };
-}
-
 // ── Avatar Component ────────────────────────────────────────────────────────
 function Avatar({ src, name, size = 40, onClick }) {
   return src ? (
@@ -227,8 +208,9 @@ export default function Community() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { dark, toggleTheme, T } = useTheme();
-  const { user } = useUser();
+  const { user, updateUser } = useUser();
   const postColors = useMemo(() => getPostColors(dark), [dark]);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
 
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "feed");
@@ -320,6 +302,11 @@ export default function Community() {
     const vis = () => (document.visibilityState === "hidden" ? off() : go());
     document.addEventListener("visibilitychange", vis);
     window.addEventListener("beforeunload", off);
+
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["feed", "explore", "challenges", "messages", "leaderboard", "members"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
 
     const targetDm = searchParams.get("dm");
     if (targetDm) {
@@ -605,6 +592,7 @@ export default function Community() {
       await addDoc(collection(db, "posts", postId, "comments"), {
         uid: myUid,
         name: user.name || "Athlete",
+        username: user.username || (user.name ? user.name.toLowerCase().replace(/\s+/g, "_") : "athlete"),
         avatar: user.avatar || null,
         text,
         createdAt: serverTimestamp(),
@@ -645,26 +633,58 @@ export default function Community() {
   };
 
   const checkInChallenge = (challenge) => {
-    if (!challenge?.activated) return;
+    if (!challenge) return;
     const today = todayStr();
-    if (challenge.id.startsWith("default_")) {
+    if (challenge.id?.startsWith("default_")) {
       const prog = challengeProgress[challenge.id] || {};
       if (prog.lastCheckIn === today) return;
       const daysCompleted = Math.min((prog.daysCompleted || 0) + 1, challenge.totalDays);
-      const updated = { ...challengeProgress, [challenge.id]: { ...prog, daysCompleted, lastCheckIn: today } };
+      const updated = {
+        ...challengeProgress,
+        [challenge.id]: {
+          ...prog,
+          joinedAt: prog.joinedAt || today,
+          daysCompleted,
+          lastCheckIn: today,
+          streak: (prog.streak || daysCompleted - 1) + 1,
+        },
+      };
       setChallengeProgress(updated);
       saveChallengeProgress(updated);
       const daysLeft = Math.max(0, challenge.totalDays - daysCompleted);
+      const progressPct = Math.round((daysCompleted / Math.max(challenge.totalDays, 1)) * 100);
       setActiveChallengeDetail((p) =>
-        p ? { ...p, daysCompleted, daysLeft, progressPct: Math.round((daysCompleted / Math.max(challenge.totalDays, 1)) * 100), lastCheckIn: today } : p
+        p ? { ...p, daysCompleted, daysLeft, progressPct, lastCheckIn: today } : p
       );
     }
   };
 
   const openChallengeDetail = (challenge) => {
-    if (!challenge.activated) return;
-    setActiveChallengeDetail(challenge);
+    if (!challenge) return;
+    const stats = getChallengeStats(challenge, challengeProgress);
+    setActiveChallengeDetail({
+      ...challenge,
+      ...stats,
+      activated: stats.joined,
+      joined: stats.joined,
+      daysCompleted: stats.daysCompleted || 1,
+      daysLeft: stats.daysLeft,
+      progressPct: stats.pct,
+      lastCheckIn: stats.lastCheckIn,
+    });
   };
+
+  // Handle ?challenge= url parameter (e.g. from Dashboard or direct links)
+  useEffect(() => {
+    const chParam = searchParams.get("challenge");
+    if (chParam) {
+      setActiveTab("challenges");
+      const found = challenges.find((c) => c.id === chParam) || DEFAULT_CHALLENGES.find((c) => c.id === chParam);
+      if (found) {
+        openChallengeDetail(found);
+      }
+    }
+  }, [searchParams, challenges, challengeProgress]);
 
   const handleShare = (post) => {
     if (navigator.clipboard) {
@@ -864,11 +884,9 @@ export default function Community() {
 
   const onlineCount = members.filter((m) => m.online).length;
 
-  const BG = dark ? "#08090d" : "#f8fafc";
-  const GB = dark
-    ? "linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.025) 100%)"
-    : "#ffffff";
-  const GB_BORDER = dark ? "rgba(255,255,255,0.09)" : "#e2e8f0";
+  const BG = dark ? "#08090d" : "#f1f5f9";
+  const GB = dark ? "#0f1322" : "#ffffff";
+  const GB_BORDER = dark ? "rgba(255,255,255,0.12)" : "#cbd5e1";
   const GB_TOP = dark ? "rgba(255,255,255,0.18)" : "#ffffff";
 
   // ── CSS ──────────────────────────────────────────────────────────────────
@@ -890,14 +908,13 @@ export default function Community() {
     @keyframes oF1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,-35px);}}
     @keyframes oF2{0%,100%{transform:translate(0,0);}50%{transform:translate(-50px,-40px);}}
 
-    /* Foundation Liquid Glass */
-    .gl{background:${GB};border:1px solid ${GB_BORDER};
-      backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      -webkit-backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", inset 0 -1px 0 rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.22), 0 16px 44px rgba(0,0,0,0.32)":"0 2px 4px rgba(0,0,0,0.02), 0 8px 20px -2px rgba(15,23,42,0.06), 0 0 0 1px #e2e8f0"};
+    /* Foundation Card Container */
+    .gl{background:${GB};border:1.5px solid ${GB_BORDER};
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+      box-shadow:${dark?"0 10px 32px rgba(0,0,0,0.36)":"0 4px 16px -2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)"};
       position:relative;overflow:hidden;}
-    .gl::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
-      background:${dark?"linear-gradient(128deg,rgba(255,255,255,0.09) 0%,transparent 28%), linear-gradient(308deg,rgba(255,255,255,0.04) 0%,transparent 22%)":"none"};}
+    .gl::before{display:none;}
     .gl>*{position:relative;z-index:1;}
 
     /* ── UNIFIED EXECUTIVE HEADER (Centered Symmetric Grid) ── */
@@ -1038,26 +1055,26 @@ export default function Community() {
     .cm-composer-trigger{
       background:${dark?GB:"#ffffff"};border:1px solid ${dark?GB_BORDER:"#e2e8f0"};border-radius:22px;
       padding:20px 24px;margin-bottom:24px;
-      backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      -webkit-backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 8px 30px rgba(0,0,0,0.25)":"0 2px 4px rgba(0,0,0,0.02), 0 8px 20px -2px rgba(15,23,42,0.06), 0 0 0 1px #e2e8f0"};
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+      box-shadow:${dark?"0 8px 30px rgba(0,0,0,0.30)":"0 4px 16px -2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)"};
       transition:border-color 0.22s ease,box-shadow 0.22s ease;
       position:relative;overflow:hidden;
     }
     .cm-composer-trigger:hover{
       border-color:${dark?T.accent+"60":"rgba(59,130,246,0.45)"};
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 12px 38px rgba(59,130,246,0.15)":"0 4px 12px rgba(15,23,42,0.05), 0 12px 28px -4px rgba(37,99,235,0.10)"};
+      box-shadow:${dark?"0 12px 38px rgba(59,130,246,0.15)":"0 4px 12px rgba(15,23,42,0.05), 0 12px 28px -4px rgba(37,99,235,0.10)"};
     }
     .cm-ct-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
     .cm-ct-input-box{
-      flex:1;height:46px;border-radius:13px;border:1px solid ${dark?GB_BORDER:"#e2e8f0"};
+      flex:1;height:46px;border-radius:13px;border:1.5px solid ${dark?GB_BORDER:"#cbd5e1"};
       background:${dark?"rgba(255,255,255,0.04)":"#f8fafc"};
       color:${dark?T.textMuted:"#64748b"};padding:0 16px;font-size:13px;display:flex;
       align-items:center;cursor:pointer;transition:all 0.18s ease;
     }
     .cm-ct-input-box:hover{
       background:${dark?"rgba(255,255,255,0.07)":"#f1f5f9"};
-      border-color:${T.accent}45;color:${dark?T.text:"#0f172a"};
+      border-color:${T.accent}65;color:${dark?T.text:"#0f172a"};
     }
     .cm-ct-publish-btn{
       padding:11px 18px;border-radius:13px;border:none;
@@ -1073,7 +1090,7 @@ export default function Community() {
       border-top:1px solid ${dark?GB_BORDER:"#f1f5f9"};flex-wrap:wrap;
     }
     .cm-ct-shortcut-btn{
-      padding:7px 14px;border-radius:10px;border:1px solid ${dark?GB_BORDER:"#e2e8f0"};
+      padding:7px 14px;border-radius:10px;border:1.5px solid ${dark?GB_BORDER:"#cbd5e1"};
       background:${dark?"rgba(255,255,255,0.03)":"#f8fafc"};
       color:${dark?T.textSub:"#334155"};font-size:12px;font-weight:700;cursor:pointer;
       display:inline-flex;align-items:center;gap:7px;transition:all 0.18s ease;
@@ -1085,11 +1102,11 @@ export default function Community() {
 
     /* ── HIGH VISIBILITY FEED FILTER BAR ── */
     .feed-filter-bar{
-      background:${dark?GB:"#ffffff"};border:1px solid ${dark?GB_BORDER:"#e2e8f0"};border-radius:20px;
+      background:${dark?GB:"#ffffff"};border:1.5px solid ${dark?GB_BORDER:"#cbd5e1"};border-radius:20px;
       padding:16px 22px;margin-bottom:22px;
-      backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      -webkit-backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 6px 24px rgba(0,0,0,0.20)":"0 2px 4px rgba(0,0,0,0.02), 0 8px 20px -2px rgba(15,23,42,0.06), 0 0 0 1px #e2e8f0"};
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+      box-shadow:${dark?"0 6px 24px rgba(0,0,0,0.25)":"0 4px 16px -2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)"};
     }
     .ff-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
     .ff-title{
@@ -1102,7 +1119,7 @@ export default function Community() {
       scrollbar-width:thin;
     }
     .ff-chip{
-      padding:8px 15px;border-radius:11px;border:1px solid ${dark?GB_BORDER:"#e2e8f0"};
+      padding:8px 15px;border-radius:11px;border:1.5px solid ${dark?GB_BORDER:"#cbd5e1"};
       background:${dark?"rgba(255,255,255,0.04)":"#f8fafc"};
       color:${dark?T.textSub:"#334155"};font-size:12px;font-weight:700;cursor:pointer;
       display:inline-flex;align-items:center;gap:7px;white-space:nowrap;transition:all 0.18s ease;
@@ -1118,24 +1135,36 @@ export default function Community() {
     }
     .ff-chip-count{
       font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;
-      background:${dark?"rgba(255,255,255,0.14)":"#e2e8f0"};color:${dark?T.textSub:"#475569"};
+      background:${dark?"rgba(255,255,255,0.14)":"#cbd5e1"};color:${dark?T.textSub:"#334155"};
     }
     .ff-chip.active .ff-chip-count{background:rgba(255,255,255,0.25);color:#fff;}
 
-    /* ── POST CARD ── */
+    /* ── POST CARD (Zero haze, solid background, razor-sharp borders) ── */
     .post-card{
-      background:${dark?GB:"#ffffff"};border:1px solid ${dark?GB_BORDER:"#e2e8f0"};border-radius:24px;
+      background:${dark ? "#0f1322" : "#ffffff"} !important;
+      border:1.5px solid ${dark ? "rgba(255,255,255,0.14)" : "#cbd5e1"} !important;
+      border-radius:24px;
       padding:24px 26px;margin-bottom:22px;
-      backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      -webkit-backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 10px 32px rgba(0,0,0,0.26)":"0 2px 4px rgba(0,0,0,0.02), 0 8px 24px -2px rgba(15,23,42,0.06), 0 0 0 1px #e2e8f0"};
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+      filter:none !important;
+      opacity:1 !important;
+      box-shadow:${dark ? "0 10px 32px rgba(0,0,0,0.36)" : "0 4px 18px -2px rgba(15,23,42,0.07), 0 1px 3px rgba(15,23,42,0.04)"};
       transition:transform 0.22s ease,border-color 0.22s ease,box-shadow 0.22s ease;
       animation:fadeUp 0.35s ease both;position:relative;overflow:hidden;
     }
+    .post-card::before, .post-card::after,
+    .ch-card::before, .ch-card::after,
+    .mem-card::before, .mem-card::after,
+    .side-card::before, .side-card::after,
+    .cm-composer-trigger::before, .cm-composer-trigger::after{
+      display:none !important;
+      content:none !important;
+    }
     .post-card:hover{
-      border-color:${dark?"rgba(255,255,255,0.18)":"rgba(59,130,246,0.40)"};
+      border-color:${dark ? "rgba(255,255,255,0.26)" : "#94a3b8"} !important;
       transform:translateY(-2px);
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 14px 40px rgba(0,0,0,0.35)":"0 14px 34px -4px rgba(15,23,42,0.11), 0 4px 12px rgba(15,23,42,0.04)"};
+      box-shadow:${dark ? "0 14px 40px rgba(0,0,0,0.45)" : "0 12px 28px -4px rgba(15,23,42,0.12), 0 2px 6px rgba(15,23,42,0.06)"};
     }
 
     .post-hd{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
@@ -1146,17 +1175,17 @@ export default function Community() {
     .post-time{font-size:11.5px;color:${dark?T.textMuted:"#64748b"};margin-top:2px;font-weight:500;}
     .post-tag{padding:4px 10px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:0.04em;}
 
-    .post-body{font-size:14.5px;line-height:1.65;color:${dark?T.text:"#1e293b"};margin-bottom:16px;white-space:pre-line;font-weight:450;}
+    .post-body{font-size:14.5px;line-height:1.65;color:${dark?T.text:"#0f172a"};margin-bottom:16px;white-space:pre-line;font-weight:500;}
 
     /* Media views */
-    .post-media-container{border-radius:18px;overflow:hidden;margin-bottom:16px;background:rgba(0,0,0,0.25);position:relative;border:1px solid ${GB_BORDER};}
+    .post-media-container{border-radius:18px;overflow:hidden;margin-bottom:16px;background:rgba(0,0,0,0.25);position:relative;border:1.5px solid ${GB_BORDER};}
     .post-media-img{width:100%;max-height:480px;object-fit:cover;display:block;cursor:pointer;}
     .post-media-video{width:100%;max-height:480px;display:block;}
 
     /* Blog Card View */
     .blog-embed-card{
-      border-radius:20px;overflow:hidden;border:1px solid ${GB_BORDER};
-      background:${dark?"rgba(255,255,255,0.04)":"#f8fafc"};
+      border-radius:20px;overflow:hidden;border:1.5px solid ${GB_BORDER};
+      background:${dark?"#131829":"#f8fafc"};
       margin-bottom:16px;cursor:pointer;transition:border-color 0.2s ease,box-shadow 0.2s ease;
     }
     .blog-embed-card:hover{border-color:${T.accent}60;box-shadow:0 8px 26px rgba(59,130,246,0.12);}
@@ -1170,22 +1199,22 @@ export default function Community() {
     .post-acts{display:flex;align-items:center;gap:10px;padding-top:16px;border-top:1px solid ${dark?GB_BORDER:"#f1f5f9"};flex-wrap:wrap;}
     .act-btn{
       display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:11px;
-      border:1px solid ${dark?"transparent":"#e2e8f0"};
-      background:${dark?"transparent":"#f8fafc"};
-      color:${dark?T.textSub:"#475569"};
+      border:1.5px solid ${dark?"rgba(255,255,255,0.08)":"#e2e8f0"};
+      background:${dark?"rgba(255,255,255,0.04)":"#f8fafc"};
+      color:${dark?T.textSub:"#334155"};
       font-size:12.5px;font-weight:700;cursor:pointer;transition:all 0.16s ease;
       font-family:${FONT.body};
       box-shadow:${dark?"none":"0 1px 2px rgba(15,23,42,0.03)"};
     }
     .act-btn:hover{
-      background:${dark?"rgba(255,255,255,0.06)":"#f1f5f9"};
+      background:${dark?"rgba(255,255,255,0.08)":"#f1f5f9"};
       color:${dark?T.text:"#0f172a"};
-      border-color:${dark?"transparent":"#cbd5e1"};
+      border-color:${dark?"rgba(255,255,255,0.20)":"#cbd5e1"};
     }
     .act-btn.liked{
       color:#e11d48;
-      background:${dark?"rgba(225,29,72,0.12)":"#fff1f2"};
-      border-color:${dark?"rgba(225,29,72,0.30)":"#fecdd3"};
+      background:${dark?"rgba(225,29,72,0.14)":"#fff1f2"};
+      border-color:${dark?"rgba(225,29,72,0.35)":"#fecdd3"};
       box-shadow:0 2px 8px rgba(225,29,72,0.15);
     }
 
@@ -1241,28 +1270,28 @@ export default function Community() {
     /* Members Grid */
     .mem-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:16px;}
     .mem-card{
-      background:${dark?GB:"#ffffff"};border:1px solid ${dark?GB_BORDER:"#e2e8f0"};border-radius:22px;
+      background:${dark?GB:"#ffffff"};border:1.5px solid ${dark?GB_BORDER:"#cbd5e1"};border-radius:22px;
       padding:22px;
-      backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      -webkit-backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
       transition:all 0.22s ease;
       cursor:pointer;
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 8px 28px rgba(0,0,0,0.20)":"0 2px 4px rgba(0,0,0,0.02), 0 8px 20px -2px rgba(15,23,42,0.06), 0 0 0 1px #e2e8f0"};
+      box-shadow:${dark?"0 8px 28px rgba(0,0,0,0.28)":"0 4px 16px -2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)"};
     }
-    .mem-card:hover{border-color:${T.accent}55;transform:translateY(-2px);box-shadow:${dark?"0 12px 34px rgba(59,130,246,0.15)":"0 12px 30px -4px rgba(37,99,235,0.12), 0 0 0 1px #cbd5e1"};}
+    .mem-card:hover{border-color:${T.accent}65;transform:translateY(-2px);box-shadow:${dark?"0 12px 34px rgba(59,130,246,0.18)":"0 12px 28px -4px rgba(37,99,235,0.12), 0 0 0 1px #94a3b8"};}
 
     /* Challenges Cards */
     .ch-card{
-      background:${dark?GB:"#ffffff"};border:1px solid ${dark?GB_BORDER:"#e2e8f0"};border-radius:22px;
+      background:${dark?GB:"#ffffff"};border:1.5px solid ${dark?GB_BORDER:"#cbd5e1"};border-radius:22px;
       padding:22px;margin-bottom:16px;
-      backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      -webkit-backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
       transition:all 0.22s ease;
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 8px 28px rgba(0,0,0,0.20)":"0 2px 4px rgba(0,0,0,0.02), 0 8px 20px -2px rgba(15,23,42,0.06), 0 0 0 1px #e2e8f0"};
+      box-shadow:${dark?"0 8px 28px rgba(0,0,0,0.28)":"0 4px 16px -2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)"};
     }
     .ch-card:hover{
-      border-color:${T.accent}55;transform:translateY(-2px);
-      box-shadow:${dark?"0 12px 34px rgba(0,0,0,0.32)":"0 12px 28px -4px rgba(15,23,42,0.10), 0 0 0 1px #cbd5e1"};
+      border-color:${T.accent}65;transform:translateY(-2px);
+      box-shadow:${dark?"0 12px 34px rgba(0,0,0,0.38)":"0 12px 26px -4px rgba(15,23,42,0.10), 0 0 0 1px #94a3b8"};
     }
     .ch-hd{display:flex;align-items:flex-start;gap:14px;}
     .ch-title{font-family:${FONT.display};font-size:17.5px;font-weight:800;color:${dark?T.text:"#0f172a"};margin-bottom:4px;}
@@ -1272,11 +1301,11 @@ export default function Community() {
 
     /* Sidebar Cards */
     .side-card{
-      background:${dark?GB:"#ffffff"};border:1px solid ${dark?GB_BORDER:"#e2e8f0"};border-radius:22px;
+      background:${dark?GB:"#ffffff"};border:1.5px solid ${dark?GB_BORDER:"#cbd5e1"};border-radius:22px;
       padding:22px;margin-bottom:18px;
-      backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      -webkit-backdrop-filter:${dark?"blur(50px) saturate(190%)":"none"};
-      box-shadow:${dark?"inset 0 1.5px 0 "+GB_TOP+", 0 8px 30px rgba(0,0,0,0.22)":"0 2px 4px rgba(0,0,0,0.02), 0 8px 20px -2px rgba(15,23,42,0.06), 0 0 0 1px #e2e8f0"};
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+      box-shadow:${dark?"0 8px 28px rgba(0,0,0,0.28)":"0 4px 16px -2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)"};
     }
     .side-title{font-family:${FONT.display};font-size:12px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;color:${dark?T.textMuted:"#64748b"};margin-bottom:16px;}
     .online-user-item{
@@ -1374,11 +1403,38 @@ export default function Community() {
                 <span>Create Post</span>
               </button>
 
+              <button
+                className="cm-edit-profile-btn"
+                onClick={() => setShowEditProfileModal(true)}
+                title="Edit Profile Picture & @handle"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "7px 12px",
+                  borderRadius: 10,
+                  fontSize: 12,
+                  fontWeight: 650,
+                  cursor: "pointer",
+                  border: dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.1)",
+                  background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                  color: dark ? "#f8fafc" : "#1e293b",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <span>⚙️</span>
+                <span className="cm-ep-label">Edit Profile</span>
+              </button>
+
               <button className="cm-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
                 {dark ? <Moon size={15} /> : <Sun size={15} />}
               </button>
 
-              <div style={{ cursor: "pointer" }} onClick={() => setSelectedAthlete(user)} title="View profile">
+              <div
+                style={{ cursor: "pointer", position: "relative" }}
+                onClick={() => setSelectedAthlete(user)}
+                title="View your athlete profile"
+              >
                 <Avatar src={user?.avatar} name={user?.name} size={36} />
               </div>
             </div>
@@ -1554,15 +1610,25 @@ export default function Community() {
                             src={p.avatar}
                             name={p.name}
                             size={44}
-                            onClick={() => setSelectedAthlete({ uid: p.uid, name: p.name, avatar: p.avatar })}
+                            onClick={() => setSelectedAthlete({ uid: p.uid, name: p.name, avatar: p.avatar, username: p.username })}
                           />
                           <div className="post-meta">
                             <div className="post-name-row">
                               <span
                                 className="post-name"
-                                onClick={() => setSelectedAthlete({ uid: p.uid, name: p.name, avatar: p.avatar })}
+                                onClick={() => setSelectedAthlete({ uid: p.uid, name: p.name, avatar: p.avatar, username: p.username })}
                               >
                                 {p.name || "Athlete"}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: 650,
+                                  color: dark ? "rgba(148, 163, 184, 0.85)" : "#64748b",
+                                  letterSpacing: "-0.01em",
+                                }}
+                              >
+                                @{p.username || (p.name ? p.name.toLowerCase().replace(/\s+/g, "_") : "athlete")}
                               </span>
                               {p.readTime && (
                                 <span style={{ fontSize: 11, color: T.textMuted }}>
@@ -1722,8 +1788,13 @@ export default function Community() {
                                 <div key={c.id} className="com-row">
                                   <Avatar src={c.avatar} name={c.name} size={30} />
                                   <div className="com-bubble">
-                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                      <span className="com-name">{c.name || "Athlete"}</span>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                        <span className="com-name" style={{ marginBottom: 0 }}>{c.name || "Athlete"}</span>
+                                        <span style={{ fontSize: 11, color: dark ? "rgba(148, 163, 184, 0.8)" : "#64748b", fontWeight: 600 }}>
+                                          @{c.username || (c.name ? c.name.toLowerCase().replace(/\s+/g, "_") : "athlete")}
+                                        </span>
+                                      </div>
                                       <span style={{ fontSize: 10.5, color: T.textMuted }}>
                                         {timeAgo(c.createdAt)}
                                       </span>
@@ -1803,8 +1874,13 @@ export default function Community() {
                             )}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 800, color: T.text }}>
-                              {m.name || "Athlete"}
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                              <span style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 800, color: T.text }}>
+                                {m.name || "Athlete"}
+                              </span>
+                              <span style={{ fontSize: 12, color: dark ? T.textMuted : "#64748b", fontWeight: 650 }}>
+                                @{m.username || (m.name ? m.name.toLowerCase().replace(/\s+/g, "_") : "athlete")}
+                              </span>
                             </div>
                             <div style={{ fontSize: 12, color: T.textSub, textTransform: "capitalize" }}>
                               {m.goal ? m.goal.replace(/_/g, " ") : "Fitness"}
@@ -1900,9 +1976,10 @@ export default function Community() {
                     <div
                       key={c.id}
                       className="ch-card"
-                      onClick={() => c.activated && openChallengeDetail(c)}
+                      title={(c.activated || c.joined) ? "Click to view quest roadmap & daily check-in" : "Click to join this quest"}
+                      onClick={() => (c.activated || c.joined) ? openChallengeDetail(c) : joinChallenge(c)}
                       style={{
-                        cursor: c.activated ? "pointer" : "default",
+                        cursor: "pointer",
                         borderLeft: `5px solid ${chColor}`,
                       }}
                     >
@@ -1952,7 +2029,7 @@ export default function Community() {
                                 border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"}`,
                               }}
                             >
-                              {c.activated
+                              {(c.activated || c.joined)
                                 ? `Day ${c.daysCompleted || 1} of ${c.totalDays} · ${c.daysLeft}d left`
                                 : `${c.totalDays} Days Quest`}
                             </span>
@@ -1965,7 +2042,7 @@ export default function Community() {
                             padding: "9px 18px",
                             borderRadius: 12,
                             border: "none",
-                            background: c.activated
+                            background: (c.activated || c.joined)
                               ? "linear-gradient(135deg, #10b981, #059669)"
                               : `linear-gradient(135deg, ${chColor}, ${chColor}dd)`,
                             color: "#fff",
@@ -1973,17 +2050,18 @@ export default function Community() {
                             fontWeight: 800,
                             cursor: "pointer",
                             whiteSpace: "nowrap",
-                            boxShadow: c.activated
+                            boxShadow: (c.activated || c.joined)
                               ? "0 4px 14px rgba(16,185,129,0.35)"
                               : `0 4px 14px ${chColor}45`,
                             transition: "transform 0.16s ease, box-shadow 0.16s ease",
                           }}
+                          title={(c.activated || c.joined) ? "Click to view quest progress & milestones" : "Join this quest"}
                           onClick={(e) => {
                             e.stopPropagation();
-                            c.activated ? openChallengeDetail(c) : joinChallenge(c);
+                            (c.activated || c.joined) ? openChallengeDetail(c) : joinChallenge(c);
                           }}
                         >
-                          {c.activated ? "✓ Enrolled" : "Join Quest →"}
+                          {(c.activated || c.joined) ? "✓ Enrolled" : "Join Quest →"}
                         </button>
                       </div>
 
@@ -2365,6 +2443,26 @@ export default function Community() {
           onClose={() => setSelectedAthlete(null)}
           onMessage={(targetUid) => openDMWithUser(targetUid)}
           onViewFullProfile={(targetUid) => navigate(`/user/${targetUid}`)}
+          currentUid={myUid}
+          onEditProfile={() => {
+            setSelectedAthlete(null);
+            setShowEditProfileModal(true);
+          }}
+          dark={dark}
+          T={T}
+        />
+
+        {/* 2b. Edit Athlete Profile & Handle Modal */}
+        <EditAthleteModal
+          isOpen={showEditProfileModal}
+          user={user}
+          currentUid={myUid}
+          onClose={() => setShowEditProfileModal(false)}
+          onSave={async (updatedData) => {
+            if (updateUser) {
+              await updateUser(updatedData);
+            }
+          }}
           dark={dark}
           T={T}
         />
@@ -2582,6 +2680,305 @@ export default function Community() {
                 >
                   {addingChallenge ? "Creating…" : "Launch Quest →"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. Challenge Detail & Progress Tracker Modal */}
+        {activeChallengeDetail && (
+          <div
+            onClick={() => setActiveChallengeDetail(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.78)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              padding: 16,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: dark ? "#0d111d" : "#ffffff",
+                border: `1.5px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"}`,
+                borderRadius: 24,
+                padding: "26px 24px",
+                width: "100%",
+                maxWidth: 520,
+                maxHeight: "90vh",
+                overflowY: "auto",
+                color: dark ? T.text : "#0f172a",
+                boxShadow: dark
+                  ? "0 24px 60px rgba(0,0,0,0.6)"
+                  : "0 20px 48px -8px rgba(15,23,42,0.16)",
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 16,
+                      background: dark ? `${activeChallengeDetail.color}25` : `${activeChallengeDetail.color}15`,
+                      border: `1.5px solid ${activeChallengeDetail.color}${dark ? "40" : "30"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Trophy size={26} color={activeChallengeDetail.color} strokeWidth={2.4} />
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <h3 style={{ margin: 0, fontFamily: FONT.display, fontSize: 18, fontWeight: 900, color: dark ? T.text : "#0f172a" }}>
+                        {activeChallengeDetail.title}
+                      </h3>
+                      {activeChallengeDetail.official && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            background: `${activeChallengeDetail.color}20`,
+                            color: activeChallengeDetail.color,
+                            border: `1px solid ${activeChallengeDetail.color}40`,
+                          }}
+                        >
+                          ✦ OFFICIAL
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 12.5, color: dark ? T.textSub : "#64748b", marginTop: 4 }}>
+                      Quest Duration: {activeChallengeDetail.totalDays} Days · {activeChallengeDetail.createdBy || "AshFitVerse"}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveChallengeDetail(null)}
+                  style={{
+                    background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                    border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#cbd5e1"}`,
+                    borderRadius: 10,
+                    width: 32,
+                    height: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: dark ? T.textSub : "#475569",
+                    fontSize: 20,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Description */}
+              {activeChallengeDetail.description && (
+                <div
+                  style={{
+                    background: dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                    border: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
+                    borderRadius: 14,
+                    padding: "14px 16px",
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    color: dark ? T.textSub : "#334155",
+                    marginBottom: 18,
+                  }}
+                >
+                  {activeChallengeDetail.description}
+                </div>
+              )}
+
+              {/* Stats Row */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 10,
+                  marginBottom: 18,
+                }}
+              >
+                <div
+                  style={{
+                    background: dark ? "rgba(255,255,255,0.04)" : "#f8fafc",
+                    border: `1px solid ${dark ? "rgba(255,255,255,0.07)" : "#e2e8f0"}`,
+                    borderRadius: 14,
+                    padding: "12px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, color: dark ? T.textMuted : "#64748b", textTransform: "uppercase" }}>Completed</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: activeChallengeDetail.color, marginTop: 4 }}>
+                    Day {activeChallengeDetail.daysCompleted || 1}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: dark ? T.textSub : "#64748b" }}>of {activeChallengeDetail.totalDays} Days</div>
+                </div>
+
+                <div
+                  style={{
+                    background: dark ? "rgba(255,255,255,0.04)" : "#f8fafc",
+                    border: `1px solid ${dark ? "rgba(255,255,255,0.07)" : "#e2e8f0"}`,
+                    borderRadius: 14,
+                    padding: "12px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, color: dark ? T.textMuted : "#64748b", textTransform: "uppercase" }}>Remaining</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#f97316", marginTop: 4 }}>
+                    {activeChallengeDetail.daysLeft}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: dark ? T.textSub : "#64748b" }}>Days Left</div>
+                </div>
+
+                <div
+                  style={{
+                    background: dark ? "rgba(255,255,255,0.04)" : "#f8fafc",
+                    border: `1px solid ${dark ? "rgba(255,255,255,0.07)" : "#e2e8f0"}`,
+                    borderRadius: 14,
+                    padding: "12px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, color: dark ? T.textMuted : "#64748b", textTransform: "uppercase" }}>Progress</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#10b981", marginTop: 4 }}>
+                    {activeChallengeDetail.progressPct || 0}%
+                  </div>
+                  <div style={{ fontSize: 10.5, color: dark ? T.textSub : "#64748b" }}>Completed</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 8, color: dark ? T.textSub : "#475569" }}>
+                  <span>Overall Quest Completion</span>
+                  <span>{activeChallengeDetail.progressPct || 0}%</span>
+                </div>
+                <div style={{ height: 10, borderRadius: 99, background: dark ? "rgba(255,255,255,0.08)" : "#e2e8f0", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${activeChallengeDetail.progressPct || 0}%`,
+                      background: `linear-gradient(90deg, ${activeChallengeDetail.color}, #10b981)`,
+                      borderRadius: 99,
+                      transition: "width 0.4s ease",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Daily Check-In Action Button */}
+              <div style={{ marginBottom: 22 }}>
+                {activeChallengeDetail.lastCheckIn === todayStr() ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      padding: "14px",
+                      borderRadius: 14,
+                      background: "rgba(16,185,129,0.12)",
+                      border: "1.5px solid rgba(16,185,129,0.35)",
+                      color: "#10b981",
+                      fontWeight: 800,
+                      fontSize: 13.5,
+                      textAlign: "center",
+                    }}
+                  >
+                    <span>✓</span>
+                    <span>You're checked in for today! Streak maintained 🔥</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => checkInChallenge(activeChallengeDetail)}
+                    style={{
+                      width: "100%",
+                      padding: "14px",
+                      borderRadius: 14,
+                      border: "none",
+                      background: `linear-gradient(135deg, ${activeChallengeDetail.color}, #059669)`,
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      boxShadow: "0 4px 18px rgba(16,185,129,0.35)",
+                      transition: "transform 0.16s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span>⚡</span>
+                    <span>Check In for Today (Day {(activeChallengeDetail.daysCompleted || 0) + 1})</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Habit Milestone Grid */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", color: dark ? T.textSub : "#64748b", marginBottom: 10, letterSpacing: "0.04em" }}>
+                  Daily Milestone Tracker (1 – {activeChallengeDetail.totalDays} Days)
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(36px, 1fr))",
+                    gap: 7,
+                  }}
+                >
+                  {Array.from({ length: activeChallengeDetail.totalDays }).map((_, idx) => {
+                    const dayNum = idx + 1;
+                    const isCompleted = dayNum <= (activeChallengeDetail.daysCompleted || 0);
+                    const isToday = dayNum === (activeChallengeDetail.daysCompleted || 0) + 1 && activeChallengeDetail.lastCheckIn !== todayStr();
+                    return (
+                      <div
+                        key={dayNum}
+                        title={`Day ${dayNum}${isCompleted ? " (Completed)" : isToday ? " (Today)" : ""}`}
+                        style={{
+                          height: 36,
+                          borderRadius: 9,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 11.5,
+                          fontWeight: 800,
+                          background: isCompleted
+                            ? "#10b981"
+                            : isToday
+                            ? dark ? "rgba(59,130,246,0.2)" : "#eff6ff"
+                            : dark ? "rgba(255,255,255,0.04)" : "#f1f5f9",
+                          color: isCompleted
+                            ? "#ffffff"
+                            : isToday
+                            ? activeChallengeDetail.color
+                            : dark ? T.textMuted : "#94a3b8",
+                          border: isCompleted
+                            ? "none"
+                            : isToday
+                            ? `1.5px solid ${activeChallengeDetail.color}`
+                            : `1px solid ${dark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
+                        }}
+                      >
+                        {isCompleted ? "✓" : dayNum}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

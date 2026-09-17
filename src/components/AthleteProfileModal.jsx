@@ -10,6 +10,8 @@ export default function AthleteProfileModal({
   onClose,
   onMessage,
   onViewFullProfile,
+  onEditProfile,
+  currentUid,
   dark = true,
   T = {},
 }) {
@@ -208,30 +210,55 @@ export default function AthleteProfileModal({
               )}
             </div>
 
-            {/* Direct Message Action Button */}
-            <button
-              onClick={() => {
-                onClose();
-                if (onMessage) onMessage(uid);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 20px",
-                borderRadius: 14,
-                border: "none",
-                background: `linear-gradient(135deg, ${T.accent || "#0a84ff"}, ${T.purple || "#bf5af2"})`,
-                color: "#fff",
-                fontSize: 13.5,
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 6px 20px rgba(10,132,255,0.3)",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <span>💬</span> Send Message
-            </button>
+            {/* Action Button: Edit Profile if self, else Direct Message */}
+            {Boolean(currentUid && uid === currentUid) || athlete.isCurrentUser || athlete.isMe ? (
+              <button
+                onClick={() => {
+                  onClose();
+                  if (onEditProfile) onEditProfile();
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 18px",
+                  borderRadius: 14,
+                  border: `1.5px solid ${dark ? "rgba(255,255,255,0.18)" : "#cbd5e1"}`,
+                  background: dark ? "rgba(255,255,255,0.08)" : "#f1f5f9",
+                  color: dark ? "#fff" : "#0f172a",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  transition: "all 0.16s ease",
+                }}
+              >
+                <span>⚙️</span> Edit Profile & Handle
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  onClose();
+                  if (onMessage) onMessage(uid);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 20px",
+                  borderRadius: 14,
+                  border: "none",
+                  background: `linear-gradient(135deg, ${T.accent || "#0a84ff"}, ${T.purple || "#bf5af2"})`,
+                  color: "#fff",
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 6px 20px rgba(10,132,255,0.3)",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <span>💬</span> Send Message
+              </button>
+            )}
           </div>
 
           {/* Name & Title */}
