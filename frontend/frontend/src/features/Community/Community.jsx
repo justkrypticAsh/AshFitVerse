@@ -1319,9 +1319,124 @@ export default function Community() {
     .online-user-item:last-child{border-bottom:none;}
     .online-user-item:hover .oui-name{color:${T.accent};}
 
+    /* Mobile Floating Bottom Navigation Dock — Hidden on Desktop */
+    .mobile-bottom-dock{display:none !important;}
+
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-    @media(max-width:960px){.cm-body{grid-template-columns:1fr;}.cm-body>div:last-child{order:-1;}}
-    @media(max-width:600px){.cm-hd{padding:12px 16px;}.sub-nav{padding:10px 16px;}.cm-body{padding:16px 14px;}}
+    
+    @media(max-width:900px){
+      .cm-header-inner{
+        display:flex !important;
+        flex-direction:column !important;
+        align-items:stretch !important;
+        gap:10px !important;
+        padding:12px 14px !important;
+      }
+      .cm-header-left{
+        width:100% !important;
+        justify-content:space-between !important;
+      }
+      .cm-nav-tabs{
+        width:100% !important;
+        overflow-x:auto !important;
+        -webkit-overflow-scrolling:touch !important;
+        scrollbar-width:none !important;
+        justify-content:flex-start !important;
+        padding:4px 6px !important;
+      }
+      .cm-nav-tabs::-webkit-scrollbar{display:none;}
+      .cm-nav-pill{
+        flex-shrink:0 !important;
+        padding:7px 12px !important;
+        font-size:12px !important;
+      }
+      .cm-header-right{
+        width:100% !important;
+        justify-content:space-between !important;
+        gap:8px !important;
+        flex-wrap:wrap !important;
+      }
+      .cm-search-wrapper{
+        flex:1 1 120px !important;
+        min-width:100px !important;
+      }
+      .cm-search-input{
+        width:100% !important;
+      }
+      .cm-search-input:focus{
+        width:100% !important;
+      }
+      .cm-create-post-btn{
+        padding:8px 12px !important;
+        font-size:11.5px !important;
+      }
+      .cm-edit-profile-btn{
+        padding:6px 10px !important;
+        font-size:11.5px !important;
+      }
+      .cm-ep-label{
+        display:none !important;
+      }
+      .cm-body{
+        grid-template-columns:1fr !important;
+        padding:16px 14px 110px !important;
+        gap:18px !important;
+      }
+      .cm-body>div:first-child{
+        order:1 !important;
+      }
+      .cm-body>div:last-child{
+        order:2 !important;
+        margin-top:8px !important;
+      }
+      .cm-hero{
+        padding:20px 16px !important;
+        border-radius:18px !important;
+      }
+      .cm-hero-title{
+        font-size:22px !important;
+      }
+      .post-card{
+        padding:18px 16px !important;
+        border-radius:18px !important;
+      }
+      
+      /* Mobile Floating Bottom Navigation Dock */
+      .mobile-bottom-dock{
+        position:fixed;bottom:14px;left:14px;right:14px;z-index:998;
+        display:flex !important;align-items:center;justify-content:space-around;
+        padding:7px 8px;border-radius:22px;
+        background:${dark ? "rgba(15,17,26,0.92)" : "rgba(255,255,255,0.94)"};
+        backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+        border:1px solid ${dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"};
+        box-shadow:0 12px 36px rgba(0,0,0,${dark ? "0.55" : "0.15"});
+      }
+      .mbd-item{
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:3px;background:none;border:none;cursor:pointer;
+        padding:6px 12px;border-radius:14px;transition:all 0.18s ease;
+        color:${dark ? "#94a3b8" : "#64748b"};
+        font-family:${FONT.body};
+      }
+      .mbd-item.active{
+        color:${T.accent};
+        background:${dark ? "rgba(79,142,247,0.16)" : "rgba(79,142,247,0.10)"};
+      }
+      .mbd-icon{font-size:18px;line-height:1;}
+      .mbd-lbl{font-size:10px;font-weight:750;letter-spacing:0.01em;}
+    }
+
+    @media(max-width:480px){
+      .cm-header-right{
+        gap:6px !important;
+      }
+      .cm-create-post-btn span{
+        display:none !important;
+      }
+      .cm-create-post-btn{
+        padding:8px !important;
+      }
+    }
   `;
 
   return (
@@ -2987,6 +3102,50 @@ export default function Community() {
             </div>
           </div>
         )}
+
+        {/* Mobile Floating Bottom Navigation Dock */}
+        <div className="mobile-bottom-dock">
+          <button
+            className="mbd-item"
+            onClick={() => navigate("/dashboard")}
+            aria-label="Dashboard"
+          >
+            <span className="mbd-icon">🏠</span>
+            <span className="mbd-lbl">Home</span>
+          </button>
+          <button
+            className="mbd-item active"
+            onClick={() => { setActiveTab("feed"); setSearchParams({ tab: "feed" }); }}
+            aria-label="Community"
+          >
+            <span className="mbd-icon">👥</span>
+            <span className="mbd-lbl">Community</span>
+          </button>
+          <button
+            className="mbd-item"
+            onClick={() => navigate("/workout-logger")}
+            aria-label="Workouts"
+          >
+            <span className="mbd-icon">🏋️</span>
+            <span className="mbd-lbl">Workouts</span>
+          </button>
+          <button
+            className="mbd-item"
+            onClick={() => navigate("/diet-logger")}
+            aria-label="Diet"
+          >
+            <span className="mbd-icon">🥗</span>
+            <span className="mbd-lbl">Diet</span>
+          </button>
+          <button
+            className="mbd-item"
+            onClick={() => setSelectedAthlete(user)}
+            aria-label="Profile"
+          >
+            <span className="mbd-icon">👤</span>
+            <span className="mbd-lbl">Profile</span>
+          </button>
+        </div>
       </div>
     </>
   );

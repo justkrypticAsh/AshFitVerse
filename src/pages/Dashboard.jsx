@@ -1088,8 +1088,78 @@ export default function Dashboard() {
     @keyframes shim{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 
-    @media(max-width:1200px){.sg,.wg,.dg{grid-template-columns:repeat(2,1fr);}.cr1,.cr2{grid-template-columns:1fr;}.qa-grid{grid-template-columns:repeat(3,1fr);}}
-    @media(max-width:768px){.sb{display:none;}.mn{padding:18px 14px 40px;}.sg{grid-template-columns:repeat(2,1fr);}.qa-grid{grid-template-columns:repeat(2,1fr);}.wg,.dg{grid-template-columns:1fr 1fr;}.fv-top{flex-direction:column;gap:14px;}.fv-bottom{flex-direction:column;gap:14px;}}
+    /* Mobile Floating Bottom Navigation Dock — Hidden on Desktop */
+    .mobile-bottom-dock{display:none !important;}
+
+    @media(max-width:1200px){
+      .sg,.wg,.dg{grid-template-columns:repeat(2,1fr);}
+      .cr1,.cr2{grid-template-columns:1fr;}
+      .qa-grid{grid-template-columns:repeat(3,1fr);}
+    }
+
+    @media(max-width:900px){
+      .sb{display:none !important;}
+      .mn{padding:16px 14px 105px !important;}
+      .topbar{
+        flex-direction:column !important;
+        align-items:stretch !important;
+        gap:14px !important;
+        padding:16px 14px !important;
+      }
+      .tb-left{width:100% !important;}
+      .tb-title{font-size:24px !important;}
+      .tb-right{
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        width:100% !important;
+        gap:8px !important;
+        flex-wrap:wrap !important;
+        padding-top:12px !important;
+        border-top:1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} !important;
+      }
+      .streak-pill{font-size:11.5px !important;padding:5px 12px !important;}
+      .tb-feedback-btn{font-size:11.5px !important;padding:6px 11px !important;}
+      .qa-grid{grid-template-columns:repeat(2,1fr) !important;gap:10px !important;}
+      .sg{grid-template-columns:repeat(2,1fr) !important;}
+      .wg,.dg{grid-template-columns:1fr !important;}
+      .fv-top{flex-direction:column;gap:14px;}
+      .fv-bottom{flex-direction:column;gap:14px;}
+
+      /* Mobile Floating Bottom Navigation Dock */
+      .mobile-bottom-dock{
+        position:fixed;bottom:14px;left:14px;right:14px;z-index:998;
+        display:flex !important;align-items:center;justify-content:space-around;
+        padding:7px 8px;border-radius:22px;
+        background:${dark ? "rgba(15,17,26,0.92)" : "rgba(255,255,255,0.94)"};
+        backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+        border:1px solid ${dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"};
+        box-shadow:0 12px 36px rgba(0,0,0,${dark ? "0.55" : "0.15"});
+      }
+      .mbd-item{
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:3px;background:none;border:none;cursor:pointer;
+        padding:6px 12px;border-radius:14px;transition:all 0.18s ease;
+        color:${dark ? "#94a3b8" : "#64748b"};
+        font-family:${FONT.body};
+      }
+      .mbd-item.active{
+        color:${T.accent};
+        background:${dark ? "rgba(79,142,247,0.16)" : "rgba(79,142,247,0.10)"};
+      }
+      .mbd-icon{font-size:18px;line-height:1;}
+      .mbd-lbl{font-size:10px;font-weight:750;letter-spacing:0.01em;}
+    }
+
+    @media(max-width:480px){
+      .mn{padding:14px 10px 100px !important;}
+      .tb-title{font-size:22px !important;}
+      .qa-grid{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+      .qa-card{padding:12px !important;}
+      .qa-card-sub{display:none !important;}
+      .sg{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+      .sg-card{padding:12px !important;}
+    }
   `;
 
   const CT = ({ active, payload, label }) => {
@@ -2341,6 +2411,50 @@ export default function Dashboard() {
           <span>Checked in for {challengeToast.title} (Day {challengeToast.day})!</span>
         </div>
       )}
+      {/* Mobile Floating Bottom Navigation Dock */}
+      <div className="mobile-bottom-dock">
+        <button
+          className="mbd-item active"
+          onClick={() => { setActiveNav("Dashboard"); navigate("/dashboard"); }}
+          aria-label="Dashboard"
+        >
+          <span className="mbd-icon">🏠</span>
+          <span className="mbd-lbl">Home</span>
+        </button>
+        <button
+          className="mbd-item"
+          onClick={() => navigate("/community")}
+          aria-label="Community"
+        >
+          <span className="mbd-icon">👥</span>
+          <span className="mbd-lbl">Community</span>
+        </button>
+        <button
+          className="mbd-item"
+          onClick={() => navigate("/workout-logger")}
+          aria-label="Workouts"
+        >
+          <span className="mbd-icon">🏋️</span>
+          <span className="mbd-lbl">Workouts</span>
+        </button>
+        <button
+          className="mbd-item"
+          onClick={() => navigate("/diet-logger")}
+          aria-label="Diet"
+        >
+          <span className="mbd-icon">🥗</span>
+          <span className="mbd-lbl">Diet</span>
+        </button>
+        <button
+          className="mbd-item"
+          onClick={() => setShowProfile(true)}
+          aria-label="Profile"
+        >
+          <span className="mbd-icon">👤</span>
+          <span className="mbd-lbl">Profile</span>
+        </button>
+      </div>
+
       <StreakModal
         isOpen={showStreakModal}
         onClose={() => setShowStreakModal(false)}

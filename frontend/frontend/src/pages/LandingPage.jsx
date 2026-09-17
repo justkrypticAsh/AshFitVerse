@@ -602,6 +602,18 @@ export default function LandingPage() {
       .gs{grid-template-columns:1fr;}
       .ctabtns{flex-direction:column;width:100%;max-width:300px;}
     }
+
+    @media(max-width:640px){
+      .nav{left:8px;right:8px;top:10px;padding:8px 14px;}
+      .nr{gap:8px;}
+      .nl{display:none;}
+      .nbtn{padding:8px 14px;font-size:11px;}
+      .hero-h1{font-size:clamp(38px,11vw,64px);line-height:1.0;}
+      .hero-sub-container{padding-left:14px;margin-top:20px;}
+      .hero-scroll{left:20px;bottom:24px;}
+      .fhdr{padding:50px 20px 28px;}
+      .footer{flex-direction:column;gap:14px;align-items:flex-start;padding:24px 20px;}
+    }
   `;
 
   const [navScrolled, setNavScrolled] = useState(false);
