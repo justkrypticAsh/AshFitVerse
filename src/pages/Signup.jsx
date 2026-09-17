@@ -323,11 +323,20 @@ export default function Signup() {
     .sptxt{font-size:13px;font-weight:600;color:rgba(255,255,255,0.78);font-family:${FONT.body};}
 
     @media(max-width:900px){
-      .scard{grid-template-columns:1fr;height:auto;}
-      .sip{height:320px;}
-      .sfp{padding:32px 24px;}
-      .sttl{font-size:50px;}
-      .sihl h2{font-size:58px;}
+      .sr { padding: 16px 14px; min-height: 100vh; }
+      .scard {
+        grid-template-columns: 1fr;
+        height: auto;
+        max-width: 480px;
+        border-radius: 26px;
+      }
+      .sip { display: none; }
+      .sfp { padding: 30px 22px; }
+      .sttl { font-size: 42px; margin-bottom: 8px; }
+      .ssubt { font-size: 13px; margin-bottom: 24px; }
+      .supbtn { height: 50px; font-size: 14px; }
+      .sbtn-google { height: 50px; font-size: 13.5px; }
+      .sinp { height: 48px; font-size: 13.5px; }
     }
   `;
 

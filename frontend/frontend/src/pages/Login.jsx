@@ -601,11 +601,20 @@ export default function Login() {
 
     /* Responsive */
     @media (max-width: 900px) {
-      .lcard { grid-template-columns: 1fr; height: auto; }
-      .lip   { height: 320px; }
-      .lfp   { padding: 32px 28px; }
-      .fttl  { font-size: 52px; }
-      .lhl h2 { font-size: 58px; }
+      .lr { padding: 16px 14px; min-height: 100vh; }
+      .lcard {
+        grid-template-columns: 1fr;
+        height: auto;
+        max-width: 480px;
+        border-radius: 26px;
+      }
+      .lip { display: none; }
+      .lfp { padding: 30px 22px; }
+      .fttl { font-size: 42px; margin-bottom: 8px; }
+      .fsub { font-size: 13px; margin-bottom: 24px; }
+      .sinbtn { height: 50px; font-size: 14px; }
+      .sbtn-google { height: 50px; font-size: 13.5px; }
+      .linp { height: 48px; font-size: 13.5px; }
     }
   `;
 
