@@ -133,20 +133,57 @@ export default function useUserLogs(uid) {
     });
   }, [workouts, week]);
 
-  const workoutDates = useMemo(
-    () =>
-      workouts
-        .map((w) => {
-          if (!w) return null;
-          if (typeof w.date === "string") return w.date.slice(0, 10);
-          if (w.date) return todayKey(w.date);
-          if (w.createdAt) return todayKey(w.createdAt);
-          return null;
-        })
-        .filter(Boolean),
-    [workouts]
-  );
-  const streak = useMemo(() => computeStreak(workoutDates), [workoutDates]);
+  const activeDates = useMemo(() => {
+    const dates = new Set();
+    const extractDate = (item) => {
+      if (!item) return null;
+      if (typeof item.date === "string") return item.date.slice(0, 10);
+      if (item.date) return todayKey(item.date);
+      if (item.createdAt) return todayKey(item.createdAt);
+      if (item.id && typeof item.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.id)) return item.id;
+      return null;
+    };
+
+    workouts.forEach((w) => {
+      const d = extractDate(w);
+      if (d) dates.add(d);
+    });
+
+    meals.forEach((m) => {
+      const d = extractDate(m);
+      if (d) dates.add(d);
+    });
+
+    checkins.forEach((c) => {
+      const d = extractDate(c);
+      if (d) dates.add(d);
+    });
+
+    weights.forEach((w) => {
+      const d = extractDate(w);
+      if (d) dates.add(d);
+    });
+
+    try {
+      const rawCP = typeof localStorage !== "undefined" ? localStorage.getItem("ashfitverse_challenge_progress") : null;
+      if (rawCP) {
+        const cp = JSON.parse(rawCP);
+        Object.values(cp).forEach((p) => {
+          if (p?.lastCheckIn) dates.add(p.lastCheckIn);
+          if (Array.isArray(p?.history)) {
+            p.history.forEach((h) => {
+              if (h?.date) dates.add(h.date);
+            });
+          }
+        });
+      }
+    } catch {}
+
+    return Array.from(dates);
+  }, [workouts, meals, checkins, weights]);
+
+  const streak = useMemo(() => computeStreak(activeDates), [activeDates]);
+  const isTodayActive = useMemo(() => activeDates.includes(today), [activeDates, today]);
 
   const mealGroups = useMemo(() => {
     const colors = {
@@ -186,5 +223,7 @@ export default function useUserLogs(uid) {
     calData,
     volumeHistory,
     streak,
+    activeDates,
+    isTodayActive,
   };
 }

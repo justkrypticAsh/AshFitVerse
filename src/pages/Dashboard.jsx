@@ -9,12 +9,13 @@ import useTheme from "../hooks/usetheme";
 import useUser  from "../hooks/useUser";
 import useUserLogs from "../hooks/useUserLogs";
 import useAppNotifications from "../hooks/useAppNotifications";
-import { todayKey } from "../lib/userLogs";
+import { todayKey, recordDailyActivity } from "../lib/userLogs";
 import { generateCSS, FONT } from "../theme";
 import QuickActionsModal from "../components/QuickActionsModal";
 import WeightLogModal from "../components/WeightLogModal";
 import FeedbackModal from "../components/FeedbackModal";
 import WorkoutDetailModal from "../components/WorkoutDetailModal";
+import StreakModal from "../components/StreakModal";
 import { getDefaultQuickActions, QA_THEMES, sanitizeActionsForUser } from "../config/quickActionsCatalog";
 import {
   DEFAULT_CHALLENGES,
@@ -125,7 +126,7 @@ export default function Dashboard() {
   const navigate  = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
   const { user, authUid, clearUser, loading, isMale, isFemale, bmi, calorieTarget, getCycleDay, getPhaseName, isPro, isAdmin, updateUser } = useUser();
-  const { ready: logsReady, weeklyWeight, calData, todayCalories, todayBurned, todayNetCalories, todayMacros, mealGroups, streak: liveStreak, workouts, weights, todayWorkouts } = useUserLogs(authUid);
+  const { ready: logsReady, weeklyWeight, calData, todayCalories, todayBurned, todayNetCalories, todayMacros, mealGroups, streak: liveStreak, activeDates = [], isTodayActive = false, workouts, weights, todayWorkouts, meals } = useUserLogs(authUid);
   const { items: notifications, unread: unreadNotifications, markRead, markAllRead, requestPermission } = useAppNotifications(authUid);
 
   const [mounted,     setMounted]     = useState(false);
@@ -135,10 +136,11 @@ export default function Dashboard() {
   const [showQAModal, setShowQAModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showStreakModal, setShowStreakModal] = useState(false);
   const [selectedWorkoutLog, setSelectedWorkoutLog] = useState(null);
   const displayStreak = Math.max(Number(liveStreak) || 0, Number(user?.streak) || 0);
 
-  // Keep user profile streak synchronized with live computed streak from workouts
+  // Keep user profile streak synchronized with live computed streak from activities
   useEffect(() => {
     if (liveStreak > 0 && liveStreak !== user?.streak && updateUser) {
       updateUser({ streak: liveStreak, lastWorkoutAt: todayKey() });
@@ -224,6 +226,7 @@ export default function Dashboard() {
     };
     setChallengeProgress(updated);
     saveChallengeProgress(updated);
+    recordDailyActivity(authUid, "challenge_checkin", { challengeId, challengeTitle: c.title });
     setChallengeToast({ title: c.title, day: daysCompleted });
     setTimeout(() => setChallengeToast(null), 3500);
   };
@@ -481,19 +484,27 @@ export default function Dashboard() {
 
     /* Streak widget */
     .sb-streak-card{
-      margin:8px 12px 0;padding:9px 12px;border-radius:13px;
-      background:${dark ? "rgba(249,115,22,0.08)" : "#fff7ed"};
-      border:1px solid ${dark ? "rgba(249,115,22,0.22)" : "#fed7aa"};
+      margin:8px 12px 0;padding:10px 12px;border-radius:14px;
+      background:${dark ? "linear-gradient(135deg, rgba(249,115,22,0.14), rgba(234,88,12,0.06))" : "linear-gradient(135deg, #fff7ed, #ffedd5)"};
+      border:1px solid ${dark ? "rgba(249,115,22,0.30)" : "#fed7aa"};
       display:flex;align-items:center;gap:9px;
       font-size:12px;font-weight:800;color:${T.orange};
+      cursor:pointer;
+      transition:all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow:${dark ? "0 4px 14px rgba(249,115,22,0.12)" : "0 2px 8px rgba(249,115,22,0.08)"};
+    }
+    .sb-streak-card:hover{
+      transform:translateY(-1.5px);
+      border-color:rgba(249,115,22,0.55);
+      box-shadow:${dark ? "0 6px 20px rgba(249,115,22,0.25)" : "0 4px 14px rgba(249,115,22,0.16)"};
     }
     .sb-streak-bar{
-      flex:1;height:5px;background:${dark ? "rgba(249,115,22,0.18)" : "#ffedd5"};
+      flex:1;height:6px;background:${dark ? "rgba(249,115,22,0.18)" : "#fed7aa"};
       border-radius:99px;overflow:hidden;
     }
     .sb-streak-fill{
       height:100%;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:99px;
-      transition:width 1.2s cubic-bezier(0.4,0,0.2,1);
+      transition:width 0.8s cubic-bezier(0.4,0,0.2,1);
     }
 
     /* Section titles */
@@ -647,10 +658,41 @@ export default function Dashboard() {
       padding:2px 9px;border-radius:99px;background:${T.accentSoft};border:1px solid ${T.accent}18;
     }
     .tb-right{display:flex;align-items:center;gap:10px;position:relative;z-index:2;flex-shrink:0;}
-    .streak-pill{display:flex;align-items:center;gap:6px;padding:7px 15px;border-radius:99px;
-      background:${dark?"rgba(251,146,60,0.10)":"rgba(200,130,50,0.09)"};
-      border:1px solid ${dark?"rgba(251,146,60,0.22)":"rgba(200,130,50,0.20)"};
-      font-size:12px;font-weight:800;color:${T.orange};}
+    .streak-pill{
+      display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:99px;
+      background:${dark ? "linear-gradient(135deg, rgba(249,115,22,0.18), rgba(234,88,12,0.08))" : "linear-gradient(135deg, #fff7ed, #ffedd5)"};
+      border:1.5px solid ${dark ? "rgba(249,115,22,0.35)" : "#fed7aa"};
+      font-size:12px;font-weight:800;color:${dark ? "#fb923c" : "#ea580c"};
+      cursor:pointer;
+      transition:all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow:${dark ? "0 0 16px rgba(249,115,22,0.2)" : "0 2px 8px rgba(249,115,22,0.12)"};
+    }
+    .streak-pill:hover{
+      transform:scale(1.04);
+      box-shadow:0 0 22px rgba(249,115,22,0.38);
+      border-color:#f97316;
+    }
+    .streak-pill.zero{
+      background:${dark ? "rgba(255,255,255,0.06)" : "#f1f5f9"};
+      border:1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"};
+      color:${dark ? T.textSub : "#475569"};
+      box-shadow:none;
+    }
+    .streak-flame-icon{
+      display:inline-block;animation:flamePulse 2s infinite ease-in-out;
+    }
+    @keyframes flamePulse{
+      0%,100%{transform:scale(1);}
+      50%{transform:scale(1.2) rotate(4deg);}
+    }
+    .streak-active-dot{
+      width:14px;height:14px;border-radius:50%;background:#10b981;color:#fff;
+      font-size:9px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;
+    }
+    .streak-pending-dot{
+      width:8px;height:8px;border-radius:50%;background:#f97316;display:inline-block;
+      box-shadow:0 0 8px #f97316;animation:flamePulse 1.5s infinite;
+    }
     .tb-btn{width:38px;height:38px;border-radius:12px;border:1px solid ${GB_BORDER};
       background:${dark?"rgba(255,255,255,0.06)":"rgba(255,252,245,0.72)"};
       backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;
@@ -1157,8 +1199,12 @@ export default function Dashboard() {
           </div>
 
           {displayStreak > 0 && (
-            <div className="sb-streak-card">
-              <span style={{ fontSize: 16 }}>🔥</span>
+            <div
+              className="sb-streak-card"
+              onClick={() => setShowStreakModal(true)}
+              title="Click to view streak telemetry and 7-day breakdown"
+            >
+              <span className="streak-flame-icon" style={{ fontSize: 16 }}>🔥</span>
               <span style={{ flex: 1 }}>{displayStreak}d active streak</span>
               <div className="sb-streak-bar">
                 <div className="sb-streak-fill" style={{ width: `${Math.min((displayStreak / 30) * 100, 100)}%` }} />
@@ -1280,7 +1326,30 @@ export default function Dashboard() {
                 <span>Feedback</span>
               </button>
 
-              {displayStreak > 0 && <div className="streak-pill">🔥 {displayStreak}-day streak</div>}
+              {displayStreak > 0 ? (
+                <button
+                  className="streak-pill"
+                  title="Click to view streak breakdown & milestone tracker"
+                  onClick={() => setShowStreakModal(true)}
+                >
+                  <span className="streak-flame-icon">🔥</span>
+                  <span>{displayStreak}-day streak</span>
+                  {isTodayActive ? (
+                    <span className="streak-active-dot" title="Active today!">✓</span>
+                  ) : (
+                    <span className="streak-pending-dot" title="Log activity to maintain today!" />
+                  )}
+                </button>
+              ) : (
+                <button
+                  className="streak-pill zero"
+                  title="Start your streak today!"
+                  onClick={() => setShowStreakModal(true)}
+                >
+                  <span className="streak-flame-icon">⚡</span>
+                  <span>Start Streak</span>
+                </button>
+              )}
               <div className="tb-notif-wrap">
                 <button className="tb-btn" title="Notifications" onClick={() => setShowNotifications(v => !v)}>
                   🔔{unreadNotifications > 0 && <span className="tb-notif-dot"/>}
@@ -2272,6 +2341,17 @@ export default function Dashboard() {
           <span>Checked in for {challengeToast.title} (Day {challengeToast.day})!</span>
         </div>
       )}
+      <StreakModal
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+        streak={displayStreak}
+        activeDates={activeDates}
+        isTodayActive={isTodayActive}
+        totalWorkouts={workouts.length}
+        totalMeals={meals.length}
+        dark={dark}
+        T={T}
+      />
     </>
   );
 }

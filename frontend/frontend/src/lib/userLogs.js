@@ -346,3 +346,17 @@ export async function addAppNotification(uid, { text, type = "info", path = "/da
   } catch {}
   return item;
 }
+
+export async function recordDailyActivity(uid, activityType = "general", detail = {}) {
+  const effectiveUid = getEffectiveUid(uid);
+  const tKey = todayKey();
+  const entry = await upsertDated(effectiveUid, "dailyCheckins", tKey, {
+    date: tKey,
+    activityType,
+    updatedAt: new Date().toISOString(),
+    ...detail,
+  });
+  notifyChange(effectiveUid, "dailyCheckins");
+  return entry;
+}
+

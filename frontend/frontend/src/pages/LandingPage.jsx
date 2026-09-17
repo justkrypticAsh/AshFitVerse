@@ -16,8 +16,8 @@ const CLIPS = [
 
 const HERO_VID = "/videos/hero.mp4";
 const HERO_POSTER = "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1600&q=80";
-const HOLD_MS = 2600;
-const TRANS_MS = 680;
+const HOLD_MS = 3200;
+const TRANS_MS = 650;
 
 const HERO_LINES = [
   "Your Body.\nYour Biology.",
@@ -156,11 +156,17 @@ export default function LandingPage() {
   const videoRefs  = useRef({});
   useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
 
-  // Safe playback for intro videos — only start/reset when clipIdx changes or intro finishes
+  // Safe playback for intro videos & hero video
   useEffect(() => {
     if (iPhase === "done") {
-      Object.values(videoRefs.current).forEach((el) => el && el.pause());
+      Object.values(videoRefs.current).forEach((el) => {
+        if (el) {
+          try { el.pause(); } catch (_) {}
+        }
+      });
       if (heroVidRef.current) {
+        heroVidRef.current.muted = true;
+        heroVidRef.current.defaultMuted = true;
         const p = heroVidRef.current.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
       }
@@ -171,6 +177,8 @@ export default function LandingPage() {
     if (iPhase === "done") return;
     const currentEl = videoRefs.current[clipIdx];
     if (currentEl) {
+      currentEl.muted = true;
+      currentEl.defaultMuted = true;
       if (currentEl.readyState >= 2) {
         try { currentEl.currentTime = 0; } catch (_) {}
       }
@@ -183,17 +191,44 @@ export default function LandingPage() {
         try { el.pause(); } catch (_) {}
       }
     });
+  }, [clipIdx, iPhase]);
+
+  // Global user interaction unblocker for browser autoplay policy
+  useEffect(() => {
+    const handleGesture = () => {
+      if (heroVidRef.current) {
+        heroVidRef.current.muted = true;
+        heroVidRef.current.defaultMuted = true;
+        heroVidRef.current.play().catch(() => {});
+      }
+      const cur = videoRefs.current[clipIdx];
+      if (cur) {
+        cur.muted = true;
+        cur.defaultMuted = true;
+        cur.play().catch(() => {});
+      }
+    };
+    window.addEventListener("pointerdown", handleGesture, { once: true });
+    window.addEventListener("keydown", handleGesture, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", handleGesture);
+      window.removeEventListener("keydown", handleGesture);
+    };
   }, [clipIdx]);
 
-  // Intro sequencer
+  // Intro sequencer with smooth crossfade
   useEffect(() => {
     if (iPhase === "done") return;
     let t;
-    if (iPhase === "in")   t = setTimeout(() => setIPhase("hold"), 260);
+    if (iPhase === "in")   t = setTimeout(() => setIPhase("hold"), 300);
     if (iPhase === "hold") t = setTimeout(() => setIPhase("out"), HOLD_MS);
     if (iPhase === "out")  t = setTimeout(() => {
-      if (clipIdx < CLIPS.length - 1) { setClipIdx((c) => c + 1); setIPhase("in"); }
-      else setIPhase("done");
+      if (clipIdx < CLIPS.length - 1) {
+        setClipIdx((c) => c + 1);
+        setIPhase("in");
+      } else {
+        setIPhase("done");
+      }
     }, TRANS_MS);
     return () => clearTimeout(t);
   }, [iPhase, clipIdx]);
@@ -283,20 +318,18 @@ export default function LandingPage() {
     ::-webkit-scrollbar-thumb{background:${T.accent}66;border-radius:99px;}
 
     .intro{position:fixed;inset:0;z-index:1000;overflow:hidden;background:#050712;}
-    .iv-wrapper{position:absolute;inset:0;width:100%;height:100%;opacity:0;background-size:cover;background-position:center;background-repeat:no-repeat;transition:opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);will-change:opacity;}
-    .iv-wrapper.active{opacity:1;z-index:2;}
-    .iv{width:100%;height:100%;object-fit:cover;display:block;}
-    .io1{position:absolute;inset:0;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,.4) 0%,rgba(0,0,0,.1) 40%,rgba(0,0,0,.75) 100%);}
-    .io2{position:absolute;inset:0;z-index:3;background:linear-gradient(135deg,rgba(0,0,0,.3) 0%,transparent 62%);}
-    .io3{position:absolute;inset:0;z-index:3;mix-blend-mode:soft-light;opacity:.38;background:var(--ac);}
-    .tr-wipe-right{animation:trWipeRight ${TRANS_MS}ms cubic-bezier(.76,0,.18,1) forwards;}
-    @keyframes trWipeRight{0%{clip-path:inset(0 0 0 0);}100%{clip-path:inset(0 0 0 100%);}}
-    .tr-wipe-up{animation:trWipeUp ${TRANS_MS}ms cubic-bezier(.76,0,.18,1) forwards;}
-    @keyframes trWipeUp{0%{clip-path:inset(0 0 0 0);}100%{clip-path:inset(0 0 100% 0);}}
-    .tr-wipe-left{animation:trWipeLeft ${TRANS_MS}ms cubic-bezier(.76,0,.18,1) forwards;}
-    @keyframes trWipeLeft{0%{clip-path:inset(0 0 0 0);}100%{clip-path:inset(0 100% 0 0);}}
-    .tr-wipe-down{animation:trWipeDown ${TRANS_MS}ms cubic-bezier(.76,0,.18,1) forwards;}
-    @keyframes trWipeDown{0%{clip-path:inset(0 0 0 0);}100%{clip-path:inset(100% 0 0 0);}}
+    .iv-wrapper{
+      position:absolute;inset:0;width:100%;height:100%;
+      opacity:0;
+      transform:scale(1.035);
+      background-size:cover;background-position:center;background-repeat:no-repeat;
+      transition:opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 4s ease-out;
+      will-change:opacity,transform;
+    }
+    .iv-wrapper.active{opacity:1;transform:scale(1.0);z-index:2;}
+    .iv{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.92) contrast(1.04) saturate(1.08);}
+    .io1{position:absolute;inset:0;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,.32) 0%,rgba(0,0,0,.08) 45%,rgba(0,0,0,.72) 100%);}
+    .io2{position:absolute;inset:0;z-index:3;background:radial-gradient(circle at center,transparent 45%,rgba(0,0,0,.45) 100%);}
     .itxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;pointer-events:none;z-index:6;}
     .iword{display:block;font-family:${FONT.display};font-size:clamp(58px,11vw,148px);font-weight:800;line-height:.82;letter-spacing:-.03em;color:#fff;opacity:0;transform:translateY(46px) skewY(3deg);animation:iWordIn .58s cubic-bezier(.22,1,.36,1) forwards;}
     .iword.ac{background:linear-gradient(140deg,var(--ac) 20%,rgba(255,255,255,.92) 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
@@ -433,9 +466,18 @@ export default function LandingPage() {
     }
 
     .hero{position:relative;height:100vh;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:0 56px;}
-    .hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.5) saturate(1.15);}
-    .hero-vid-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(5,6,16,.5) 0%,rgba(5,6,16,.2) 45%,rgba(5,6,16,.94) 100%);}
-    .hero-tint{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 55% 50% at 75% 82%,rgba(79,142,247,.18) 0%,transparent 70%);}
+    .hero-vid{
+      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+      filter:brightness(0.85) contrast(1.05) saturate(1.10);
+    }
+    .hero-vid-ov{
+      position:absolute;inset:0;
+      background:linear-gradient(to bottom,rgba(5,6,16,.38) 0%,rgba(5,6,16,.12) 40%,rgba(5,6,16,.88) 100%);
+    }
+    .hero-tint{
+      position:absolute;inset:0;pointer-events:none;
+      background:radial-gradient(ellipse 65% 55% at 75% 75%,rgba(79,142,247,.12) 0%,transparent 70%);
+    }
     .hero-body{position:relative;z-index:2;display:flex;flex-direction:column;margin-top:60px;}
     .hero-eye{font-size:10.5px;font-weight:700;letter-spacing:.34em;text-transform:uppercase;color:#4f8ef7;margin-bottom:20px;}
     .hero-h1{font-family:${FONT.display};font-size:clamp(56px,8.5vw,128px);font-weight:800;line-height:.95;letter-spacing:-.04em;color:#ffffff;white-space:pre-line;text-shadow:0 4px 30px rgba(0,0,0,0.95),0 2px 10px rgba(0,0,0,0.85);min-height:2.2em;margin-bottom:6px;}
@@ -576,27 +618,46 @@ export default function LandingPage() {
 
       {/* Intro sequence */}
       {!isDone && (
-        <div className={`intro${isOut ? ` tr-${clip.trans}` : ""}`} style={{ "--ac": clip.accent }}>
-          {CLIPS.map((c, i) => (
-            <div
-              key={i}
-              className={`iv-wrapper ${i === clipIdx ? "active" : ""}`}
-              style={{ backgroundImage: `url(${c.poster})` }}
-            >
-              <video
-                ref={(el) => { videoRefs.current[i] = el; }}
-                className="iv"
-                src={c.src}
-                poster={c.poster}
-                muted
-                playsInline
-                loop
-                preload={i === clipIdx || i === (clipIdx + 1) % CLIPS.length ? "auto" : "none"}
-                disablePictureInPicture
-              />
-            </div>
-          ))}
-          <div className="io1"/><div className="io2"/><div className="io3"/>
+        <div className="intro" style={{ "--ac": clip.accent }}>
+          {CLIPS.map((c, i) => {
+            const shouldMountVideo = i === clipIdx || i === (clipIdx + 1) % CLIPS.length;
+            return (
+              <div
+                key={i}
+                className={`iv-wrapper ${i === clipIdx ? "active" : ""}`}
+                style={{ backgroundImage: `url(${c.poster})` }}
+              >
+                {shouldMountVideo && (
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[i] = el;
+                      if (el) {
+                        el.muted = true;
+                        el.defaultMuted = true;
+                      }
+                    }}
+                    className="iv"
+                    src={c.src}
+                    poster={c.poster}
+                    autoPlay
+                    muted
+                    defaultMuted
+                    playsInline
+                    loop
+                    preload="auto"
+                    disablePictureInPicture
+                    onCanPlay={(e) => {
+                      if (i === clipIdx) {
+                        e.currentTarget.muted = true;
+                        e.currentTarget.play().catch(() => {});
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+          <div className="io1"/><div className="io2"/>
           <div className="itxt" key={clipIdx}>
             <div>
               {clip.words.map((w, wi) => (
@@ -648,15 +709,26 @@ export default function LandingPage() {
         {/* Hero */}
         <section className="hero">
           <video
-            ref={heroVidRef}
+            ref={(el) => {
+              heroVidRef.current = el;
+              if (el) {
+                el.muted = true;
+                el.defaultMuted = true;
+              }
+            }}
             className="hero-vid"
             src={HERO_VID}
             poster={HERO_POSTER}
             autoPlay
             muted
+            defaultMuted
             playsInline
             loop
             preload="auto"
+            onCanPlay={(e) => {
+              e.currentTarget.muted = true;
+              e.currentTarget.play().catch(() => {});
+            }}
           />
           <div className="hero-vid-ov"/>
           <div className="hero-tint"/>

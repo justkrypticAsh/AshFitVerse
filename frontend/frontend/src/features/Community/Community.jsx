@@ -22,6 +22,7 @@ import {
   todayStr,
   getChallengeStats,
 } from "../../config/challengesConfig";
+import { recordDailyActivity } from "../../lib/userLogs";
 import {
   Activity, Users, Trophy, MessageSquare, Plus, Search,
   Image as ImageIcon, Video, BookOpen, Award, Moon, Sun,
@@ -612,9 +613,11 @@ export default function Community() {
       };
       setChallengeProgress(updated);
       saveChallengeProgress(updated);
+      recordDailyActivity(myUid, "challenge_join", { challengeId: challenge.id, challengeTitle: challenge.title });
     } else {
       try {
         await updateDoc(doc(db, "challenges", challenge.id), { participants: arrayUnion(myUid) });
+        recordDailyActivity(myUid, "challenge_join", { challengeId: challenge.id, challengeTitle: challenge.title });
       } catch (e) {
         console.error(e);
         return;
@@ -651,6 +654,7 @@ export default function Community() {
       };
       setChallengeProgress(updated);
       saveChallengeProgress(updated);
+      recordDailyActivity(myUid, "challenge_checkin", { challengeId: challenge.id, challengeTitle: challenge.title });
       const daysLeft = Math.max(0, challenge.totalDays - daysCompleted);
       const progressPct = Math.round((daysCompleted / Math.max(challenge.totalDays, 1)) * 100);
       setActiveChallengeDetail((p) =>
