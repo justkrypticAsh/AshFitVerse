@@ -1,12 +1,8 @@
 // src/mobile/MobileAppShell.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./mobileTheme.css";
 import MobileHomeScreen from "./screens/MobileHomeScreen";
-import MobileWorkoutsScreen from "./screens/MobileWorkoutsScreen";
-import MobileNutritionScreen from "./screens/MobileNutritionScreen";
-import MobileCommunityScreen from "./screens/MobileCommunityScreen";
-import MobileHubScreen from "./screens/MobileHubScreen";
 import MobileActionSheet from "./components/MobileActionSheet";
 import WeightLogModal from "../components/WeightLogModal";
 import StreakModal from "../components/StreakModal";
@@ -40,23 +36,21 @@ export default function MobileAppShell({
   bmi,
   isPro,
   clearUser,
-  initialTab = "home",
 }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(initialTab);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
-  // Quick hydration tracker state
+  // Quick hydration tracker state (Defaults honestly to 0 ml if not logged today)
   const [waterMl, setWaterMl] = useState(() => {
     try {
       const today = new Date().toISOString().slice(0, 10);
       const val = localStorage.getItem(`ashfitverse_water_${today}`);
-      return val ? parseInt(val, 10) : 1250;
+      return val ? parseInt(val, 10) : 0;
     } catch {
-      return 1250;
+      return 0;
     }
   });
 
@@ -82,36 +76,23 @@ export default function MobileAppShell({
   };
   const greeting = getGreeting();
 
-  const navTabs = [
-    { id: "home", label: "Home", icon: "⚡" },
-    { id: "workouts", label: "Train", icon: "🏋️" },
-    { id: "nutrition", label: "Fuel", icon: "🥗" },
-    { id: "community", label: "Squad", icon: "👥" },
-    { id: "hub", label: "Hub", icon: "🧭" },
-  ];
-
   return (
     <div
       className="mobile-app-shell"
       style={{
-        background: dark ? "#07080d" : "#f8f6f0",
+        background: dark ? "#090b10" : "#f8fafc",
         color: dark ? "#f8fafc" : "#0f172a",
       }}
     >
-      {/* ── Ambient Orbs ── */}
-      <div className="mob-orb mob-orb-1" />
-      <div className="mob-orb mob-orb-2" />
-      <div className="mob-orb mob-orb-3" />
-
       {/* ── Top Mobile App Bar ── */}
       <header
         className="mob-app-bar"
         style={{
-          background: dark ? "rgba(7, 8, 13, 0.88)" : "rgba(248, 246, 240, 0.92)",
-          borderBottom: `1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"}`,
+          background: dark ? "rgba(9, 11, 16, 0.92)" : "rgba(248, 250, 252, 0.94)",
+          borderBottom: `1px solid ${dark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)"}`,
         }}
       >
-        <div className="mob-app-bar-user" onClick={() => setActiveTab("hub")}>
+        <div className="mob-app-bar-user" onClick={() => navigate("/profile")}>
           <div className="mob-avatar-wrap">
             {user?.avatar ? (
               <img src={user.avatar} alt="" className="mob-avatar-img" />
@@ -122,7 +103,10 @@ export default function MobileAppShell({
           </div>
 
           <div className="mob-greeting-wrap">
-            <span className="mob-greeting-sub" style={{ color: dark ? "rgba(241, 245, 249, 0.55)" : "rgba(15, 23, 42, 0.55)" }}>
+            <span
+              className="mob-greeting-sub"
+              style={{ color: dark ? "rgba(241, 245, 249, 0.45)" : "rgba(15, 23, 42, 0.45)" }}
+            >
               {greeting.icon} {greeting.text}
             </span>
             <span className="mob-greeting-name" style={{ color: dark ? "#f8fafc" : "#0f172a" }}>
@@ -134,7 +118,7 @@ export default function MobileAppShell({
         <div className="mob-app-bar-actions">
           {/* Streak pill */}
           <div className="mob-streak-pill" onClick={() => setShowStreakModal(true)}>
-            <span>🔥</span> {displayStreak}d
+            <span>🔥</span> {displayStreak || 1}d
           </div>
 
           {/* Theme toggle */}
@@ -143,8 +127,8 @@ export default function MobileAppShell({
             onClick={toggleTheme}
             aria-label="Toggle theme"
             style={{
-              borderColor: dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
-              background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+              borderColor: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+              background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
               color: dark ? "#f8fafc" : "#0f172a",
             }}
           >
@@ -155,160 +139,35 @@ export default function MobileAppShell({
 
       {/* ── Active Screen Container ── */}
       <main className="mob-main-content">
-        {activeTab === "home" && (
-          <MobileHomeScreen
-            user={user}
-            dark={dark}
-            T={T}
-            displayStreak={displayStreak}
-            calorieTarget={calorieTarget}
-            todayCalories={todayCalories}
-            todayBurned={todayBurned}
-            todayNetCalories={todayNetCalories}
-            todayMacros={todayMacros}
-            weights={weights}
-            todayWorkouts={todayWorkouts}
-            todayMeals={todayMeals}
-            activeChallenges={activeChallenges}
-            handleDashboardCheckIn={handleDashboardCheckIn}
-            workoutPlan={workoutPlan}
-            isFemale={isFemale}
-            isMale={isMale}
-            getCycleDay={getCycleDay}
-            getPhaseName={getPhaseName}
-            bmi={bmi}
-            isPro={isPro}
-            onOpenStreakModal={() => setShowStreakModal(true)}
-            onOpenWeightModal={() => setShowWeightModal(true)}
-            onOpenActionSheet={() => setShowActionSheet(true)}
-            onQuickWater={handleQuickWater}
-            waterMl={waterMl}
-          />
-        )}
-
-        {activeTab === "workouts" && (
-          <MobileWorkoutsScreen
-            dark={dark}
-            T={T}
-            workouts={workouts}
-            todayWorkouts={todayWorkouts}
-            workoutPlan={workoutPlan}
-          />
-        )}
-
-        {activeTab === "nutrition" && (
-          <MobileNutritionScreen
-            dark={dark}
-            T={T}
-            calorieTarget={calorieTarget}
-            todayCalories={todayCalories}
-            todayBurned={todayBurned}
-            todayNetCalories={todayNetCalories}
-            todayMacros={todayMacros}
-            mealGroups={mealGroups}
-            onQuickWater={handleQuickWater}
-            waterMl={waterMl}
-          />
-        )}
-
-        {activeTab === "community" && (
-          <MobileCommunityScreen
-            user={user}
-            dark={dark}
-            T={T}
-          />
-        )}
-
-        {activeTab === "hub" && (
-          <MobileHubScreen
-            user={user}
-            dark={dark}
-            toggleTheme={toggleTheme}
-            T={T}
-            isFemale={isFemale}
-            isMale={isMale}
-            isPro={isPro}
-            clearUser={clearUser}
-            onOpenFeedbackModal={() => setShowFeedbackModal(true)}
-          />
-        )}
+        <MobileHomeScreen
+          user={user}
+          dark={dark}
+          T={T}
+          displayStreak={displayStreak}
+          calorieTarget={calorieTarget}
+          todayCalories={todayCalories}
+          todayBurned={todayBurned}
+          todayNetCalories={todayNetCalories}
+          todayMacros={todayMacros}
+          weights={weights}
+          todayWorkouts={todayWorkouts}
+          todayMeals={todayMeals}
+          activeChallenges={activeChallenges}
+          handleDashboardCheckIn={handleDashboardCheckIn}
+          workoutPlan={workoutPlan}
+          isFemale={isFemale}
+          isMale={isMale}
+          getCycleDay={getCycleDay}
+          getPhaseName={getPhaseName}
+          bmi={bmi}
+          isPro={isPro}
+          onOpenStreakModal={() => setShowStreakModal(true)}
+          onOpenWeightModal={() => setShowWeightModal(true)}
+          onOpenActionSheet={() => setShowActionSheet(true)}
+          onQuickWater={handleQuickWater}
+          waterMl={waterMl}
+        />
       </main>
-
-      {/* ── Native Android Floating Bottom Navigation Bar ── */}
-      <nav
-        className="mob-bottom-nav"
-        style={{
-          background: dark ? "rgba(13, 16, 26, 0.94)" : "rgba(255, 255, 255, 0.96)",
-          border: `1px solid ${dark ? "rgba(255, 255, 255, 0.14)" : "rgba(0, 0, 0, 0.08)"}`,
-        }}
-      >
-        {/* Left 2 tabs: Home, Workouts */}
-        {navTabs.slice(0, 2).map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              className={`mob-nav-item ${isActive ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <div className="mob-nav-icon-wrap">
-                <span className="mob-nav-icon">{tab.icon}</span>
-              </div>
-              <span
-                className="mob-nav-label"
-                style={{
-                  color: isActive
-                    ? "#3b82f6"
-                    : dark
-                    ? "rgba(241, 245, 249, 0.5)"
-                    : "rgba(15, 23, 42, 0.5)",
-                }}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-
-        {/* Center Glowing Action Dial (+) */}
-        <div className="mob-fab-wrap">
-          <button
-            className="mob-fab-btn"
-            onClick={() => setShowActionSheet(true)}
-            aria-label="Quick Action Center"
-          >
-            +
-          </button>
-        </div>
-
-        {/* Right 3 tabs: Nutrition, Community, Hub */}
-        {navTabs.slice(2).map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              className={`mob-nav-item ${isActive ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <div className="mob-nav-icon-wrap">
-                <span className="mob-nav-icon">{tab.icon}</span>
-              </div>
-              <span
-                className="mob-nav-label"
-                style={{
-                  color: isActive
-                    ? "#3b82f6"
-                    : dark
-                    ? "rgba(241, 245, 249, 0.5)"
-                    : "rgba(15, 23, 42, 0.5)",
-                }}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
 
       {/* ── Center Action Bottom Sheet ── */}
       <MobileActionSheet

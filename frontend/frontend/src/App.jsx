@@ -61,6 +61,7 @@ import SleepTracker        from "./features/maleHealth/SleepTracker";
 import MaleShop   from "./features/shop/MaleShop";
 import RequirePlan from "./components/RequirePlan";
 import DonePopup from "./components/DonePopup";
+import MobileBottomDock from "./components/MobileBottomDock";
 
 
 // ── Auth + Onboarding guard ────────────────────────────────────────────────
@@ -310,6 +311,7 @@ export default function App() {
 
       </Routes>
       <DonePopup />
+      <MobileBottomDock />
     </Router>
   );
 }

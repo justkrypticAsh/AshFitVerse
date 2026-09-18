@@ -1,67 +1,79 @@
 // src/mobile/screens/MobileCommunityScreen.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { db } from "../../firebase";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 
-export default function MobileCommunityScreen({
-  user,
-  dark,
-  T,
-}) {
+function timeAgo(ts) {
+  if (!ts) return "just now";
+  const d = ts?.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+export default function MobileCommunityScreen({ user, dark, T }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("all");
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockPosts = [
-    {
-      id: 1,
-      athlete: "Vikram R.",
-      handle: "@vikram_fit",
-      badge: "ELITE",
-      badgeColor: "#3b82f6",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-      time: "25m ago",
-      text: "Hit a brand new PR on Barbell Incline Bench today! 105kg for 4 clean reps. Discipline always beats motivation. 💪🔥",
-      stats: "Bench PR · 105kg · 4 Reps",
-      likes: 38,
-      comments: 7,
-    },
-    {
-      id: 2,
-      athlete: "Priya Patel",
-      handle: "@priya_wellness",
-      badge: "PRO",
-      badgeColor: "#8b5cf6",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
-      time: "2h ago",
-      text: "Cycle phase synced leg workout done! Kept weights moderate in the luteal phase and focused on time under tension. Feels incredible! 🌸✨",
-      stats: "Leg Day · 45 mins · 380 kcal",
-      likes: 54,
-      comments: 12,
-    },
-    {
-      id: 3,
-      athlete: "Rohan Malhotra",
-      handle: "@rohan_lift",
-      badge: "PRO",
-      badgeColor: "#10b981",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-      time: "5h ago",
-      text: "Clean macros for 14 straight days! Net deficit locked at -450 kcal and energy levels are sky high. Keep grinding squad! 🥗",
-      stats: "14d Streak · 165g Protein",
-      likes: 29,
-      comments: 4,
-    },
-  ];
+  useEffect(() => {
+    let unsub = () => {};
+    try {
+      const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(25));
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setPosts(list);
+          setLoading(false);
+        },
+        (err) => {
+          console.error("Firestore posts error:", err);
+          setLoading(false);
+        }
+      );
+    } catch (e) {
+      console.error(e);
+      setLoading(false);
+    }
+    return () => unsub();
+  }, []);
 
   return (
     <div className="mob-community-screen">
-      {/* ── Squad Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+      {/* ── Header ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
         <div>
-          <span style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "#3b82f6" }}>
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "#3b82f6",
+            }}
+          >
             FitVerse Squad
           </span>
-          <div style={{ fontSize: 18, fontWeight: 900, fontFamily: "var(--mobile-font-display)", color: dark ? "#f8fafc" : "#0f172a" }}>
-            Live Athlete Feed
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 900,
+              fontFamily: "var(--mobile-font-display)",
+              color: dark ? "#f8fafc" : "#0f172a",
+            }}
+          >
+            Community Feed
           </div>
         </div>
         <button
@@ -69,11 +81,11 @@ export default function MobileCommunityScreen({
           style={{
             padding: "6px 12px",
             borderRadius: 10,
-            border: "1px solid rgba(59, 130, 246, 0.35)",
-            background: "rgba(59, 130, 246, 0.12)",
-            color: "#3b82f6",
+            border: `1px solid ${dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+            background: dark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.03)",
+            color: dark ? "#f8fafc" : "#0f172a",
             fontSize: 11,
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: "pointer",
           }}
         >
@@ -87,12 +99,12 @@ export default function MobileCommunityScreen({
         className="mob-card"
         style={{
           background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
-          border: `1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"}`,
+          border: `1px solid ${dark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)"}`,
           display: "flex",
           alignItems: "center",
           gap: 12,
           padding: 12,
-          marginBottom: 14,
+          marginBottom: 16,
           cursor: "pointer",
         }}
       >
@@ -104,102 +116,211 @@ export default function MobileCommunityScreen({
           )}
         </div>
         <div style={{ fontSize: 13, color: dark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
-          Share your workout, PR or gym win...
+          Share your workout, PR or gym win with the squad...
         </div>
       </div>
 
-      {/* ── Feed Posts ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {mockPosts.map((post) => (
+      {/* ── Feed Content ── */}
+      {loading ? (
+        <div style={{ padding: "40px 0", textAlign: "center", color: dark ? "#64748b" : "#94a3b8" }}>
           <div
-            key={post.id}
-            className="mob-card"
             style={{
-              margin: 0,
-              padding: 16,
-              background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
-              border: `1px solid ${dark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)"}`,
+              width: 24,
+              height: 24,
+              border: "2px solid rgba(59,130,246,0.2)",
+              borderTopColor: "#3b82f6",
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+              margin: "0 auto 10px",
+            }}
+          />
+          <span style={{ fontSize: 12 }}>Loading squad feed…</span>
+        </div>
+      ) : posts.length === 0 ? (
+        /* Honest, Clean Empty State (No Mock Posts) */
+        <div
+          className="mob-card"
+          style={{
+            textAlign: "center",
+            padding: "36px 20px",
+            background: dark ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.015)",
+            border: `1px solid ${dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"}`,
+          }}
+        >
+          <div style={{ fontSize: 36, marginBottom: 12 }}>⚡</div>
+          <div
+            style={{
+              fontFamily: "var(--mobile-font-display)",
+              fontSize: 16,
+              fontWeight: 800,
+              color: dark ? "#f8fafc" : "#0f172a",
+              marginBottom: 6,
             }}
           >
-            {/* Author */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <img
-                  src={post.avatar}
-                  alt=""
-                  style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover" }}
-                />
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: dark ? "#f8fafc" : "#0f172a" }}>
-                      {post.athlete}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 800,
-                        padding: "2px 6px",
-                        borderRadius: 6,
-                        background: `${post.badgeColor}20`,
-                        color: post.badgeColor,
-                      }}
-                    >
-                      {post.badge}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 11, color: dark ? "#94a3b8" : "#64748b" }}>
-                    {post.handle} · {post.time}
-                  </div>
-                </div>
-              </div>
-            </div>
+            No Community Posts Yet
+          </div>
+          <p
+            style={{
+              fontSize: 13,
+              color: dark ? "#94a3b8" : "#64748b",
+              lineHeight: 1.5,
+              maxWidth: 280,
+              margin: "0 auto 18px",
+            }}
+          >
+            Be the first athlete to post a workout summary, personal record, or motivational tip!
+          </p>
+          <button
+            onClick={() => navigate("/community")}
+            style={{
+              padding: "9px 18px",
+              borderRadius: 12,
+              border: "none",
+              background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+              color: "#ffffff",
+              fontSize: 12,
+              fontWeight: 800,
+              fontFamily: "var(--mobile-font-display)",
+              cursor: "pointer",
+            }}
+          >
+            Create First Post +
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {posts.map((post) => {
+            const likesCount = Array.isArray(post.likes) ? post.likes.length : Number(post.likes) || 0;
+            const commentsCount = Array.isArray(post.comments) ? post.comments.length : Number(post.commentsCount) || 0;
 
-            {/* Content */}
-            <div style={{ fontSize: 13, lineHeight: 1.5, color: dark ? "rgba(241,245,249,0.88)" : "#1e293b", marginBottom: 10 }}>
-              {post.text}
-            </div>
-
-            {/* Stat Pill */}
-            {post.stats && (
+            return (
               <div
+                key={post.id}
+                className="mob-card"
                 style={{
-                  display: "inline-block",
-                  padding: "4px 10px",
-                  borderRadius: 8,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: "rgba(59, 130, 246, 0.1)",
-                  color: "#3b82f6",
-                  marginBottom: 12,
+                  margin: 0,
+                  padding: 16,
+                  background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                  border: `1px solid ${dark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)"}`,
                 }}
               >
-                ⚡ {post.stats}
-              </div>
-            )}
+                {/* Author row */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div className="mob-avatar-wrap" style={{ width: 34, height: 34 }}>
+                      {post.authorPhoto || post.avatar ? (
+                        <img src={post.authorPhoto || post.avatar} alt="" className="mob-avatar-img" />
+                      ) : (
+                        <div className="mob-avatar-fallback">
+                          {post.authorName?.[0]?.toUpperCase() || post.athlete?.[0]?.toUpperCase() || "A"}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontSize: 13.5,
+                          fontWeight: 800,
+                          color: dark ? "#f8fafc" : "#0f172a",
+                          fontFamily: "var(--mobile-font-display)",
+                        }}
+                      >
+                        {post.authorName || post.athlete || "Athlete"}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: dark ? "#64748b" : "#94a3b8" }}>
+                        {timeAgo(post.createdAt)}
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Interactions */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 18,
-                paddingTop: 8,
-                borderTop: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
-                fontSize: 12,
-                fontWeight: 700,
-                color: dark ? "#94a3b8" : "#64748b",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
-                <span>🔥</span> {post.likes}
+                  {post.type && (
+                    <span
+                      style={{
+                        fontSize: 9.5,
+                        fontWeight: 800,
+                        padding: "2px 7px",
+                        borderRadius: 6,
+                        background: "rgba(59, 130, 246, 0.12)",
+                        color: "#3b82f6",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {post.type}
+                    </span>
+                  )}
+                </div>
+
+                {/* Text Content */}
+                <p
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: dark ? "#cbd5e1" : "#334155",
+                    margin: "0 0 10px 0",
+                  }}
+                >
+                  {post.content || post.text}
+                </p>
+
+                {/* Optional Media */}
+                {post.image && (
+                  <div style={{ borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
+                    <img
+                      src={post.image}
+                      alt=""
+                      style={{ width: "100%", maxHeight: 240, objectFit: "cover", display: "block" }}
+                    />
+                  </div>
+                )}
+
+                {/* Engagement Bar */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    paddingTop: 8,
+                    borderTop: `1px solid ${dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}`,
+                  }}
+                >
+                  <button
+                    onClick={() => navigate("/community")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      color: dark ? "#94a3b8" : "#64748b",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    <span>❤️</span> {likesCount}
+                  </button>
+                  <button
+                    onClick={() => navigate("/community")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      color: dark ? "#94a3b8" : "#64748b",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    <span>💬</span> {commentsCount}
+                  </button>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
-                <span>💬</span> {post.comments}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

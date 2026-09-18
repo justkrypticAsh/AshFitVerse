@@ -1,34 +1,19 @@
-import React, { useState, useEffect, useRef } from "react";
+// src/features/Workouts/WorkoutDayPage.jsx
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
+import useIsMobile from "../../hooks/useIsMobile";
+import { FONT, generateCSS } from "../../theme";
 import { addLog, todayKey, addAppNotification } from "../../lib/userLogs";
 import { showDonePopup } from "../../components/DonePopup";
-
-const DT = {
-  bg: "#060810", glass: "rgba(255,255,255,0.035)", glassBorder: "rgba(255,255,255,0.075)",
-  cardBorderHover: "rgba(255,255,255,0.15)",
-  text: "#eef2ff", textSub: "rgba(200,212,255,0.52)", textMuted: "rgba(200,212,255,0.28)",
-  accent: "#4f8ef7", accentGlow: "rgba(79,142,247,0.22)",
-  green: "#34d399", greenGlow: "rgba(52,211,153,0.18)",
-  purple: "#a78bfa", purpleGlow: "rgba(167,139,250,0.18)",
-  orange: "#fb923c",
-};
-const LT = {
-  bg: "#f3f6ff", glass: "rgba(255,255,255,0.75)", glassBorder: "rgba(0,0,0,0.07)",
-  cardBorderHover: "rgba(79,142,247,0.3)",
-  text: "#0a0e1f", textSub: "rgba(10,14,31,0.52)", textMuted: "rgba(10,14,31,0.3)",
-  accent: "#3b7ef0", accentGlow: "rgba(59,126,240,0.14)",
-  green: "#10b981", greenGlow: "rgba(16,185,129,0.14)",
-  purple: "#7c3aed", purpleGlow: "rgba(124,58,237,0.14)",
-  orange: "#f97316",
-};
 
 export default function WorkoutDayPage({ config }) {
   const navigate = useNavigate();
   const { authUid } = useUser();
-  const [dark, setDark] = useState(true);
+  const { dark, toggleTheme, T } = useTheme();
+  const isMobile = useIsMobile(840);
   const [mounted, setMounted] = useState(false);
-  const T = dark ? DT : LT;
 
   const [completedSets, setCompletedSets] = useState({});
   const [timer, setTimer] = useState(0);
@@ -39,34 +24,45 @@ export default function WorkoutDayPage({ config }) {
   const [activeEx, setActiveEx] = useState(0);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
+  // Workout stopwatch
   useEffect(() => {
     let i;
-    if (timerActive) i = setInterval(() => setTimer(t => t + 1), 1000);
+    if (timerActive) i = setInterval(() => setTimer((t) => t + 1), 1000);
     return () => clearInterval(i);
   }, [timerActive]);
 
+  // Rest timer
   useEffect(() => {
     let i;
     if (restActive && restTimer > 0) {
-      i = setInterval(() => setRestTimer(t => {
-        if (t <= 1) { setRestActive(false); return 0; }
-        return t - 1;
-      }), 1000);
+      i = setInterval(() => {
+        setRestTimer((t) => {
+          if (t <= 1) {
+            setRestActive(false);
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
     }
     return () => clearInterval(i);
   }, [restActive, restTimer]);
 
-  const formatTime = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  const formatTime = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   const toggleSet = (exIdx, setIdx) => {
     const key = `${exIdx}-${setIdx}`;
     const wasCompleted = completedSets[key];
-    setCompletedSets(prev => ({ ...prev, [key]: !prev[key] }));
+    setCompletedSets((prev) => ({ ...prev, [key]: !prev[key] }));
     if (!wasCompleted) {
       setRestTimer(90);
       setRestActive(true);
+      if (!timerActive) setTimerActive(true);
     }
   };
 
@@ -78,303 +74,825 @@ export default function WorkoutDayPage({ config }) {
     if (completedCount === 0 || saving) return;
     setSaving(true);
     setTimerActive(false);
-    const effectiveUid = authUid || getEffectiveUid();
+    const effectiveUid = authUid || localStorage.getItem("ashfitverse_email") || "local_athlete";
     try {
-      const exercises = config.exercises.map((exercise, exIdx) => ({
-        name: exercise.name,
-        sets: exercise.sets.filter((_, setIdx) => completedSets[`${exIdx}-${setIdx}`]),
-      })).filter((exercise) => exercise.sets.length);
+      const exercises = config.exercises
+        .map((exercise, exIdx) => ({
+          name: exercise.name,
+          sets: exercise.sets.filter((_, setIdx) => completedSets[`${exIdx}-${setIdx}`]),
+        }))
+        .filter((exercise) => exercise.sets.length);
+
       await addLog(effectiveUid, "workouts", {
-        date: todayKey(), name: config.name, exercises, sets: completedCount,
-        duration: timer, volume: 0, caloriesBurned: Math.round((timer / 60) * 6),
+        date: todayKey(),
+        name: config.name,
+        exercises,
+        sets: completedCount,
+        duration: timer,
+        volume: 0,
+        caloriesBurned: Math.round((timer / 60) * 6),
       });
-      await addAppNotification(effectiveUid, { text:`Workout saved: ${config.name} · ${completedCount} sets complete`, type:"workout", path:"/workout-logger" });
+
+      await addAppNotification(effectiveUid, {
+        text: `Workout saved: ${config.name} · ${completedCount} sets complete`,
+        type: "workout",
+        path: "/workout-logger",
+      });
+
       setDone(true);
       showDonePopup({
-        title: "Done!",
+        title: "Workout Finished!",
         message: `${config.name} logged & synced with your Dashboard!`,
         subtext: `${completedCount} sets completed · ${Math.round(timer / 60)} min session`,
-        color: config.color || "#22c55e",
+        color: config.color || T.accent,
       });
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
     setSaving(false);
   };
 
-  const css = `
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:${T.bg};}
-    ::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-thumb{background:${config.color}50;border-radius:99px;}
-
-    .root{min-height:100vh;background:${T.bg};color:${T.text};font-family:'DM Sans',sans-serif;
-      opacity:${mounted?1:0};transition:opacity 0.7s ease,background 0.5s,color 0.5s;position:relative;overflow-x:hidden;}
-
-    .orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;}
-    .o1{top:-18%;left:-10%;width:1000px;height:1000px;background:radial-gradient(circle,${config.color}10 0%,transparent 65%);animation:of1 22s ease-in-out infinite;}
-    .o2{bottom:-20%;right:-12%;width:900px;height:900px;background:radial-gradient(circle,${dark?"rgba(167,139,250,0.05)":"rgba(167,139,250,0.03)"} 0%,transparent 65%);animation:of2 28s ease-in-out infinite;}
-    @keyframes of1{0%,100%{transform:translate(0,0);}50%{transform:translate(50px,-40px);}}
-    @keyframes of2{0%,100%{transform:translate(0,0);}50%{transform:translate(-40px,-50px);}}
-
-    .header{display:flex;align-items:center;justify-content:space-between;padding:24px 40px;border-bottom:1px solid ${T.glassBorder};background:${T.glass};backdrop-filter:blur(30px);position:sticky;top:0;z-index:50;}
-    .back-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;border:1px solid ${T.glassBorder};background:${T.glass};color:${T.textSub};font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;font-family:'DM Sans',sans-serif;}
-    .back-btn:hover{color:${config.color};border-color:${config.color}40;}
-    .h-logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${T.text};}
-    .h-logo span{color:${config.color};}
-    .h-right{display:flex;align-items:center;gap:10px;}
-    .tt2{width:52px;height:28px;border-radius:99px;border:1px solid ${T.glassBorder};background:${T.glass};cursor:pointer;position:relative;}
-    .th{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,${config.color},${T.purple});position:absolute;top:3px;left:${dark?"27px":"3px"};transition:left 0.3s cubic-bezier(0.4,0,0.2,1);display:flex;align-items:center;justify-content:center;font-size:10px;}
-    .timer-display{padding:8px 18px;border-radius:99px;background:${config.color}15;border:1px solid ${config.color}30;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:${config.color};cursor:pointer;transition:all 0.25s;}
-    .timer-display:hover{background:${config.color}25;}
-
-    /* Hero */
-    .hero{padding:40px 40px 32px;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;}
-    .hero-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:99px;background:${config.color}15;border:1px solid ${config.color}30;font-size:12px;font-weight:700;color:${config.color};letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;}
-    .hero-title{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;letter-spacing:-0.03em;color:${T.text};line-height:1;margin-bottom:12px;}
-    .hero-sub{font-size:15px;color:${T.textSub};line-height:1.6;margin-bottom:24px;max-width:480px;}
-
-    /* Progress */
-    .progress-wrap{margin-bottom:8px;}
-    .progress-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;}
-    .progress-label{color:${T.textSub};font-weight:600;}
-    .progress-pct{color:${config.color};font-weight:800;font-family:'Syne',sans-serif;}
-    .progress-track{height:8px;background:${dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.06)"};border-radius:99px;overflow:hidden;}
-    .progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,${config.color},${config.color}88);transition:width 0.6s cubic-bezier(0.4,0,0.2,1);}
-
-    /* Stats pills */
-    .stats-pills{display:flex;gap:10px;flex-wrap:wrap;}
-    .stat-pill{padding:10px 18px;border-radius:12px;background:${T.glass};border:1px solid ${T.glassBorder};backdrop-filter:blur(20px);text-align:center;}
-    .sp-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${T.text};}
-    .sp-lbl{font-size:10px;color:${T.textMuted};font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;}
-
-    /* Rest timer */
-    .rest-timer{
-      position:fixed;bottom:28px;right:28px;z-index:100;
-      background:${dark?"rgba(8,12,24,0.95)":"rgba(255,255,255,0.97)"};
-      border:1px solid ${config.color}40;border-radius:20px;
-      padding:18px 24px;backdrop-filter:blur(24px);
-      box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 0 1px ${config.color}20;
-      animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1) both;
-      display:flex;align-items:center;gap:16px;
-    }
-    @keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-    .rest-icon{font-size:24px;}
-    .rest-label{font-size:11px;color:${T.textMuted};font-weight:700;letter-spacing:0.12em;text-transform:uppercase;}
-    .rest-time{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:${config.color};}
-    .rest-skip{padding:8px 14px;border-radius:10px;border:1px solid ${T.glassBorder};background:${T.glass};color:${T.textSub};font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
-    .rest-skip:hover{color:${T.text};}
-
-    /* Main layout */
-    .main{max-width:1100px;margin:0 auto;padding:0 40px 40px;display:grid;grid-template-columns:1fr 320px;gap:20px;}
-
-    /* Exercise list */
-    .ex-section{margin-bottom:14px;background:${T.glass};border:1px solid ${T.glassBorder};border-radius:22px;backdrop-filter:blur(28px);overflow:hidden;transition:all 0.3s;animation:fu 0.5s ease both;}
-    .ex-section:hover{border-color:${T.cardBorderHover};}
-    .ex-section.active-ex{border-color:${config.color}40;box-shadow:0 0 0 1px ${config.color}20;}
-    .ex-section-header{padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
-    .ex-info{display:flex;align-items:center;gap:14px;}
-    .ex-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;flex-shrink:0;}
-    .ex-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:${T.text};}
-    .ex-meta{font-size:12px;color:${T.textSub};margin-top:3px;}
-    .ex-chevron{font-size:14px;color:${T.textMuted};transition:transform 0.3s;}
-    .ex-chevron.open{transform:rotate(180deg);}
-
-    .ex-sets{padding:0 24px 20px;}
-    .set-row{display:grid;grid-template-columns:36px 1fr 1fr 1fr 44px;gap:10px;align-items:center;margin-bottom:8px;}
-    .set-label{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${T.textMuted};text-align:center;}
-    .set-num-badge{width:36px;height:36px;border-radius:10px;background:${T.glass};border:1px solid ${T.glassBorder};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${T.textSub};}
-    .set-info{background:${dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)"};border:1px solid ${T.glassBorder};border-radius:10px;height:36px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${T.text};}
-    .set-check{width:36px;height:36px;border-radius:10px;border:2px solid ${T.glassBorder};background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.25s;}
-    .set-check:hover{border-color:${config.color}60;}
-    .set-check.checked{background:${config.color};border-color:${config.color};box-shadow:0 0 14px ${config.color}60;}
-    .set-check.checked::after{content:'✓';color:#000;font-weight:800;font-size:14px;}
-
-    .ex-tip{background:${config.color}08;border-radius:12px;padding:12px 14px;margin-top:4px;font-size:12px;color:${T.textSub};line-height:1.6;}
-    .ex-tip strong{color:${T.text};}
-
-    /* Right sidebar */
-    .side-card{background:${T.glass};border:1px solid ${T.glassBorder};border-radius:20px;padding:20px;backdrop-filter:blur(28px);margin-bottom:14px;transition:all 0.3s;}
-    .side-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.textMuted};margin-bottom:14px;}
-
-    .muscle-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid ${T.glassBorder};}
-    .muscle-item:last-child{border-bottom:none;}
-    .muscle-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-    .muscle-name{font-size:13px;font-weight:600;color:${T.text};flex:1;}
-    .muscle-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:0.06em;}
-
-    .finish-btn{width:100%;height:54px;border-radius:15px;border:none;background:linear-gradient(135deg,${config.color},${config.color}bb);color:#000;font-size:14px;font-weight:800;font-family:'DM Sans',sans-serif;letter-spacing:0.05em;cursor:pointer;transition:all 0.3s;box-shadow:0 8px 24px ${config.color}40;text-transform:uppercase;margin-top:4px;}
-    .finish-btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px ${config.color}50;}
-    .finish-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
-
-    /* Done overlay */
-    .done-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(14px);}
-    .done-box{background:${dark?"#0b0f1a":"#ffffff"};border:1px solid ${config.color}30;border-radius:28px;padding:44px;text-align:center;max-width:420px;width:90%;animation:scaleIn 0.5s cubic-bezier(0.4,0,0.2,1) both;box-shadow:0 40px 100px rgba(0,0,0,0.5),0 0 0 1px ${config.color}20;}
-    .done-emoji{font-size:72px;margin-bottom:16px;display:block;}
-    .done-title{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:${T.text};margin-bottom:8px;}
-    .done-sub{font-size:15px;color:${T.textSub};margin-bottom:28px;line-height:1.6;}
-    .done-btn{width:100%;padding:15px;border-radius:15px;border:none;background:linear-gradient(135deg,${config.color},${T.purple});color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 8px 24px ${config.color}40;transition:all 0.25s;}
-    .done-btn:hover{transform:translateY(-2px);}
-
-    @keyframes fu{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes scaleIn{from{opacity:0;transform:scale(0.88);}to{opacity:1;transform:scale(1);}}
-    @media(max-width:900px){.hero{grid-template-columns:1fr;}.main{grid-template-columns:1fr;}.main>div:last-child{order:-1;}.header{padding:20px 20px;}.hero{padding:28px 20px;}.main{padding:0 20px 28px;}}
-  `;
+  const themeCss = generateCSS(T, dark);
 
   return (
     <>
-      <style>{css}</style>
-      <div className="root">
-        <div className="orb o1" /><div className="orb o2" />
+      <style>{themeCss}</style>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: T.bg,
+          color: T.text,
+          fontFamily: FONT.body,
+          opacity: mounted ? 1 : 0,
+          transition: "opacity 0.5s ease, background 0.4s ease, color 0.4s ease",
+          position: "relative",
+          paddingBottom: isMobile ? "calc(80px + env(safe-area-inset-bottom, 0px))" : "40px",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Ambient Subtle Glow Orbs */}
+        <div className="orb orb-1" style={{ opacity: 0.15 }} />
+        <div className="orb orb-2" style={{ opacity: 0.12 }} />
 
+        {/* ── Completion Overlay ── */}
         {done && (
-          <div className="done-overlay">
-            <div className="done-box">
-              <span className="done-emoji">{config.emoji}</span>
-              <div className="done-title">{config.name} Complete!</div>
-              <div className="done-sub">
-                You crushed <strong>{completedCount} sets</strong> in <strong>{formatTime(timer)}</strong>. 
-                Recovery begins now — rest well and fuel up!
-              </div>
-              <button className="done-btn" onClick={() => navigate("/dashboard")}>Back to Dashboard →</button>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.75)",
+              backdropFilter: "blur(16px)",
+              padding: 20,
+            }}
+          >
+            <div
+              style={{
+                background: dark ? "#0f121d" : "#ffffff",
+                border: `1px solid ${config.color || T.accent}40`,
+                borderRadius: 24,
+                padding: "36px 28px",
+                textAlign: "center",
+                maxWidth: 420,
+                width: "100%",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+              }}
+            >
+              <div style={{ fontSize: 56, marginBottom: 12 }}>{config.emoji || "💪"}</div>
+              <h2
+                style={{
+                  fontFamily: FONT.display,
+                  fontSize: 26,
+                  fontWeight: 900,
+                  color: T.text,
+                  marginBottom: 8,
+                }}
+              >
+                {config.name} Complete!
+              </h2>
+              <p style={{ fontSize: 14, color: T.textSub, lineHeight: 1.6, marginBottom: 24 }}>
+                You completed <strong style={{ color: config.color }}>{completedCount} sets</strong> in{" "}
+                <strong>{formatTime(timer)}</strong>. Recovery starts now — rehydrate and refuel!
+              </p>
+              <button
+                onClick={() => navigate("/dashboard")}
+                style={{
+                  width: "100%",
+                  height: 48,
+                  borderRadius: 14,
+                  border: "none",
+                  background: config.color || T.accent,
+                  color: "#ffffff",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  fontFamily: FONT.display,
+                }}
+              >
+                Back to Dashboard →
+              </button>
             </div>
           </div>
         )}
 
+        {/* ── Rest Timer Floating Pill ── */}
         {restActive && restTimer > 0 && (
-          <div className="rest-timer">
-            <span className="rest-icon">😮‍💨</span>
-            <div>
-              <div className="rest-label">Rest Timer</div>
-              <div className="rest-time">{formatTime(restTimer)}</div>
+          <div
+            style={{
+              position: "fixed",
+              bottom: isMobile ? "calc(76px + env(safe-area-inset-bottom, 0px))" : 28,
+              right: isMobile ? 16 : 28,
+              left: isMobile ? 16 : "auto",
+              zIndex: 1000,
+              background: dark ? "rgba(12, 16, 28, 0.95)" : "rgba(255, 255, 255, 0.98)",
+              border: `1px solid ${config.color || T.accent}40`,
+              borderRadius: 20,
+              padding: "14px 20px",
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 24 }}>😮‍💨</span>
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: T.textMuted,
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Rest Timer
+                </div>
+                <div
+                  style={{
+                    fontFamily: FONT.display,
+                    fontSize: 22,
+                    fontWeight: 900,
+                    color: config.color || T.accent,
+                  }}
+                >
+                  {formatTime(restTimer)}
+                </div>
+              </div>
             </div>
-            <button className="rest-skip" onClick={() => { setRestActive(false); setRestTimer(0); }}>Skip</button>
+            <button
+              onClick={() => {
+                setRestActive(false);
+                setRestTimer(0);
+              }}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 10,
+                border: `1px solid ${T.glassBorder}`,
+                background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                color: T.textSub,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Skip
+            </button>
           </div>
         )}
 
-        {/* Header */}
-        <div className="header">
-          <button className="back-btn" onClick={() => navigate("/dashboard")}>← Dashboard</button>
-          <div className="h-logo">AshFit<span>Verse</span></div>
-          <div className="h-right">
-            <div className="timer-display" onClick={() => setTimerActive(!timerActive)}>
-              {timerActive ? "⏸" : "▶"} {formatTime(timer)}
+        {/* ── Sticky Modern Header ── */}
+        <header
+          style={{
+            height: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 20px",
+            borderBottom: `1px solid ${T.glassBorder}`,
+            background: dark ? "rgba(9, 11, 17, 0.88)" : "rgba(255, 255, 255, 0.92)",
+            backdropFilter: "blur(28px) saturate(180%)",
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={() => navigate("/workout-planner")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 12px",
+                borderRadius: 10,
+                border: `1px solid ${T.glassBorder}`,
+                background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                color: T.textSub,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: FONT.body,
+              }}
+            >
+              ← Workouts
+            </button>
+            <div
+              onClick={() => navigate("/dashboard")}
+              style={{
+                fontFamily: FONT.display,
+                fontSize: 18,
+                fontWeight: 900,
+                color: T.text,
+                cursor: "pointer",
+              }}
+            >
+              AshFit<span style={{ color: config.color || T.accent }}>Verse</span>
             </div>
-            <button className="tt2" onClick={() => setDark(!dark)}><div className="th">{dark?"🌙":"☀️"}</div></button>
           </div>
-        </div>
 
-        {/* Hero */}
-        <div className="hero">
-          <div>
-            <div className="hero-tag">{config.emoji} {config.tag}</div>
-            <div className="hero-title" style={{color: config.color}}>{config.name}</div>
-            <div className="hero-sub">{config.description}</div>
-            <div className="progress-wrap">
-              <div className="progress-header">
-                <span className="progress-label">{completedCount} of {totalSets} sets completed</span>
-                <span className="progress-pct">{Math.round(progress)}%</span>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{width: `${progress}%`}} />
-              </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              onClick={() => setTimerActive(!timerActive)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 99,
+                background: `${config.color || T.accent}14`,
+                border: `1px solid ${config.color || T.accent}30`,
+                fontFamily: FONT.display,
+                fontSize: 13,
+                fontWeight: 800,
+                color: config.color || T.accent,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <span>{timerActive ? "⏸" : "▶"}</span>
+              <span>{formatTime(timer)}</span>
             </div>
-          </div>
-          <div className="stats-pills">
-            {[
-              {val: config.exercises.length, lbl: "Exercises"},
-              {val: totalSets, lbl: "Total Sets"},
-              {val: config.duration, lbl: "Est. Time"},
-            ].map((s,i) => (
-              <div key={i} className="stat-pill">
-                <div className="sp-val" style={{color: config.color}}>{s.val}</div>
-                <div className="sp-lbl">{s.lbl}</div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="main">
-          {/* Exercises */}
-          <div>
-            {config.exercises.map((ex, ei) => (
-              <div key={ei} className={`ex-section ${activeEx === ei ? "active-ex" : ""}`}
-                style={{animationDelay: `${ei * 0.06}s`}}>
-                <div className="ex-section-header" onClick={() => setActiveEx(activeEx === ei ? -1 : ei)}>
-                  <div className="ex-info">
-                    <div className="ex-num" style={{background: `${config.color}18`, color: config.color}}>
-                      {ei + 1}
-                    </div>
-                    <div>
-                      <div className="ex-name">{ex.name}</div>
-                      <div className="ex-meta">{ex.sets.length} sets · {ex.reps} · {ex.rest} rest</div>
-                    </div>
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                border: `1px solid ${T.glassBorder}`,
+                background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                color: T.text,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              {dark ? "🌙" : "☀️"}
+            </button>
+          </div>
+        </header>
+
+        {/* ── Main Container ── */}
+        <div style={{ maxWidth: 1080, margin: "0 auto", padding: isMobile ? "16px 16px 20px" : "28px 24px" }}>
+          {/* Hero Section */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: isMobile ? "flex-start" : "flex-end",
+              gap: 18,
+              marginBottom: 24,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "4px 12px",
+                  borderRadius: 20,
+                  background: `${config.color}15`,
+                  border: `1px solid ${config.color}35`,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: config.color,
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  marginBottom: 8,
+                }}
+              >
+                {config.emoji} {config.tag}
+              </div>
+              <h1
+                style={{
+                  fontFamily: FONT.display,
+                  fontSize: isMobile ? 32 : 44,
+                  fontWeight: 900,
+                  letterSpacing: "-0.02em",
+                  color: T.text,
+                  margin: "0 0 8px 0",
+                  lineHeight: 1.1,
+                }}
+              >
+                {config.name}
+              </h1>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: T.textSub,
+                  lineHeight: 1.5,
+                  maxWidth: 580,
+                  margin: 0,
+                }}
+              >
+                {config.description}
+              </p>
+            </div>
+
+            {/* Quick Stats Badges */}
+            <div style={{ display: "flex", gap: 10, width: isMobile ? "100%" : "auto" }}>
+              {[
+                { val: config.exercises.length, lbl: "Exercises" },
+                { val: totalSets, lbl: "Sets" },
+                { val: config.duration, lbl: "Duration" },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: isMobile ? 1 : "none",
+                    padding: "10px 14px",
+                    borderRadius: 14,
+                    background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                    border: `1px solid ${T.glassBorder}`,
+                    textAlign: "center",
+                    minWidth: 70,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: FONT.display,
+                      fontSize: 18,
+                      fontWeight: 800,
+                      color: config.color,
+                    }}
+                  >
+                    {s.val}
                   </div>
-                  <span className={`ex-chevron ${activeEx === ei ? "open" : ""}`}>▼</span>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: T.textMuted,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      marginTop: 2,
+                    }}
+                  >
+                    {s.lbl}
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                {activeEx === ei && (
-                  <div className="ex-sets">
-                    {/* Header row */}
-                    <div className="set-row" style={{marginBottom: 6}}>
-                      <div className="set-label">Set</div>
-                      <div className="set-label">Target Reps</div>
-                      <div className="set-label">Weight</div>
-                      <div className="set-label">Rest</div>
-                      <div className="set-label">Done</div>
-                    </div>
-                    {ex.sets.map((s, si) => {
-                      const key = `${ei}-${si}`;
-                      const checked = completedSets[key];
-                      return (
-                        <div key={si} className="set-row">
-                          <div className="set-num-badge" style={checked ? {background: config.color+"20", color: config.color} : {}}>{si + 1}</div>
-                          <div className="set-info">{s.reps}</div>
-                          <div className="set-info">{s.weight}</div>
-                          <div className="set-info">{ex.rest}</div>
-                          <button className={`set-check ${checked ? "checked" : ""}`} onClick={() => toggleSet(ei, si)} />
+          {/* Progress Bar */}
+          <div
+            style={{
+              background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+              border: `1px solid ${T.glassBorder}`,
+              borderRadius: 16,
+              padding: "12px 16px",
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 12,
+                fontWeight: 700,
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ color: T.textSub }}>
+                {completedCount} of {totalSets} sets completed
+              </span>
+              <span style={{ color: config.color, fontFamily: FONT.display }}>
+                {Math.round(progress)}%
+              </span>
+            </div>
+            <div
+              style={{
+                height: 8,
+                borderRadius: 99,
+                background: dark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${progress}%`,
+                  background: config.color || T.accent,
+                  borderRadius: 99,
+                  transition: "width 0.4s ease",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Two Columns Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 310px",
+              gap: 20,
+              alignItems: "start",
+            }}
+          >
+            {/* Exercises List */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {config.exercises.map((ex, ei) => {
+                const isOpen = activeEx === ei;
+                return (
+                  <div
+                    key={ei}
+                    style={{
+                      background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                      border: `1px solid ${isOpen ? `${config.color}40` : T.glassBorder}`,
+                      borderRadius: 18,
+                      overflow: "hidden",
+                      transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                  >
+                    {/* Header */}
+                    <div
+                      onClick={() => setActiveEx(isOpen ? -1 : ei)}
+                      style={{
+                        padding: "16px 18px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 10,
+                            background: `${config.color}18`,
+                            color: config.color,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontFamily: FONT.display,
+                            fontSize: 13,
+                            fontWeight: 800,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {ei + 1}
                         </div>
-                      );
-                    })}
-                    {ex.tip && (
-                      <div className="ex-tip">
-                        <strong>💡 Form tip: </strong>{ex.tip}
+                        <div>
+                          <div
+                            style={{
+                              fontFamily: FONT.display,
+                              fontSize: 15,
+                              fontWeight: 800,
+                              color: T.text,
+                            }}
+                          >
+                            {ex.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: T.textSub, marginTop: 2 }}>
+                            {ex.sets.length} sets · {ex.reps} · {ex.rest} rest
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: T.textMuted,
+                          transform: isOpen ? "rotate(180deg)" : "none",
+                          transition: "transform 0.2s ease",
+                        }}
+                      >
+                        ▼
+                      </span>
+                    </div>
+
+                    {/* Sets Content */}
+                    {isOpen && (
+                      <div
+                        style={{
+                          padding: "0 18px 16px",
+                          borderTop: `1px solid ${T.glassBorder}`,
+                          paddingTop: 14,
+                        }}
+                      >
+                        {/* Table Header */}
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "32px 1fr 1fr 1fr 38px",
+                            gap: 8,
+                            alignItems: "center",
+                            marginBottom: 8,
+                            fontSize: 10,
+                            fontWeight: 800,
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                            color: T.textMuted,
+                            textAlign: "center",
+                          }}
+                        >
+                          <div>Set</div>
+                          <div>Reps</div>
+                          <div>Load</div>
+                          <div>Rest</div>
+                          <div>Done</div>
+                        </div>
+
+                        {/* Sets Rows */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {ex.sets.map((s, si) => {
+                            const key = `${ei}-${si}`;
+                            const isChecked = completedSets[key];
+
+                            return (
+                              <div
+                                key={si}
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "32px 1fr 1fr 1fr 38px",
+                                  gap: 8,
+                                  alignItems: "center",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    height: 34,
+                                    borderRadius: 8,
+                                    background: isChecked ? `${config.color}20` : dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+                                    color: isChecked ? config.color : T.textSub,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 12,
+                                    fontWeight: 800,
+                                    fontFamily: FONT.display,
+                                  }}
+                                >
+                                  {si + 1}
+                                </div>
+
+                                <div
+                                  style={{
+                                    height: 34,
+                                    borderRadius: 8,
+                                    background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                                    border: `1px solid ${T.glassBorder}`,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: T.text,
+                                  }}
+                                >
+                                  {s.reps}
+                                </div>
+
+                                <div
+                                  style={{
+                                    height: 34,
+                                    borderRadius: 8,
+                                    background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                                    border: `1px solid ${T.glassBorder}`,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: T.text,
+                                  }}
+                                >
+                                  {s.weight}
+                                </div>
+
+                                <div
+                                  style={{
+                                    height: 34,
+                                    borderRadius: 8,
+                                    background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                                    border: `1px solid ${T.glassBorder}`,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: T.textSub,
+                                  }}
+                                >
+                                  {ex.rest}
+                                </div>
+
+                                <button
+                                  onClick={() => toggleSet(ei, si)}
+                                  aria-label={`Mark set ${si + 1} complete`}
+                                  style={{
+                                    width: 38,
+                                    height: 34,
+                                    borderRadius: 8,
+                                    border: isChecked ? `1px solid ${config.color}` : `1px solid ${T.glassBorder}`,
+                                    background: isChecked ? config.color : "transparent",
+                                    color: isChecked ? "#ffffff" : "transparent",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 14,
+                                    fontWeight: 900,
+                                    cursor: "pointer",
+                                    transition: "all 0.15s ease",
+                                  }}
+                                >
+                                  {isChecked ? "✓" : ""}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Form Tip */}
+                        {ex.tip && (
+                          <div
+                            style={{
+                              marginTop: 12,
+                              padding: "10px 12px",
+                              borderRadius: 10,
+                              background: `${config.color}0c`,
+                              border: `1px solid ${config.color}20`,
+                              fontSize: 11.5,
+                              color: T.textSub,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            <strong style={{ color: config.color }}>Form Cue: </strong>
+                            {ex.tip}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                );
+              })}
+            </div>
+
+            {/* Sidebar Cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Muscles Worked */}
+              <div
+                style={{
+                  background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                  border: `1px solid ${T.glassBorder}`,
+                  borderRadius: 18,
+                  padding: 16,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: T.textMuted,
+                    marginBottom: 12,
+                  }}
+                >
+                  Muscles Worked
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {config.muscles.map((m, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "6px 0",
+                        borderBottom: i < config.muscles.length - 1 ? `1px solid ${T.glassBorder}` : "none",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: config.color,
+                          }}
+                        />
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>
+                          {m.name}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 6,
+                          background: `${config.color}15`,
+                          color: config.color,
+                        }}
+                      >
+                        {m.type}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
 
-          {/* Right sidebar */}
-          <div>
-            <div className="side-card">
-              <div className="side-title">Muscles Worked</div>
-              {config.muscles.map((m, i) => (
-                <div key={i} className="muscle-item">
-                  <div className="muscle-dot" style={{background: config.color, boxShadow: `0 0 6px ${config.color}60`}} />
-                  <span className="muscle-name">{m.name}</span>
-                  <span className="muscle-tag" style={{background: `${config.color}18`, color: config.color}}>
-                    {m.type}
-                  </span>
+              {/* Routine Goals */}
+              <div
+                style={{
+                  background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                  border: `1px solid ${T.glassBorder}`,
+                  borderRadius: 18,
+                  padding: 16,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: T.textMuted,
+                    marginBottom: 12,
+                  }}
+                >
+                  Key Objectives
                 </div>
-              ))}
-            </div>
-
-            <div className="side-card">
-              <div className="side-title">Today's Goal</div>
-              {config.goals.map((g, i) => (
-                <div key={i} style={{display:"flex", alignItems:"flex-start", gap:10, padding:"8px 0", borderBottom: i < config.goals.length-1 ? `1px solid rgba(255,255,255,0.06)` : "none"}}>
-                  <span style={{fontSize:16, flexShrink:0}}>{g.icon}</span>
-                  <span style={{fontSize:13, color: T.textSub, lineHeight:1.5}}>{g.text}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {config.goals.map((g, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 8,
+                        fontSize: 12,
+                        color: T.textSub,
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>{g.icon}</span>
+                      <span>{g.text}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <button className="finish-btn"
-              disabled={completedCount === 0}
-              onClick={finishWorkout}>
-              {saving ? "Saving…" : `Finish ${config.name} ✓`}
-            </button>
+              {/* Finish Workout CTA */}
+              <button
+                disabled={completedCount === 0 || saving}
+                onClick={finishWorkout}
+                style={{
+                  width: "100%",
+                  height: 48,
+                  borderRadius: 14,
+                  border: "none",
+                  background: completedCount > 0 ? config.color || T.accent : dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+                  color: completedCount > 0 ? "#ffffff" : T.textMuted,
+                  fontFamily: FONT.display,
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: completedCount > 0 ? "pointer" : "not-allowed",
+                  transition: "all 0.2s ease",
+                  boxShadow: completedCount > 0 ? `0 6px 20px ${config.color}35` : "none",
+                }}
+              >
+                {saving
+                  ? "Saving Workout…"
+                  : completedCount === 0
+                  ? "Check sets to finish"
+                  : `Finish ${config.name} (${completedCount} sets) ✓`}
+              </button>
+            </div>
           </div>
         </div>
       </div>

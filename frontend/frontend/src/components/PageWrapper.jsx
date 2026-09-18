@@ -27,13 +27,6 @@ export default function PageWrapper({
   const color = accentColor || T.accent;
   const css = generateCSS(T, dark);
 
-  const mobTabs = [
-    { label: "Home", icon: "⚡", path: "/dashboard" },
-    { label: "Train", icon: "🏋️", path: "/workout-planner" },
-    { label: "Fuel", icon: "🥗", path: "/diet-logger" },
-    { label: "Squad", icon: "👥", path: "/community" },
-    { label: "Profile", icon: "👤", path: "/profile" },
-  ];
 
   return (
     <>
@@ -93,57 +86,6 @@ export default function PageWrapper({
         <div style={{ position: "relative", zIndex: 1 }}>
           {children}
         </div>
-
-        {/* ── Mobile Persistent Bottom Dock ── */}
-        {isMobile && (
-          <nav
-            style={{
-              position: "fixed",
-              bottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
-              left: 14,
-              right: 14,
-              height: 60,
-              borderRadius: 28,
-              zIndex: 1000,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-around",
-              padding: "0 8px",
-              boxSizing: "border-box",
-              background: dark ? "rgba(13, 16, 26, 0.95)" : "rgba(255, 255, 255, 0.96)",
-              backdropFilter: "blur(28px)",
-              WebkitBackdropFilter: "blur(28px)",
-              border: `1px solid ${dark ? "rgba(255, 255, 255, 0.14)" : "rgba(0, 0, 0, 0.08)"}`,
-              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.5)",
-            }}
-          >
-            {mobTabs.map((t) => {
-              const isActive = location.pathname.startsWith(t.path);
-              return (
-                <button
-                  key={t.label}
-                  onClick={() => navigate(t.path)}
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 3,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "4px 2px",
-                    color: isActive ? "#3b82f6" : dark ? "rgba(241, 245, 249, 0.55)" : "rgba(15, 23, 42, 0.55)",
-                  }}
-                >
-                  <span style={{ fontSize: 18, lineHeight: 1 }}>{t.icon}</span>
-                  <span style={{ fontSize: 10, fontWeight: 800, fontFamily: FONT.display }}>{t.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        )}
       </div>
     </>
   );

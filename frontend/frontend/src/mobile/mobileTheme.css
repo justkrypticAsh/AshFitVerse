@@ -1,4 +1,4 @@
-/* src/mobile/mobileTheme.css — AshFitVerse Native Android-Grade Mobile Styling */
+/* src/mobile/mobileTheme.css — AshFitVerse Native Clean Mobile Styling */
 
 :root {
   --mobile-font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -19,38 +19,12 @@
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  padding-bottom: calc(88px + var(--safe-bottom));
+  padding-bottom: calc(84px + var(--safe-bottom));
 }
 
-/* Ambient glow orbs on mobile */
+/* Subtle ambient depth (zero neon noise) */
 .mob-orb {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  filter: blur(60px);
-  opacity: 0.6;
-}
-.mob-orb-1 {
-  top: -60px;
-  right: -50px;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%);
-}
-.mob-orb-2 {
-  top: 35%;
-  left: -80px;
-  width: 260px;
-  height: 260px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, transparent 70%);
-}
-.mob-orb-3 {
-  bottom: 80px;
-  right: -60px;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, transparent 70%);
+  display: none;
 }
 
 /* ── Top Mobile App Bar ── */
@@ -62,26 +36,25 @@
   align-items: center;
   justify-content: space-between;
   padding: calc(10px + var(--safe-top)) 16px 10px;
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .mob-app-bar-user {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
 }
 
 .mob-avatar-wrap {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  padding: 2px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+  padding: 1.5px;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
   flex-shrink: 0;
 }
 
@@ -101,7 +74,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 16px;
+  font-size: 15px;
   color: #ffffff;
   background: #0f172a;
 }
@@ -110,11 +83,11 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #10b981;
-  border: 2px solid #08090d;
+  border: 2px solid #090b10;
 }
 
 .mob-greeting-wrap {
@@ -123,7 +96,7 @@
 }
 
 .mob-greeting-sub {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -134,7 +107,7 @@
 
 .mob-greeting-name {
   font-family: var(--mobile-font-display);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -147,9 +120,9 @@
 }
 
 .mob-action-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,31 +139,20 @@
 .mob-streak-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 11px;
-  border-radius: 20px;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 16px;
   font-size: 12px;
   font-weight: 800;
   font-family: var(--mobile-font-display);
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
-  border: 1px solid rgba(249, 115, 22, 0.35);
-  background: rgba(249, 115, 22, 0.12);
+  transition: transform 0.15s ease;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  background: rgba(249, 115, 22, 0.08);
   color: #f97316;
 }
 .mob-streak-pill:active {
   transform: scale(0.95);
-}
-
-.mob-badge-dot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #3b82f6;
-  box-shadow: 0 0 8px #3b82f6;
 }
 
 /* ── Content Container ── */
@@ -200,13 +162,13 @@
   padding: 12px 16px 24px;
 }
 
-/* ── Horizontal Story Pills ── */
+/* ── Horizontal Story / Quick Pills ── */
 .mob-story-scroll {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   overflow-x: auto;
-  padding: 4px 0 14px;
+  padding: 2px 0 10px;
   margin: 0 -16px;
   padding-left: 16px;
   padding-right: 16px;
@@ -221,120 +183,29 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border-radius: 24px;
-  font-size: 12.5px;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 700;
   font-family: var(--mobile-font-display);
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.15s ease, opacity 0.2s ease;
 }
 .mob-story-chip:active {
-  transform: scale(0.94);
+  transform: scale(0.95);
 }
 
-/* ── Glassmorphic Elevated Cards ── */
+/* ── Clean Understated Cards (Apple / Linear Aesthetic) ── */
 .mob-card {
-  border-radius: 20px;
+  border-radius: 18px;
   padding: 16px;
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-  margin-bottom: 14px;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
-}
-.mob-card:active {
-  transform: scale(0.99);
-}
-
-.mob-card-glow {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(40px);
-  opacity: 0.18;
-}
-
-/* ── Kinetic Activity Ring Card ── */
-.mob-ring-card {
-  display: grid;
-  grid-template-columns: 108px 1fr;
-  align-items: center;
-  gap: 16px;
-  padding: 18px;
-}
-
-.mob-ring-container {
-  position: relative;
-  width: 108px;
-  height: 108px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mob-ring-center {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.mob-ring-value {
-  font-family: var(--mobile-font-mono);
-  font-size: 20px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-
-.mob-ring-unit {
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 2px;
-}
-
-.mob-ring-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mob-macro-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.mob-macro-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.mob-macro-bar-track {
-  height: 5px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.mob-macro-bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 12px;
+  transition: transform 0.15s ease;
 }
 
 /* ── 2x2 Telemetry Grid ── */
@@ -342,16 +213,16 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .mob-grid-cell {
-  border-radius: 18px;
-  padding: 14px;
+  border-radius: 16px;
+  padding: 13px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 112px;
+  min-height: 104px;
   position: relative;
   overflow: hidden;
 }
@@ -363,258 +234,121 @@
 }
 
 .mob-cell-label {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
 }
 
 .mob-cell-icon {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .mob-cell-value {
   font-family: var(--mobile-font-mono);
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   line-height: 1.1;
-  margin: 6px 0 2px;
+  margin: 4px 0 2px;
 }
 
 .mob-cell-sub {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-/* ── Workout Mission Hero Card ── */
-.mob-mission-card {
-  border-radius: 20px;
-  padding: 16px;
-  margin-bottom: 14px;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-.mob-mission-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  margin-bottom: 8px;
-}
-
-.mob-mission-title {
-  font-family: var(--mobile-font-display);
-  font-size: 19px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  margin-bottom: 4px;
-}
-
-.mob-mission-exs {
-  font-size: 12px;
-  line-height: 1.45;
-  margin-bottom: 14px;
-  opacity: 0.75;
-}
-
-.mob-mission-btn {
-  width: 100%;
-  height: 44px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  color: #ffffff;
-  font-family: var(--mobile-font-display);
-  font-size: 14px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-  transition: transform 0.15s ease;
-}
-.mob-mission-btn:active {
-  transform: scale(0.97);
-}
-
-/* ── Native Android Floating Bottom Navigation Bar ── */
-.mob-bottom-nav {
-  position: fixed;
-  bottom: calc(12px + var(--safe-bottom));
-  left: 14px;
-  right: 14px;
-  height: 64px;
-  border-radius: 28px;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px;
-  box-sizing: border-box;
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mob-nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 6px 2px;
-  border-radius: 18px;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-}
-.mob-nav-item:active {
-  transform: scale(0.9);
-}
-
-.mob-nav-icon-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 24px;
-}
-
-.mob-nav-icon {
-  font-size: 19px;
-  line-height: 1;
-  transition: transform 0.2s ease, filter 0.2s ease;
-}
-
-.mob-nav-item.active .mob-nav-icon {
-  transform: translateY(-2px);
-  filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.6));
-}
-
-.mob-nav-label {
-  font-family: var(--mobile-font-display);
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.01em;
-  transition: color 0.2s ease;
-}
-
-/* Center Glowing FAB Button */
-.mob-fab-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin: 0 4px;
-}
-
-.mob-fab-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6), inset 0 1.5px 0 rgba(255, 255, 255, 0.4);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-}
-.mob-fab-btn:active {
-  transform: scale(0.88) rotate(45deg);
-}
-
 /* ── Native Android-Style Action Sheet / Bottom Drawer ── */
 .mob-sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1050;
-  background: rgba(0, 0, 0, 0.65);
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  animation: mobFadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.2s ease forwards;
 }
 
-.mob-sheet-content {
-  width: 100%;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  padding: 16px 20px calc(24px + var(--safe-bottom));
+.mob-sheet-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 12px 18px calc(24px + var(--safe-bottom));
   box-sizing: border-box;
-  animation: mobSlideUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  max-height: 85dvh;
+  animation: slideDrawerUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-height: 85vh;
   overflow-y: auto;
 }
 
-.mob-sheet-pill-handle {
-  width: 38px;
+.mob-sheet-handle {
+  width: 36px;
   height: 4px;
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.25);
   margin: 0 auto 16px;
+  opacity: 0.25;
+  background: currentColor;
+}
+
+.mob-sheet-title {
+  font-family: var(--mobile-font-display);
+  font-size: 17px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  text-align: center;
 }
 
 .mob-sheet-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 14px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
-.mob-sheet-tile {
-  padding: 16px 14px;
-  border-radius: 18px;
+.mob-sheet-item {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
+  padding: 16px 12px;
+  border-radius: 16px;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.15s ease, border-color 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  transition: transform 0.15s ease, background 0.2s ease;
 }
-.mob-sheet-tile:active {
-  transform: scale(0.95);
+.mob-sheet-item:active {
+  transform: scale(0.96);
 }
 
-@keyframes mobFadeIn {
+.mob-sheet-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.mob-sheet-item-label {
+  font-family: var(--mobile-font-display);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes mobSlideUp {
+@keyframes slideDrawerUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
