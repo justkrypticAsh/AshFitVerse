@@ -1,509 +1,730 @@
-// src/pages/Pricing.jsx — migrated to useTheme + generateCSS
-import React, { useState, useEffect } from "react";
+// src/pages/Pricing.jsx — AshFitVerse
+// Features locked accurately based on what actually exists in the app
+// Free: basics only | Lite: tools + community | Pro: health hubs + AI + advanced
+
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db, auth } from "../firebase";
 import useTheme from "../hooks/usetheme";
-import useUser from "../hooks/useUser";
+import usePayment from "../hooks/usePayment";
 import { generateCSS, FONT } from "../theme";
 
+// ─── Plans — only real features mentioned ────────────────────────────────────
 const PLANS = [
   {
-    id: "free", name: "Free", tagline: "Get started, no card needed",
+    id: "free", name: "Free", tagline: "Just getting started",
     price: { monthly: 0, yearly: 0 },
-    color: "#4f8ef7", glow: "rgba(79,142,247,0.2)", emoji: "🌱",
-    badge: null,
-    features: [
-      { text: "Dashboard overview",           included: true  },
-      { text: "BMI Calculator",               included: true  },
-      { text: "Calorie Calculator",           included: true  },
-      { text: "4 workout day pages",          included: true  },
-      { text: "Basic diet log (today only)",  included: true  },
-      { text: "Community feed (read only)",   included: true  },
-      { text: "Fat % Calculator",             included: false },
-      { text: "Workout Planner & Logger",     included: false },
-      { text: "Full Diet Plan Generator",     included: false },
-      { text: "AI Meal Suggestions",          included: false },
-      { text: "Progress Analytics",           included: false },
-      { text: "Priority Support",             included: false },
+    color: "#0a84ff", emoji: "🌱", badge: null, cta: "Current Plan",
+
+    // What free users GET (real features)
+    included: [
+      { icon:"📊", text:"Dashboard overview & basic stats"        },
+      { icon:"📏", text:"BMI Calculator"                          },
+      { icon:"🔥", text:"Calorie Calculator"                      },
+      { icon:"👀", text:"Community feed (read-only)"              },
+      { icon:"🏋️",  text:"4 basic workout day pages"               },
     ],
-    cta: "Current Plan", current: true,
+
+    // What free users DON'T get (real locked features)
+    locked: [
+      { icon:"📊", text:"Fat % Body Calculator"                   },
+      { icon:"📋", text:"Workout Planner"                         },
+      { icon:"📝", text:"Workout Logger & history"                },
+      { icon:"🥗", text:"Diet Logger"                             },
+      { icon:"🍱", text:"Diet Plan Generator"                     },
+      { icon:"💬", text:"Post & comment in community"             },
+      { icon:"♀",  text:"Women's Health Hub"                      },
+      { icon:"♂",  text:"Men's Health Hub"                        },
+    ],
   },
+
   {
     id: "lite", name: "Lite", tagline: "For consistent gym-goers",
     price: { monthly: 199, yearly: 1699 },
-    color: "#a78bfa", glow: "rgba(167,139,250,0.2)", emoji: "⚡",
-    badge: "Popular",
-    features: [
-      { text: "Everything in Free",           included: true  },
-      { text: "Fat % Calculator",             included: true  },
-      { text: "Workout Planner",              included: true  },
-      { text: "Workout Logger (history)",     included: true  },
-      { text: "Full Diet Plan Generator",     included: true  },
-      { text: "7-day progress charts",        included: true  },
-      { text: "Community — post & comment",   included: true  },
-      { text: "Leaderboard access",           included: true  },
-      { text: "AI Meal Suggestions",          included: false },
-      { text: "Custom workout programs",      included: false },
-      { text: "1-on-1 Coach Chat",            included: false },
-      { text: "Priority Support",             included: false },
+    color: "#9d22d6", emoji: "⚡", badge: "Most Popular", cta: "Get Lite",
+
+    included: [
+      { icon:"✅", text:"Everything in Free"                      },
+      { icon:"📊", text:"Fat % Body Calculator"                   },
+      { icon:"📋", text:"Workout Planner"                         },
+      { icon:"📝", text:"Workout Logger & full history"           },
+      { icon:"🥗", text:"Diet Logger (full history)"              },
+      { icon:"🍱", text:"Diet Plan Generator (rule-based)"        },
+      { icon:"💬", text:"Post, comment & join community"          },
+      { icon:"🏆", text:"Community leaderboard access"            },
     ],
-    cta: "Upgrade to Lite", current: false,
+
+    locked: [
+      { icon:"🧬", text:"AI-powered Diet Plan (Claude AI)"        },
+      { icon:"♀",  text:"Full Women's Health Hub"                 },
+      { icon:"♂",  text:"Full Men's Health Hub"                   },
+      { icon:"😴", text:"Sleep Tracker"                           },
+      { icon:"❤️", text:"Sexual Wellness module"                  },
+      { icon:"💊", text:"Testosterone Health tracker"             },
+    ],
   },
+
   {
     id: "pro", name: "Pro", tagline: "For serious athletes",
     price: { monthly: 499, yearly: 3999 },
-    color: "#fb923c", glow: "rgba(251,146,60,0.22)", emoji: "🏆",
-    badge: "Best Value",
-    features: [
-      { text: "Everything in Lite",              included: true },
-      { text: "AI Meal Suggestions (daily)",     included: true },
-      { text: "Custom workout programs",         included: true },
-      { text: "Full progress analytics",         included: true },
-      { text: "Body transformation tracker",     included: true },
-      { text: "Macro auto-calculator",           included: true },
-      { text: "1-on-1 Coach Chat (2x/month)",   included: true },
-      { text: "Challenge creation",              included: true },
-      { text: "Early access to new features",   included: true },
-      { text: "Export data (PDF/CSV)",           included: true },
-      { text: "Ad-free experience",             included: true },
-      { text: "Priority Support 24/7",          included: true },
+    color: "#e67e00", emoji: "🏆", badge: "Best Value", cta: "Go Pro",
+
+    included: [
+      { icon:"✅", text:"Everything in Lite"                      },
+      { icon:"🧬", text:"AI Diet Plan (Claude AI powered)"        },
+      { icon:"♀",  text:"Full Women's Health Hub"                 },
+      { icon:"📅", text:"Cycle Tracker & PCOS Guide"              },
+      { icon:"♂",  text:"Full Men's Health Hub"                   },
+      { icon:"😴", text:"Sleep Tracker"                           },
+      { icon:"❤️", text:"Sexual Wellness module"                  },
+      { icon:"💊", text:"Testosterone Health tracker"             },
+      { icon:"🧘", text:"Mental Wellness (Female & Male)"         },
+      { icon:"🌸", text:"Hormone Nutrition & Contraception guide" },
     ],
-    cta: "Go Pro", current: false,
+
+    locked: [],  // Pro has everything
   },
 ];
 
 const FAQS = [
-  { q: "Can I cancel anytime?",               a: "Yes, absolutely. Cancel your subscription anytime from your profile settings. You'll keep access until the end of your billing period." },
-  { q: "Is there a free trial for Lite/Pro?", a: "Yes! Both Lite and Pro come with a 7-day free trial. No credit card required to start." },
-  { q: "What payment methods do you accept?", a: "We accept UPI, all major credit/debit cards, NetBanking, and popular wallets like Paytm and PhonePe." },
-  { q: "Will I lose my data if I downgrade?", a: "No. All your logged workouts, diet entries, and progress data are always saved — regardless of your plan." },
-  { q: "Can I switch plans mid-cycle?",       a: "Yes. Upgrading is instant. If you downgrade, the change takes effect at your next billing date." },
+  { q:"Can I cancel anytime?",               a:"Yes. Cancel anytime from profile settings. Access continues until billing period ends." },
+  { q:"Is there a free trial for Lite/Pro?", a:"Yes! Both Lite and Pro come with a 7-day free trial. No credit card required to start." },
+  { q:"What payment methods are accepted?",  a:"UPI, all major credit/debit cards, NetBanking, Paytm and PhonePe — via Razorpay." },
+  { q:"Will I lose data if I downgrade?",    a:"Never. All logged workouts, diet entries and progress are always saved regardless of plan." },
+  { q:"Can I switch plans mid-cycle?",       a:"Yes. Upgrades are instant. Downgrades take effect at your next billing date." },
 ];
 
-const TOOLS = [
-  { label: "Calorie Calc",    icon: "🔥", path: "/calorie-calculator" },
-  { label: "Fat % Calc",      icon: "📊", path: "/fat-calculator"     },
-  { label: "BMI Calc",        icon: "📏", path: "/bmi-calculator"     },
-  { label: "Workout Planner", icon: "📋", path: "/workout-planner"    },
-  { label: "Workout Logger",  icon: "📝", path: "/workout-logger"     },
-  { label: "Diet Logger",     icon: "🥗", path: "/diet-logger"        },
-  { label: "Diet Plan",       icon: "🍱", path: "/diet-plan"          },
-  { label: "Shop",            icon: "🛒", path: "/shop"               },
-];
-
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Pricing() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, isMale, isFemale } = useUser();
+  const { startPayment, loading: payLoading } = usePayment();
 
   const [mounted,  setMounted]  = useState(false);
   const [billing,  setBilling]  = useState("monthly");
-  const [selected, setSelected] = useState(null);
   const [openFaq,  setOpenFaq]  = useState(null);
   const [success,  setSuccess]  = useState(null);
+  const [payErr,   setPayErr]   = useState(null);
+  const [activeId, setActiveId] = useState(null);
+
+  const [userData, setUserData] = useState({
+    plan:"free", name:"", email:"", streak:0, phone:"",
+  });
 
   useEffect(() => { setMounted(true); }, []);
 
-  const handleUpgrade = (plan) => {
-    if (plan.current) return;
-    setSelected(plan.id);
-    setTimeout(() => { setSuccess(plan); setSelected(null); }, 1200);
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), snap => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setUserData({
+          plan:   d.plan   || "free",
+          name:   d.name   || d.displayName || "User",
+          email:  d.email  || user.email || "",
+          streak: d.streak || 0,
+          phone:  d.phone  || "",
+        });
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // Canvas BG
+  const canvasRef = useRef(null);
+  const isDarkRef = useRef(dark);
+  useEffect(() => { isDarkRef.current = dark; }, [dark]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let W, H;
+    const resize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
+    resize(); window.addEventListener("resize", resize);
+    const N = 42;
+    const pts = Array.from({ length: N }, (_, i) => ({
+      x: Math.random()*1.2-.1, y: Math.random()*1.2-.1,
+      r: .3+Math.random()*.8, vx:(Math.random()-.5)*.00018, vy:(Math.random()-.5)*.00015,
+      a:.04+Math.random()*.07,
+      c:["rgba(10,132,255,","rgba(157,34,214,","rgba(48,209,88,","rgba(230,126,0,"][i%4],
+    }));
+    let raf;
+    const draw = () => {
+      if (!W||!H) { raf=requestAnimationFrame(draw); return; }
+      ctx.clearRect(0,0,W,H);
+      const d = isDarkRef.current;
+      const bg = ctx.createRadialGradient(W*.5,H*.25,0,W*.5,H*.25,W*.85);
+      if (d) {
+        bg.addColorStop(0,"rgba(10,10,12,1)"); bg.addColorStop(.5,"rgba(8,8,14,1)"); bg.addColorStop(1,"rgba(5,5,8,1)");
+      } else {
+        bg.addColorStop(0,"rgba(255,255,255,1)"); bg.addColorStop(.5,"rgba(246,247,252,1)"); bg.addColorStop(1,"rgba(235,236,242,1)");
+      }
+      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+      pts.forEach(p => {
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<-.1)p.x=1.1; if(p.x>1.1)p.x=-.1; if(p.y<-.1)p.y=1.1; if(p.y>1.1)p.y=-.1;
+        const px=p.x*W, py=p.y*H, pr=p.r*13;
+        const al=d?p.a:p.a*.38;
+        const grd=ctx.createRadialGradient(px,py,0,px,py,pr);
+        grd.addColorStop(0,p.c+al*2+")"); grd.addColorStop(1,p.c+"0)");
+        ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.fill();
+      });
+      raf=requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { window.removeEventListener("resize",resize); cancelAnimationFrame(raf); };
+  }, [dark]);
+
+  // Payment
+  const handleUpgrade = async (plan) => {
+    if (plan.id === "free" || plan.id === userData.plan) return;
+    setPayErr(null); setActiveId(plan.id);
+    await startPayment({
+      planId: plan.id, billing, planName: plan.name,
+      userEmail: userData.email, userName: userData.name, userPhone: userData.phone||"",
+      onSuccess: (planId) => { setSuccess({ planId, planName:plan.name, emoji:plan.emoji }); setActiveId(null); },
+      onFailure: (err)    => { if(!err.includes("cancel")) setPayErr(err); setActiveId(null); },
+    });
   };
 
-  const savingPct = (p) => {
-    if (p.price.monthly === 0) return null;
-    return Math.round(((p.price.monthly * 12 - p.price.yearly) / (p.price.monthly * 12)) * 100);
+  const savingPct = p => {
+    if (!p.price.monthly) return null;
+    return Math.round(((p.price.monthly*12 - p.price.yearly)/(p.price.monthly*12))*100);
+  };
+  const getPlanStatus = planId => {
+    if (planId === userData.plan) return "current";
+    return ["free","lite","pro"].indexOf(planId) < ["free","lite","pro"].indexOf(userData.plan)
+      ? "downgrade" : "upgrade";
   };
 
-  const NAV_MAIN = [
-    { label: "Dashboard",  icon: "⊞", path: "/dashboard" },
-    { label: "Community",  icon: "◎", path: "/community", badge: "3" },
-    { label: "Profile",    icon: "◉", path: "/profile" },
-    ...(isFemale ? [{ label: "Women's Health", icon: "♀", path: "/female-health", color: "#f472b6" }] : []),
-    ...(isMale   ? [{ label: "Men's Health",   icon: "♂", path: "/male-health",   color: "#4f8ef7" }] : []),
-  ];
+  // ── CSS ────────────────────────────────────────────────────────────────────
+  const css = `
+    ${generateCSS(T, dark)}
 
-  const css = generateCSS(T, dark) + `
-    .pr-root{min-height:100vh;display:flex;font-family:${FONT.body};background:${T.bg};color:${T.text};
-      opacity:${mounted?1:0};transition:opacity 0.7s ease,background 0.5s,color 0.5s;}
+    .pr-root {
+      min-height: 100vh;
+      background: ${T.bg};
+      color: ${T.text};
+      font-family: ${FONT.body};
+      opacity: ${mounted ? 1 : 0};
+      transition: opacity .5s ease, background .4s;
+      position: relative;
+    }
 
-    /* Sidebar */
-    .sb{width:255px;min-height:100vh;background:${T.sidebar};border-right:1px solid ${T.glassBorder};
-      display:flex;flex-direction:column;padding:28px 15px 22px;flex-shrink:0;
-      position:relative;z-index:20;backdrop-filter:blur(40px);transition:background 0.5s,border 0.5s;}
-    .sb::after{content:'';position:absolute;top:0;left:0;right:0;height:200px;
-      background:linear-gradient(180deg,${T.accent}08 0%,transparent 100%);pointer-events:none;}
-    .sb-logo{font-family:${FONT.display};font-size:21px;font-weight:800;letter-spacing:0.04em;
-      color:${T.text};padding:0 8px;margin-bottom:4px;cursor:pointer;}
-    .sb-logo span{color:${T.accent};}
-    .sb-sub{font-size:10px;color:${T.textMuted};letter-spacing:0.14em;text-transform:uppercase;
-      font-weight:600;padding:0 8px;margin-bottom:24px;}
-    .sb-user{padding:13px;background:${T.glass};border:1px solid ${T.glassBorder};border-radius:15px;
-      backdrop-filter:blur(20px);display:flex;align-items:center;gap:11px;cursor:pointer;
-      transition:all 0.25s;margin-bottom:22px;}
-    .sb-user:hover{border-color:${T.accent}35;}
-    .sb-ava{width:37px;height:37px;border-radius:50%;border:2px solid ${T.accent}40;
-      background:linear-gradient(135deg,${T.accent},${T.purple});
-      display:flex;align-items:center;justify-content:center;
-      font-size:15px;font-weight:800;color:#fff;flex-shrink:0;}
-    .sb-name{font-size:13px;font-weight:700;color:${T.text};}
-    .sb-goal{font-size:11px;color:${T.accent};font-weight:500;text-transform:capitalize;}
-    .sb-nl{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
-      color:${T.textMuted};padding:0 8px;margin:16px 0 5px;}
-    .sb-ni{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:13px;
-      cursor:pointer;font-size:13.5px;font-weight:500;color:${T.textSub};
-      transition:all 0.22s;margin-bottom:2px;border:1px solid transparent;}
-    .sb-ni:hover{color:${T.text};background:${T.glass};border-color:${T.glassBorder};}
-    .sb-ni.active{background:linear-gradient(135deg,${T.accentSoft},${T.purpleSoft});
-      color:${T.accent};border-color:${T.accent}24;font-weight:600;}
-    .sb-ico{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
-    .sb-badge{margin-left:auto;padding:2px 7px;background:${T.accent}22;color:${T.accent};
-      border-radius:99px;font-size:10px;font-weight:800;}
-    .sb-tool{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:11px;
-      cursor:pointer;font-size:13px;font-weight:500;color:${T.textSub};
-      transition:all 0.2s;margin-bottom:1px;}
-    .sb-tool:hover{color:${T.text};background:${T.glass};}
-    .sb-logout{width:100%;padding:11px;border-radius:13px;border:1px solid rgba(248,113,113,0.18);
-      background:rgba(248,113,113,0.05);color:${T.red};font-size:13px;font-weight:600;
-      font-family:${FONT.body};cursor:pointer;transition:all 0.25s;margin-top:auto;}
-    .sb-logout:hover{background:rgba(248,113,113,0.12);}
+    /* Header */
+    .pr-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 60px;
+      background: ${dark ? "rgba(8,8,12,0.88)" : "rgba(255,255,255,0.88)"};
+      border-bottom: 1px solid ${T.glassBorder};
+      backdrop-filter: blur(40px); position: sticky; top: 0; z-index: 50;
+    }
+    .pr-back {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 10px;
+      border: 1px solid ${T.glassBorder};
+      background: ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"};
+      color: ${T.text}; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: ${FONT.body}; transition: all .15s;
+    }
+    .pr-back:hover { background: ${T.accentSoft}; border-color: ${T.accent}40; color: ${T.accent}; }
+    .pr-logo { font-family: ${FONT.display}; font-size: 18px; font-weight: 800; color: ${T.text}; }
+    .pr-logo span { color: ${T.accent}; }
+    .theme-toggle {
+      width: 48px; height: 26px; border-radius: 99px;
+      border: 1px solid ${T.glassBorder};
+      background: ${dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"};
+      cursor: pointer; position: relative;
+    }
+    .toggle-thumb {
+      position: absolute; top: 2px; width: 20px; height: 20px;
+      border-radius: 50%; background: ${T.accent};
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; transition: left .2s; left: ${dark?"24px":"2px"};
+    }
 
-    /* Main */
-    .mn{flex:1;overflow-y:auto;padding:32px 36px;position:relative;z-index:1;}
-
-    /* Topbar */
-    .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;animation:fadeUp 0.6s ease both;}
-    .topbar-title{font-family:${FONT.display};font-size:27px;font-weight:800;color:${T.text};letter-spacing:-0.02em;}
-    .topbar-sub{font-size:13px;color:${T.textSub};margin-top:3px;}
-    .topbar-right{display:flex;align-items:center;gap:11px;}
-    .streak-pill{display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;
-      background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.2);
-      font-size:13px;font-weight:700;color:#fb923c;}
+    /* Page */
+    .pr-page { max-width: 1120px; margin: 0 auto; padding: 40px 24px 70px; position: relative; z-index: 1; }
 
     /* Hero */
-    .pricing-hero{text-align:center;margin-bottom:36px;animation:fadeUp 0.6s ease 0.05s both;}
-    .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:99px;
-      background:${T.accentSoft};border:1px solid ${T.accent}25;
-      font-size:12px;font-weight:700;color:${T.accent};letter-spacing:0.08em;
-      text-transform:uppercase;margin-bottom:18px;}
-    .hero-title{font-family:${FONT.display};font-size:42px;font-weight:800;
-      letter-spacing:-0.03em;color:${T.text};line-height:1.1;margin-bottom:14px;}
-    .hero-title span{background:linear-gradient(135deg,${T.accent},${T.purple});
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-    .hero-sub{font-size:16px;color:${T.textSub};max-width:520px;margin:0 auto 28px;line-height:1.65;}
+    .ph { text-align: center; margin-bottom: 44px; }
+    .ph-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 16px; border-radius: 99px;
+      background: ${T.accentSoft}; border: 1px solid ${T.accent}30;
+      font-size: 11px; font-weight: 800; color: ${T.accent};
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px;
+    }
+    .ph-title {
+      font-family: ${FONT.display}; font-size: 42px; font-weight: 800;
+      color: ${T.text}; line-height: 1.12; margin-bottom: 12px; letter-spacing: -.025em;
+    }
+    .ph-title span {
+      background: linear-gradient(135deg,${T.accent},${T.purple});
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .ph-sub { font-size: 15px; color: ${T.textSub}; max-width: 500px; margin: 0 auto 28px; line-height: 1.65; }
 
     /* Billing toggle */
-    .billing-toggle{display:inline-flex;background:${T.glass};border:1px solid ${T.glassBorder};
-      border-radius:14px;padding:5px;gap:4px;margin-bottom:36px;backdrop-filter:blur(20px);}
-    .bill-btn{padding:10px 24px;border-radius:10px;border:none;background:transparent;
-      color:${T.textSub};font-size:13px;font-weight:700;font-family:${FONT.body};
-      cursor:pointer;transition:all 0.25s;position:relative;}
-    .bill-btn.active{background:linear-gradient(135deg,${T.accent},${T.purple});color:#fff;
-      box-shadow:0 4px 16px ${T.accentGlow};}
-    .save-tag{position:absolute;top:-10px;right:-8px;background:${T.green};color:#000;
-      font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:0.06em;}
+    .bill-wrap {
+      display: inline-flex;
+      background: ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"};
+      border: 1px solid ${T.glassBorder}; border-radius: 14px; padding: 5px; gap: 4px;
+    }
+    .bill-btn {
+      padding: 9px 22px; border-radius: 10px; border: none;
+      background: transparent; color: ${T.textSub};
+      font-size: 13.5px; font-weight: 700; cursor: pointer;
+      font-family: ${FONT.body}; transition: all .22s;
+    }
+    .bill-btn.on {
+      background: linear-gradient(135deg,${T.accent},${T.purple});
+      color: #fff; box-shadow: 0 3px 12px ${T.accentGlow};
+    }
 
     /* Plans grid */
-    .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
-      margin-bottom:40px;animation:fadeUp 0.6s ease 0.1s both;}
+    .plans-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; margin-bottom: 52px; }
 
     /* Plan card */
-    .plan-card{background:${T.glass};border:1px solid ${T.glassBorder};border-radius:28px;
-      padding:32px 28px;backdrop-filter:blur(28px);position:relative;overflow:hidden;
-      transition:all 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;
-      box-shadow:inset 0 1px 0 ${dark?"rgba(255,255,255,0.10)":"rgba(255,255,255,0.8)"};}
-    .plan-card:hover{transform:translateY(-8px);border-color:var(--pc);
-      box-shadow:0 32px 80px rgba(0,0,0,${dark?"0.4":"0.12"}),0 0 0 1px var(--pc)35,
-        inset 0 1px 0 ${dark?"rgba(255,255,255,0.10)":"rgba(255,255,255,0.8)"};}
-    .plan-card.popular{border-color:var(--pc)50;
-      box-shadow:0 0 0 1px var(--pc)30,0 20px 60px var(--pc)18,
-        inset 0 1px 0 ${dark?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.8)"};}
+    .plan-card {
+      background: ${dark ? "rgba(16,16,24,0.88)" : "rgba(255,255,255,0.94)"};
+      border: 1.5px solid ${T.glassBorder};
+      border-radius: 26px; padding: 28px 24px 24px;
+      display: flex; flex-direction: column;
+      position: relative;
+      backdrop-filter: blur(28px);
+      transition: transform .32s cubic-bezier(.4,0,.2,1), border-color .28s, box-shadow .28s;
+      /* Glass specular */
+      box-shadow:
+        inset 0 1px 0 ${dark ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.90)"},
+        0 4px 20px rgba(0,0,0,${dark?"0.28":"0.07"});
+    }
+    /* specular shine */
+    .plan-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 26px; pointer-events: none;
+      background: linear-gradient(135deg,
+        rgba(255,255,255,${dark?"0.07":"0.50"}) 0%, transparent 45%);
+    }
+    .plan-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--pc);
+      box-shadow:
+        inset 0 1px 0 ${dark ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.95)"},
+        0 0 0 1px var(--pc)30,
+        0 24px 56px rgba(0,0,0,${dark?"0.38":"0.14"});
+    }
+    .plan-card.popular {
+      border-color: var(--pc);
+      box-shadow:
+        inset 0 1px 0 ${dark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.92)"},
+        0 0 0 1px var(--pc)35,
+        0 18px 48px var(--pc)18;
+    }
 
-    /* Glass specular layers */
-    .plan-card::before{content:'';position:absolute;inset:0;border-radius:inherit;
-      background:linear-gradient(135deg,${dark?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.6)"} 0%,transparent 50%);
-      pointer-events:none;z-index:0;}
-    .plan-card::after{content:'';position:absolute;inset:0;border-radius:inherit;
-      background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,${dark?"0.03":"0.15"}) 50%,transparent 65%);
-      background-size:200% 100%;animation:shimmer 5s ease-in-out infinite;pointer-events:none;z-index:0;}
-    .plan-card > *{position:relative;z-index:1;}
+    .plan-badge {
+      position: absolute; top: 18px; right: 18px;
+      padding: 4px 12px; border-radius: 99px;
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      background: var(--pc); color: #000; letter-spacing: .04em;
+    }
+    .plan-curr-tag {
+      position: absolute; top: 18px; left: 18px;
+      padding: 4px 12px; border-radius: 99px;
+      font-size: 10px; font-weight: 800;
+      background: ${dark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.06)"};
+      color: ${T.textSub};
+    }
 
-    .plan-glow{position:absolute;width:200px;height:200px;border-radius:50%;top:-80px;right:-60px;
-      filter:blur(60px);opacity:${dark?"0.4":"0.2"};pointer-events:none;background:var(--pc);}
+    .plan-emoji { font-size: 34px; margin-bottom: 10px; display: block; }
+    .plan-name { font-family: ${FONT.display}; font-size: 26px; font-weight: 800; margin-bottom: 3px; }
+    .plan-tagline { font-size: 12.5px; color: ${T.textSub}; margin-bottom: 20px; }
 
-    .plan-badge{position:absolute;top:20px;right:20px;padding:5px 14px;border-radius:99px;
-      font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;
-      background:var(--pc);color:#000;z-index:2;}
-    .current-indicator{position:absolute;top:20px;left:20px;padding:4px 12px;border-radius:99px;
-      font-size:10px;font-weight:800;letter-spacing:0.06em;
-      background:${T.glass};border:1px solid ${T.glassBorder};color:${T.textSub};z-index:2;}
+    /* Price block */
+    .plan-price { margin-bottom: 20px; }
+    .price-amt {
+      font-family: ${FONT.display}; font-size: 46px; font-weight: 800;
+      color: ${T.text}; line-height: 1;
+    }
+    .price-sym {
+      font-size: 20px; font-weight: 600; color: ${T.textSub};
+      vertical-align: top; margin-top: 6px; display: inline-block;
+    }
+    .price-per { font-size: 12px; color: ${T.textMuted}; margin-top: 4px; }
+    .price-save { font-size: 11.5px; color: #30d158; font-weight: 700; margin-top: 3px; }
 
-    .plan-emoji{font-size:40px;margin-bottom:16px;display:block;}
-    .plan-name{font-family:${FONT.display};font-size:24px;font-weight:800;margin-bottom:5px;}
-    .plan-tagline{font-size:13px;color:${T.textSub};margin-bottom:24px;}
+    /* ── Feature lists ── */
+    .feat-section { flex: 1; margin-bottom: 22px; }
 
-    .plan-price{margin-bottom:24px;}
-    .price-amount{font-family:${FONT.display};font-size:48px;font-weight:800;
-      letter-spacing:-0.03em;line-height:1;}
-    .price-sym{font-size:22px;font-weight:600;color:${T.textSub};vertical-align:top;
-      margin-top:10px;display:inline-block;}
-    .price-period{font-size:13px;color:${T.textMuted};margin-top:6px;}
-    .price-saving{font-size:12px;color:${T.green};font-weight:700;margin-top:4px;}
+    /* Section label */
+    .feat-label {
+      font-size: 9.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 6px; margin-bottom: 8px; margin-top: 16px;
+    }
+    .feat-label:first-child { margin-top: 0; }
+    .feat-label.incl { color: #30d158; }
+    .feat-label.lock { color: ${T.textMuted}; }
 
-    .features-list{list-style:none;margin-bottom:28px;flex:1;}
-    .feature-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;
-      font-size:13px;border-bottom:1px solid ${T.glassBorder};}
-    .feature-item:last-child{border-bottom:none;}
-    .feature-check{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
-      justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;font-weight:800;}
-    .feature-check.yes{background:var(--pc)20;color:var(--pc);}
-    .feature-check.no{background:${dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"};color:${T.textMuted};}
-    .feature-text{color:${T.textSub};line-height:1.4;}
-    .feature-text.no{color:${T.textMuted};text-decoration:line-through;opacity:0.5;}
+    /* Divider between sections */
+    .feat-divider {
+      height: 1px; margin: 14px 0 10px;
+      background: ${T.glassBorder};
+    }
 
-    .plan-cta{width:100%;padding:15px;border-radius:16px;font-size:14px;font-weight:800;
-      font-family:${FONT.body};cursor:pointer;transition:all 0.3s;letter-spacing:0.04em;border:none;}
-    .plan-cta.current{background:${T.glass};border:1px solid ${T.glassBorder};
-      color:${T.textSub};cursor:default;
-      box-shadow:inset 0 1px 0 ${dark?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.8)"};}
-    .plan-cta.upgrade{background:linear-gradient(135deg,var(--pc),var(--pc)cc);color:#000;
-      box-shadow:0 8px 28px var(--pc)40,inset 0 1px 0 rgba(255,255,255,0.25);}
-    .plan-cta.upgrade:hover{transform:translateY(-3px);box-shadow:0 16px 40px var(--pc)50;}
-    .plan-cta.loading{opacity:0.7;cursor:wait;}
+    /* Feature row */
+    .feat-row {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 12.5px; padding: 4px 0; line-height: 1.4;
+    }
+    .feat-ico-wrap {
+      width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900; margin-top: 1px;
+    }
+    .feat-ico-wrap.incl {
+      background: rgba(48,209,88,.14); color: #30d158;
+    }
+    .feat-ico-wrap.lock {
+      background: ${dark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.05)"};
+      color: ${T.textMuted};
+    }
+    .feat-text.incl { color: ${T.textSub}; }
+    .feat-text.lock {
+      color: ${T.textMuted}; text-decoration: line-through;
+      opacity: .55; font-style: italic;
+    }
 
-    /* Trust badges */
-    .trust-row{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;
-      margin-bottom:40px;animation:fadeUp 0.6s ease 0.15s both;}
-    .trust-badge{display:flex;align-items:center;gap:8px;font-size:13px;
-      color:${T.textSub};font-weight:600;}
+    /* Shimmer on card */
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .plan-shimmer {
+      position: absolute; inset: 0; border-radius: 26px; pointer-events: none;
+      background: linear-gradient(108deg,
+        transparent 30%, rgba(255,255,255,${dark?".022":".10"}) 50%, transparent 70%);
+      background-size: 200% 100%; animation: shimmer 6s ease-in-out infinite;
+    }
+
+    /* CTA button */
+    .plan-cta {
+      width: 100%; height: 50px; border-radius: 14px;
+      font-size: 14px; font-weight: 800; font-family: ${FONT.body};
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .25s cubic-bezier(.34,1.56,.64,1);
+      position: relative; z-index: 1;
+      margin-top: auto;
+    }
+    .plan-cta.upgrade {
+      background: var(--pc);
+      color: #fff;
+      box-shadow: 0 6px 22px var(--pc)45;
+    }
+    .plan-cta.upgrade:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 32px var(--pc)55;
+      filter: brightness(1.08);
+    }
+    .plan-cta.upgrade:disabled { opacity: .7; cursor: default; }
+    .plan-cta.curr {
+      background: ${dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)"};
+      border: 1px solid ${T.glassBorder};
+      color: ${T.textMuted}; cursor: default;
+    }
+    .plan-cta.downgrade {
+      background: transparent;
+      border: 1px solid ${T.glassBorder};
+      color: ${T.textMuted};
+    }
+    .btn-spin {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Trust row */
+    .trust-row { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 50px; }
+    .trust-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: ${T.textSub}; font-weight: 600; }
+
+    /* Error */
+    .pay-err {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,59,48,.10); border: 1px solid rgba(255,59,48,.28);
+      color: #ff3b30; padding: 12px 16px; border-radius: 12px;
+      font-size: 13px; font-weight: 600; margin-bottom: 22px;
+    }
 
     /* FAQ */
-    .faq-section{max-width:700px;margin:0 auto 40px;animation:fadeUp 0.6s ease 0.2s both;}
-    .faq-title{font-family:${FONT.display};font-size:22px;font-weight:800;color:${T.text};
-      text-align:center;margin-bottom:24px;letter-spacing:-0.01em;}
-    .faq-item{background:${T.glass};border:1px solid ${T.glassBorder};border-radius:18px;
-      margin-bottom:10px;backdrop-filter:blur(28px);overflow:hidden;transition:all 0.3s;
-      box-shadow:inset 0 1px 0 ${dark?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.8)"};}
-    .faq-item:hover{border-color:${T.glassBorderHover};}
-    .faq-q{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;
-      cursor:pointer;font-size:14px;font-weight:700;color:${T.text};}
-    .faq-chevron{font-size:11px;color:${T.textMuted};transition:transform 0.3s;flex-shrink:0;}
-    .faq-chevron.open{transform:rotate(180deg);color:${T.accent};}
-    .faq-a{padding:0 22px 18px;font-size:13px;color:${T.textSub};line-height:1.7;}
-
-    /* Bottom CTA */
-    .bottom-cta{background:linear-gradient(135deg,${T.accentSoft},${T.purpleSoft});
-      border:1px solid ${T.accent}25;border-radius:24px;padding:32px 36px;
-      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;
-      animation:fadeUp 0.6s ease 0.25s both;
-      box-shadow:inset 0 1px 0 ${dark?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.8)"};}
-    .bottom-cta-title{font-family:${FONT.display};font-size:20px;font-weight:800;
-      color:${T.text};margin-bottom:6px;}
-    .bottom-cta-sub{font-size:13px;color:${T.textSub};max-width:480px;line-height:1.6;}
-    .continue-btn{padding:13px 28px;border-radius:14px;border:1px solid ${T.glassBorder};
-      background:${T.glass};backdrop-filter:blur(20px);color:${T.text};
-      font-size:14px;font-weight:700;font-family:${FONT.body};cursor:pointer;transition:all 0.25s;
-      box-shadow:inset 0 1px 0 ${dark?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.8)"};}
-    .continue-btn:hover{border-color:${T.accent}50;color:${T.accent};}
+    .faq-wrap { max-width: 720px; margin: 0 auto 40px; }
+    .faq-title {
+      font-family: ${FONT.display}; font-size: 22px; font-weight: 800;
+      color: ${T.text}; text-align: center; margin-bottom: 22px; letter-spacing: -.01em;
+    }
+    .faq-item {
+      background: ${dark ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.02)"};
+      border: 1px solid ${T.glassBorder}; border-radius: 14px;
+      margin-bottom: 10px; overflow: hidden; transition: border-color .2s;
+    }
+    .faq-item:hover { border-color: ${T.glassBorderHover}; }
+    .faq-q {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; font-size: 14px; font-weight: 700;
+      color: ${T.text}; cursor: pointer;
+    }
+    .faq-a { padding: 0 20px 16px; font-size: 13px; color: ${T.textSub}; line-height: 1.68; }
 
     /* Success overlay */
-    .success-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;
-      justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(16px);}
-    .success-box{background:${dark?"#0b0f1a":"#fff"};border-radius:28px;padding:48px;
-      text-align:center;max-width:420px;width:90%;
-      animation:scaleIn 0.5s cubic-bezier(0.4,0,0.2,1) both;
-      box-shadow:0 40px 100px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,${dark?"0.08":"0.9"});}
-    .success-emoji{font-size:80px;margin-bottom:16px;display:block;}
-    .success-title{font-family:${FONT.display};font-size:28px;font-weight:800;color:${T.text};margin-bottom:8px;}
-    .success-sub{font-size:15px;color:${T.textSub};margin-bottom:28px;line-height:1.65;}
-    .success-btn{width:100%;padding:15px;border-radius:16px;border:none;font-size:14px;
-      font-weight:800;font-family:${FONT.body};cursor:pointer;transition:all 0.25s;}
+    .success-ov {
+      position: fixed; inset: 0; z-index: 900;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.75); backdrop-filter: blur(12px);
+    }
+    .success-box {
+      background: ${dark ? "#111118" : "#ffffff"}; border-radius: 24px;
+      padding: 40px; text-align: center; max-width: 400px; width: 90%;
+      border: 1px solid ${T.glassBorder};
+      box-shadow: 0 40px 80px rgba(0,0,0,.5);
+      animation: scaleIn .4s cubic-bezier(.4,0,.2,1) both;
+    }
+    @keyframes scaleIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
+    .success-emoji { font-size: 64px; margin-bottom: 14px; display: block; }
+    .success-title { font-family: ${FONT.display}; font-size: 24px; font-weight: 800; color: ${T.text}; margin-bottom: 8px; }
+    .success-sub { font-size: 13.5px; color: ${T.textSub}; margin-bottom: 24px; line-height: 1.6; }
+    .success-cta {
+      width: 100%; padding: 14px; border-radius: 13px; border: none;
+      font-size: 14px; font-weight: 800; color: #fff; cursor: pointer;
+      font-family: ${FONT.body}; transition: all .22s;
+    }
+    .success-cta:hover { transform: translateY(-2px); }
 
-    @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes scaleIn{from{opacity:0;transform:scale(0.88);}to{opacity:1;transform:scale(1);}}
-    @media(max-width:1100px){.plans-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto 40px;}}
-    @media(max-width:768px){.sb{display:none;}.mn{padding:20px 16px;}.hero-title{font-size:30px;}.trust-row{gap:16px;}}
+    /* "vs" compare row under billing */
+    .compare-note {
+      font-size: 12px; color: ${T.textMuted}; text-align: center;
+      margin-top: 12px; font-weight: 600;
+    }
+    .compare-note span { color: #30d158; font-weight: 800; }
+
+    @media(max-width:1024px) {
+      .plans-grid { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto 48px; }
+    }
+    @media(max-width:640px) {
+      .pr-page { padding: 24px 14px 60px; }
+      .ph-title { font-size: 28px; }
+      .pr-hd { padding: 0 14px; }
+    }
   `;
 
   return (
-    <>
+    <div className="pr-root">
       <style>{css}</style>
-      <div className="pr-root">
-        <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
+      <canvas ref={canvasRef} style={{ position:"fixed",inset:0,zIndex:0,width:"100%",height:"100%",pointerEvents:"none" }}/>
 
-        {/* Success Overlay */}
-        {success && (
-          <div className="success-overlay">
-            <div className="success-box">
-              <span className="success-emoji">{success.emoji}</span>
-              <div className="success-title">Welcome to {success.name}! 🎉</div>
-              <div className="success-sub">Your plan has been upgraded. All {success.name} features are now unlocked. Time to level up!</div>
-              <button className="success-btn"
-                style={{ background:`linear-gradient(135deg,${success.color},${success.color}cc)`,color:"#000" }}
-                onClick={() => { setSuccess(null); navigate("/dashboard"); }}>
-                Go to Dashboard →
-              </button>
+      {/* Success overlay */}
+      {success && (
+        <div className="success-ov">
+          <div className="success-box">
+            <span className="success-emoji">{success.emoji}</span>
+            <div className="success-title">Welcome to {success.planName}! 🎉</div>
+            <div className="success-sub">
+              Payment successful. Your {success.planName} features are now unlocked. Let's get to work.
             </div>
+            <button className="success-cta"
+              style={{ background: `linear-gradient(135deg,${PLANS.find(p=>p.id===success.planId)?.color},${PLANS.find(p=>p.id===success.planId)?.color}cc)` }}
+              onClick={() => { setSuccess(null); navigate("/dashboard"); }}>
+              Go to Dashboard →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="pr-hd">
+        <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
+        <div className="pr-logo">AshFit<span>Verse</span></div>
+        <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+          <div className="toggle-thumb">{dark ? "🌙" : "☀️"}</div>
+        </button>
+      </div>
+
+      <div className="pr-page">
+
+        {/* Error */}
+        {payErr && (
+          <div className="pay-err">
+            <span>⚠️ {payErr}</span>
+            <button onClick={() => setPayErr(null)} style={{ background:"none",border:"none",color:"inherit",cursor:"pointer",fontSize:16 }}>✕</button>
           </div>
         )}
 
-        {/* SIDEBAR */}
-        <aside className="sb">
-          <div className="sb-logo" onClick={() => navigate("/dashboard")}>AshFit<span>Verse</span></div>
-          <div className="sb-sub">Premium Fitness OS</div>
-          <div className="sb-user" onClick={() => navigate("/profile")}>
-            <div className="sb-ava">{user.name?.[0]?.toUpperCase()||"A"}</div>
-            <div>
-              <div className="sb-name">{user.name||"Athlete"}</div>
-              <div className="sb-goal">{user.goal?.replace(/_/g," ")||"Fitness"}</div>
-            </div>
+        {/* Hero */}
+        <div className="ph">
+          <div className="ph-badge">💎 Membership Plans</div>
+          <div className="ph-title">
+            Unlock the Tools<br/><span>That Actually Work</span>
           </div>
-          <div className="sb-nl">Navigation</div>
-          {NAV_MAIN.map(n => (
-            <div key={n.label} className="sb-ni" onClick={() => navigate(n.path)}
-              style={n.color?{color:n.color}:{}}>
-              <span className="sb-ico">{n.icon}</span>
-              <span>{n.label}</span>
-              {n.badge && <span className="sb-badge">{n.badge}</span>}
-            </div>
-          ))}
-          <div className="sb-ni active">
-            <span className="sb-ico">💎</span>
-            <span>Pricing</span>
-          </div>
-          <div className="sb-nl">Tools</div>
-          {TOOLS.map(t => (
-            <div key={t.label} className="sb-tool" onClick={() => navigate(t.path)}>
-              <span style={{fontSize:14,width:18,textAlign:"center"}}>{t.icon}</span>
-              <span>{t.label}</span>
-            </div>
-          ))}
-          <button className="sb-logout" onClick={() => navigate("/")} style={{marginTop:20}}>⎋ &nbsp;Logout</button>
-        </aside>
-
-        {/* MAIN */}
-        <main className="mn">
-          <div className="topbar">
-            <div>
-              <div className="topbar-title">Upgrade Your Plan 💎</div>
-              <div className="topbar-sub">Choose the plan that matches your fitness ambition</div>
-            </div>
-            <div className="topbar-right">
-              {(user.streak||0) > 0 && <div className="streak-pill">🔥 {user.streak}-day streak</div>}
-              <button style={{width:42,height:42,borderRadius:13,border:`1px solid ${T.glassBorder}`,background:T.glass,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,cursor:"pointer",color:T.textSub}}>🔔</button>
-              <button className="theme-toggle" onClick={toggleTheme}>
-                <div className="toggle-thumb">{dark?"🌙":"☀️"}</div>
-              </button>
-              <div onClick={() => navigate("/profile")}
-                style={{width:42,height:42,borderRadius:"50%",background:`linear-gradient(135deg,${T.accent},${T.purple})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,color:"#fff",cursor:"pointer",border:`2px solid ${T.accent}40`}}>
-                {user.name?.[0]?.toUpperCase()||"A"}
-              </div>
-            </div>
+          <div className="ph-sub">
+            Free gets you started. Lite gets you going. Pro gets you everything.
           </div>
 
-          {/* Hero */}
-          <div className="pricing-hero">
-            <div className="hero-badge">💎 AshFitVerse Plans</div>
-            <div className="hero-title">Train Smarter,<br/><span>Achieve More</span></div>
-            <div className="hero-sub">Unlock advanced tools, AI features, and coach access. Start free, upgrade when you're ready.</div>
-            <div className="billing-toggle">
-              <button className={`bill-btn ${billing==="monthly"?"active":""}`} onClick={() => setBilling("monthly")}>Monthly</button>
-              <button className={`bill-btn ${billing==="yearly"?"active":""}`} onClick={() => setBilling("yearly")} style={{position:"relative"}}>
-                Yearly <span className="save-tag">SAVE 30%</span>
-              </button>
-            </div>
+          {/* Billing toggle */}
+          <div className="bill-wrap">
+            <button className={`bill-btn${billing==="monthly"?" on":""}`} onClick={() => setBilling("monthly")}>
+              Monthly
+            </button>
+            <button className={`bill-btn${billing==="yearly"?" on":""}`} onClick={() => setBilling("yearly")}>
+              Yearly
+            </button>
           </div>
+          {billing === "yearly" && (
+            <div className="compare-note">
+              Yearly saves you <span>30%</span> — Lite ₹{Math.round((199*12-1699)/12)}/mo saved · Pro ₹{Math.round((499*12-3999)/12)}/mo saved
+            </div>
+          )}
+        </div>
 
-          {/* Plans */}
-          <div className="plans-grid">
-            {PLANS.map((plan, idx) => (
+        {/* Plans */}
+        <div className="plans-grid">
+          {PLANS.map((plan) => {
+            const status       = getPlanStatus(plan.id);
+            const isCurrent    = status === "current";
+            const isProcessing = activeId === plan.id && payLoading;
+
+            return (
               <div key={plan.id}
-                className={`plan-card ${plan.badge==="Popular"?"popular":""}`}
-                style={{"--pc":plan.color,animationDelay:`${0.1+idx*0.08}s`}}>
-                <div className="plan-glow"/>
-                {plan.current && <div className="current-indicator">✓ Current</div>}
-                {plan.badge && !plan.current && <div className="plan-badge">{plan.badge}</div>}
+                className={`plan-card${plan.badge ? " popular" : ""}`}
+                style={{ "--pc": plan.color }}>
+
+                <div className="plan-shimmer"/>
+
+                {isCurrent && <div className="plan-curr-tag">✓ Current Plan</div>}
+                {plan.badge && !isCurrent && <div className="plan-badge">{plan.badge}</div>}
+
                 <span className="plan-emoji">{plan.emoji}</span>
-                <div className="plan-name" style={{color:plan.color}}>{plan.name}</div>
+                <div className="plan-name" style={{ color: plan.color }}>{plan.name}</div>
                 <div className="plan-tagline">{plan.tagline}</div>
+
+                {/* Price */}
                 <div className="plan-price">
-                  {plan.price.monthly===0 ? (
-                    <>
-                      <div><span className="price-amount" style={{color:plan.color}}>₹0</span></div>
-                      <div className="price-period">Free forever</div>
-                    </>
+                  {plan.price.monthly === 0 ? (
+                    <div>
+                      <span className="price-amt" style={{ color: plan.color }}>₹0</span>
+                      <div className="price-per">Free forever — no card needed</div>
+                    </div>
                   ) : (
-                    <>
-                      <div>
-                        <span className="price-sym">₹</span>
-                        <span className="price-amount" style={{color:plan.color}}>
-                          {billing==="monthly" ? plan.price.monthly : Math.round(plan.price.yearly/12)}
-                        </span>
+                    <div>
+                      <span className="price-sym">₹</span>
+                      <span className="price-amt" style={{ color: plan.color }}>
+                        {billing==="monthly" ? plan.price.monthly : Math.round(plan.price.yearly/12)}
+                      </span>
+                      <div className="price-per">
+                        per month{billing==="yearly" ? ", billed yearly" : ""}
                       </div>
-                      <div className="price-period">per month{billing==="yearly"?", billed yearly":""}</div>
-                      {billing==="yearly" && (
-                        <div className="price-saving">🎉 Save {savingPct(plan)}% — ₹{plan.price.monthly*12-plan.price.yearly} off/year</div>
+                      {billing==="yearly" && savingPct(plan) && (
+                        <div className="price-save">
+                          🎉 Save {savingPct(plan)}% — ₹{plan.price.monthly*12 - plan.price.yearly} off per year
+                        </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
-                <ul className="features-list">
-                  {plan.features.map((f,i) => (
-                    <li key={i} className="feature-item">
-                      <span className={`feature-check ${f.included?"yes":"no"}`}>{f.included?"✓":"✕"}</span>
-                      <span className={`feature-text ${f.included?"":"no"}`}>{f.text}</span>
-                    </li>
+
+                {/* ── Feature list ── */}
+                <div className="feat-section">
+
+                  {/* What's included */}
+                  <div className="feat-label incl">
+                    <span>✓</span>
+                    <span>What you get</span>
+                  </div>
+                  {plan.included.map((f, i) => (
+                    <div key={i} className="feat-row">
+                      <div className="feat-ico-wrap incl">✓</div>
+                      <span className="feat-text incl">{f.text}</span>
+                    </div>
                   ))}
-                </ul>
-                <button
-                  className={`plan-cta ${plan.current?"current":"upgrade"} ${selected===plan.id?"loading":""}`}
-                  onClick={() => handleUpgrade(plan)}>
-                  {selected===plan.id ? "Processing..." : plan.current ? "✓ "+plan.cta : plan.cta+" →"}
-                </button>
-              </div>
-            ))}
-          </div>
 
-          {/* Trust */}
-          <div className="trust-row">
-            {[
-              {icon:"🔒",text:"Secure payments via Razorpay"},
-              {icon:"🔄",text:"Cancel anytime, no questions"},
-              {icon:"🎁",text:"7-day free trial on paid plans"},
-              {icon:"💳",text:"UPI, Cards & Wallets accepted"},
-              {icon:"📦",text:"Data safe on all plans"},
-            ].map((b,i) => (
-              <div key={i} className="trust-badge">
-                <span style={{fontSize:18}}>{b.icon}</span>
-                <span>{b.text}</span>
-              </div>
-            ))}
-          </div>
+                  {/* What's locked — only show if there are locks */}
+                  {plan.locked.length > 0 && (
+                    <>
+                      <div className="feat-divider"/>
+                      <div className="feat-label lock">
+                        <span>🔒</span>
+                        <span>Locked features</span>
+                      </div>
+                      {plan.locked.map((f, i) => (
+                        <div key={i} className="feat-row">
+                          <div className="feat-ico-wrap lock">🔒</div>
+                          <span className="feat-text lock">{f.text}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
 
-          {/* FAQ */}
-          <div className="faq-section">
-            <div className="faq-title">Frequently Asked Questions</div>
-            {FAQS.map((f,i) => (
-              <div key={i} className="faq-item">
-                <div className="faq-q" onClick={() => setOpenFaq(openFaq===i?null:i)}>
-                  <span>{f.q}</span>
-                  <span className={`faq-chevron ${openFaq===i?"open":""}`}>▼</span>
+                  {/* Pro all-clear */}
+                  {plan.locked.length === 0 && (
+                    <div style={{
+                      marginTop:14, padding:"10px 14px", borderRadius:12,
+                      background: `${plan.color}14`,
+                      border: `1px solid ${plan.color}25`,
+                      fontSize:12.5, color:T.textSub, lineHeight:1.55,
+                    }}>
+                      <span style={{ color:plan.color, fontWeight:800 }}>🏆 Full Access — </span>
+                      No features locked. Everything unlocked, always.
+                    </div>
+                  )}
+
                 </div>
-                {openFaq===i && <div className="faq-a">{f.a}</div>}
-              </div>
-            ))}
-          </div>
 
-          {/* Bottom CTA */}
-          <div className="bottom-cta">
-            <div>
-              <div className="bottom-cta-title">Still not sure? Start with Free 🌱</div>
-              <div className="bottom-cta-sub">No credit card needed. Use the free plan as long as you want and upgrade only when you're ready.</div>
+                {/* CTA */}
+                <button
+                  className={`plan-cta ${isCurrent ? "curr" : status === "downgrade" ? "downgrade" : "upgrade"}`}
+                  disabled={isCurrent || isProcessing}
+                  onClick={() => handleUpgrade(plan)}>
+                  {isProcessing
+                    ? <><span className="btn-spin"/> Connecting…</>
+                    : isCurrent
+                    ? "✓ Active Plan"
+                    : status === "downgrade"
+                    ? "Downgrade"
+                    : `${plan.cta} →`
+                  }
+                </button>
+
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Trust badges */}
+        <div className="trust-row">
+          {[
+            { icon:"🔒", text:"100% Secure via Razorpay" },
+            { icon:"🔄", text:"Cancel anytime, no hassle" },
+            { icon:"💳", text:"UPI · Cards · NetBanking"  },
+            { icon:"🎁", text:"7-day free trial included" },
+          ].map((b,i) => (
+            <div key={i} className="trust-badge">
+              <span style={{ fontSize:18 }}>{b.icon}</span>
+              <span>{b.text}</span>
             </div>
-            <button className="continue-btn" onClick={() => navigate("/dashboard")}>Continue with Free →</button>
-          </div>
-        </main>
+          ))}
+        </div>
+
+        {/* FAQ */}
+        <div className="faq-wrap">
+          <div className="faq-title">Frequently Asked Questions</div>
+          {FAQS.map((f,i) => (
+            <div key={i} className="faq-item">
+              <div className="faq-q" onClick={() => setOpenFaq(openFaq===i ? null : i)}>
+                <span>{f.q}</span>
+                <span style={{ fontSize:13, color:T.textMuted }}>{openFaq===i ? "▲" : "▼"}</span>
+              </div>
+              {openFaq===i && <div className="faq-a">{f.a}</div>}
+            </div>
+          ))}
+        </div>
+
       </div>
-    </>
+    </div>
   );
 }

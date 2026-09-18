@@ -3,6 +3,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
+import useUserLogs from "../../hooks/useUserLogs";
+import { listenDated, upsertDated, todayKey, addAppNotification, getEffectiveUid } from "../../lib/userLogs";
+import { showDonePopup } from "../../components/DonePopup";
 import { generateCSS, FONT, BG_IMAGES } from "../../theme";
 
 const CYCLE_PHASES = [
@@ -52,9 +55,10 @@ const QUICK_LINKS = [
   { label: "Cycle Tracker",        icon: "📅", path: "/cycle-tracker",       color: "#f472b6" },
   { label: "PCOS / PCOD Guide",    icon: "💊", path: "/pcos-guide",          color: "#a78bfa" },
   { label: "Hormone Nutrition",    icon: "🥗", path: "/hormone-nutrition",   color: "#34d399" },
-  { label: "Women's Shop",         icon: "🛍️", path: "/shop?cat=female",     color: "#fbbf24" },
+  { label: "Women's Shop",         icon: "🛍️", path: "/female-shop",         color: "#fbbf24" },
   { label: "Mental Wellness",      icon: "🧘", path: "/female-mental",       color: "#4f8ef7" },
-  { label: "Contraception Guide",  icon: "❤️", path: "/contraception",       color: "#fb923c" },
+  { label: "Contraception Guide",  icon: "❤️", path: "/contraception-guide", color: "#fb923c" },
+  { label:"Pregnancy Guide", icon:"🤰", path:"/pregnancy-guide", color:"#f472b6" }
 ];
 
 const SYMPTOMS = [
@@ -66,19 +70,31 @@ const SYMPTOMS = [
 export default function FemaleHealthDashboard() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, isFemale,loading } = useUser();
+  const { user, authUid } = useUser();
+  const { streak: liveStreak, todayCalories } = useUserLogs(authUid);
   const [mounted, setMounted] = useState(false);
   const [todaySymptoms, setTodaySymptoms] = useState([]);
   const [moodRating, setMoodRating] = useState(null);
   const [energyRating, setEnergyRating] = useState(null);
+  const [saved, setSaved] = useState(false);
 
-  useEffect(() => { setMounted(true);},[]);useEffect(() => {
-    if (!loading && !isFemale) navigate("/dashboard");
-  }, [loading, isFemale]); 
+  useEffect(() => { 
+    setMounted(true); 
+  }, []);
+  useEffect(() => {
+    if (!authUid) return;
+    return listenDated(authUid, "femaleHealthLogs", (entries) => {
+      const current = entries.find((entry) => entry.date === todayKey());
+      if (!current) return;
+      setTodaySymptoms(current.symptoms || []);
+      setMoodRating(current.mood ?? null);
+      setEnergyRating(current.energy ?? null);
+    });
+  }, [authUid]);
 
   // Calculate current cycle day and phase
   const getCycleInfo = () => {
-    if (!user.lastPeriod) return { day: null, phase: CYCLE_PHASES[1], daysUntilPeriod: null };
+    if (!user?.lastPeriod) return { day: null, phase: CYCLE_PHASES[1], daysUntilPeriod: null };
     const last = new Date(user.lastPeriod);
     const today = new Date();
     const daysSince = Math.floor((today - last) / (1000 * 60 * 60 * 24));
@@ -98,6 +114,24 @@ export default function FemaleHealthDashboard() {
   const { day, phase, daysUntilPeriod, cycleLen } = getCycleInfo();
   const toggleSymptom = (s) =>
     setTodaySymptoms(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
+  const saveHealthLog = async () => {
+    const effectiveUid = authUid || getEffectiveUid();
+    await upsertDated(effectiveUid, "femaleHealthLogs", todayKey(), {
+      symptoms: todaySymptoms, mood: moodRating, energy: energyRating,
+      cycleDay: day || null, phase: phase?.name || null,
+    });
+    try {
+      await addAppNotification(effectiveUid, { text:"Women's health check-in saved for today.", type:"health", path:"/female-health" });
+    } catch {}
+    setSaved(true);
+    showDonePopup({
+      title: "Done!",
+      message: "Women's health check-in saved & synced with your Dashboard!",
+      subtext: `${todaySymptoms.length} symptoms · ${energyRating ? `${energyRating}/5 energy` : "saved"}`,
+      color: "#f472b6",
+    });
+    setTimeout(() => setSaved(false), 2200);
+  };
 
   const css = generateCSS(T, dark) + `
     .fh-root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};
@@ -108,22 +142,22 @@ export default function FemaleHealthDashboard() {
 
     /* Header */
     .fh-header{display:flex;align-items:center;justify-content:space-between;
-      padding:22px 40px;border-bottom:1px solid ${T.glassBorder};
-      background:${dark?"rgba(7,8,15,0.88)":"rgba(242,244,252,0.88)"};
-      backdrop-filter:blur(32px);position:sticky;top:0;z-index:50;}
-    .back-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;
-      border:1px solid ${T.glassBorder};background:${T.glass};color:${T.textSub};
-      font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;font-family:${FONT.body};}
-    .back-btn:hover{color:${T.pink};border-color:${T.pink}40;}
-    .fh-logo{font-family:${FONT.display};font-size:20px;font-weight:800;color:${T.text};}
+      padding:0 32px;height:60px;position:sticky;top:0;z-index:50;
+      border-bottom:1px solid ${T.glassBorder};
+      background:${dark?"rgba(8,8,12,0.85)":"rgba(255,255,255,0.85)"};
+      backdrop-filter:blur(40px);}
+    .pr-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;
+      border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};
+      color:${T.text};font-size:13px;font-weight:600;cursor:pointer;
+      transition:all 0.15s ease;font-family:${FONT.body};}
+    .pr-back:hover{background:${T.accentSoft};border-color:${T.accent}40;color:${T.accent};}
+    .fh-logo{font-family:${FONT.display};font-size:18px;font-weight:800;color:${T.text};}
     .fh-logo span{color:${T.pink};}
-    .theme-toggle{width:54px;height:29px;border-radius:99px;border:1px solid ${T.glassBorder};
-      background:${T.glass};cursor:pointer;position:relative;}
-    .toggle-thumb{width:23px;height:23px;border-radius:50%;
-      background:linear-gradient(135deg,${T.pink},${T.purple});
-      position:absolute;top:3px;left:${dark?"28px":"3px"};
-      transition:left 0.35s cubic-bezier(0.4,0,0.2,1);
-      display:flex;align-items:center;justify-content:center;font-size:12px;}
+    .theme-toggle{width:48px;height:26px;border-radius:99px;border:1px solid ${T.glassBorder};
+      background:${dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"};cursor:pointer;position:relative;}
+    .toggle-thumb{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;
+      background:${T.pink};display:flex;align-items:center;justify-content:center;
+      font-size:10px;transition:left .2s ease;left:${dark?"24px":"2px"};}
 
     .fh-content{max-width:1200px;margin:0 auto;padding:32px 40px;position:relative;z-index:1;}
 
@@ -140,14 +174,14 @@ export default function FemaleHealthDashboard() {
     .ql-btn{padding:18px 10px 15px;border-radius:18px;border:1.5px solid ${T.glassBorder};
       background:${T.glass};backdrop-filter:blur(24px);cursor:pointer;
       font-family:${FONT.body};font-size:12px;font-weight:700;
-      color:${T.textSub};transition:all 0.25s cubic-bezier(0.4,0,0.2,1);text-align:center;}
+      color:${T.textSub};transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);text-align:center;}
     .ql-btn:hover{transform:translateY(-4px);color:var(--qc);
       border-color:var(--qc);background:linear-gradient(135deg,var(--qc)10,transparent);}
     .ql-ico{font-size:24px;display:block;margin-bottom:8px;}
 
     /* Main grid */
     .fh-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:24px;}
-    .fh-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+    .fh-grid-3{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
 
     /* Glass card */
     .g-card{background:${T.glass};border:1px solid ${T.glassBorder};border-radius:22px;
@@ -240,7 +274,7 @@ export default function FemaleHealthDashboard() {
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
     @media(max-width:1100px){.fh-grid{grid-template-columns:1fr;}.fh-grid-3{grid-template-columns:1fr 1fr;}.ql-grid{grid-template-columns:repeat(3,1fr);}}
-    @media(max-width:700px){.fh-content{padding:20px 16px;}.ql-grid{grid-template-columns:repeat(2,1fr);}.fh-grid-3{grid-template-columns:1fr;}.fh-header{padding:18px 20px;}}
+    @media(max-width:700px){.fh-content{padding:20px 16px;}.ql-grid{grid-template-columns:repeat(2,1fr);}.fh-grid-3{grid-template-columns:1fr;}.fh-header{padding:0 16px;}}
   `;
 
   const [activePhase, setActivePhase] = useState(phase ? CYCLE_PHASES.indexOf(phase) : 1);
@@ -259,10 +293,8 @@ export default function FemaleHealthDashboard() {
 
         {/* Header */}
         <div className="fh-header">
-          <div style={{display:"flex",alignItems:"center",gap:14}}>
-            <button className="back-btn" onClick={() => navigate("/dashboard")}>← Dashboard</button>
-            <div className="fh-logo">AshFit<span>Verse</span></div>
-          </div>
+          <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
+          <div className="fh-logo">AshFit<span>Verse</span></div>
           <button className="theme-toggle" onClick={toggleTheme}>
             <div className="toggle-thumb">{dark?"🌙":"☀️"}</div>
           </button>
@@ -273,18 +305,18 @@ export default function FemaleHealthDashboard() {
           <div className="fh-hero">
             <div className="fh-eyebrow">♀ Women's Health</div>
             <div className="fh-title">
-              Hey {user.name?.split(" ")[0] || "Beautiful"} 💜
+              Hey {user?.name?.split(" ")[0] || "Beautiful"} 💜
             </div>
             <div className="fh-sub">
               Your personalised women's health hub — cycle tracking, hormone-based fitness, and complete wellness support.
-              {user.femaleCondition && user.femaleCondition !== "none" && (
+              {user?.femaleCondition && user.femaleCondition !== "none" && (
                 <span> Tailored for <strong style={{color:T.purple}}>{user.femaleCondition.toUpperCase()}</strong> management.</span>
               )}
             </div>
           </div>
 
           {/* Condition badge */}
-          {user.femaleCondition && user.femaleCondition !== "none" && (
+          {user?.femaleCondition && user.femaleCondition !== "none" && (
             <div className="cond-badge" style={{color:T.purple,borderColor:`${T.purple}35`,background:T.purpleSoft}}>
               💊 {user.femaleCondition.toUpperCase()} Profile Active — personalised recommendations enabled
             </div>
@@ -306,7 +338,8 @@ export default function FemaleHealthDashboard() {
             {[
               {lbl:"Cycle Day",val:day?`Day ${day}`:"—",sub:`of ${cycleLen||28} day cycle`,color:T.pink,glow:T.pinkGlow},
               {lbl:"Current Phase",val:phase?.name||"—",sub:phase?.days||"Set last period date",color:T.purple,glow:T.purpleGlow},
-              {lbl:"Next Period",val:daysUntilPeriod?`${daysUntilPeriod} days`:"—",sub:"estimated",color:T.orange,glow:T.orangeGlow},
+              {lbl:"Next Period",val:daysUntilPeriod?`${daysUntilPeriod} days`:"—",sub:"estimated arrival",color:T.orange,glow:T.orangeGlow},
+              {lbl:"Workout Streak",val:`${liveStreak ?? user?.streak ?? 0} days`,sub:(liveStreak ?? user?.streak) > 0 ? "🔥 Streak active" : "Log a workout",color:T.accent,glow:T.accentGlow},
             ].map((m,i) => (
               <div key={i} className="metric-card">
                 <div className="metric-glow" style={{background:m.glow}} />
@@ -413,7 +446,7 @@ export default function FemaleHealthDashboard() {
                 </div>
               </div>
 
-              {user.femaleCondition && user.femaleCondition !== "none" && (
+              {user?.femaleCondition && user.femaleCondition !== "none" && (
                 <div style={{marginTop:18,padding:"14px 16px",borderRadius:13,
                   background:T.purpleSoft,border:`1px solid ${T.purple}30`,
                   fontSize:12,color:T.textSub,lineHeight:1.6}}>
@@ -427,7 +460,7 @@ export default function FemaleHealthDashboard() {
                 </div>
               )}
 
-              <button className="save-btn">Save Today's Log ✓</button>
+              <button className="save-btn" onClick={saveHealthLog}>{saved ? "✓ Check-in Saved" : "Save Today's Log ✓"}</button>
             </div>
           </div>
 
@@ -440,7 +473,7 @@ export default function FemaleHealthDashboard() {
                 {val:daysUntilPeriod||"—",lbl:"Days to Period",color:T.purple},
                 {val:day&&day>=6&&day<=16?`~Day ${14}`:day&&day>16?"Past":"~Day 14",lbl:"Ovulation",color:T.orange},
                 {val:cycleLen||28,lbl:"Cycle Length",color:T.accent},
-                {val:user.femaleCondition!=="none"?user.femaleCondition?.toUpperCase()||"None":"None",lbl:"Condition",color:T.green},
+                {val:user?.femaleCondition!=="none"?user?.femaleCondition?.toUpperCase()||"None":"None",lbl:"Condition",color:T.green},
               ].map((c,i) => (
                 <div key={i} className="countdown-pill">
                   <div className="cp-val" style={{color:c.color}}>{c.val}</div>
@@ -479,8 +512,8 @@ export default function FemaleHealthDashboard() {
               {[
                 {ico:"📅",lbl:"Log your cycle",sub:"Keep your tracker updated for better predictions",path:"/cycle-tracker",color:T.pink},
                 {ico:"🥗",lbl:"Hormone nutrition guide",sub:"Phase-based diet plan for hormonal harmony",path:"/hormone-nutrition",color:T.green},
-                {ico:"💊",lbl:user.femaleCondition!=="none"?`${(user.femaleCondition||"").toUpperCase()} resources`:"Women's health guides",sub:"Expert-backed information and management tips",path:"/pcos-guide",color:T.purple},
-                {ico:"🛍️",lbl:"Women's wellness shop",sub:"Supplements, care products, essentials",path:"/shop?cat=female",color:T.orange},
+                {ico:"💊",lbl:user?.femaleCondition!=="none"?`${(user?.femaleCondition||"").toUpperCase()} resources`:"Women's health guides",sub:"Expert-backed information and management tips",path:"/pcos-guide",color:T.purple},
+                {ico:"🛍️",lbl:"Women's wellness shop",sub:"Supplements, care products, essentials",path:"/female-shop",color:T.orange},
               ].map((r,i) => (
                 <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 0",
                   borderBottom:i<3?`1px solid ${T.glassBorder}`:"none",cursor:"pointer"}}

@@ -218,7 +218,7 @@ const SEED_CYCLING = {
 export default function HormoneNutrition() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user, isFemale } = useUser();
+  const { user, isFemale, loading: userLoading } = useUser(); // 👈 Destructured loading as userLoading
   const [mounted, setMounted] = useState(false);
   const [activePhase, setActivePhase] = useState(0);
   const [expandedMeal, setExpandedMeal] = useState(null);
@@ -228,7 +228,10 @@ export default function HormoneNutrition() {
   }, []);
 
   useEffect(() => {
-    if (!loading && !isFemale) navigate("/dashboard");
+    // 💡 Safeguarded using userLoading state
+    if (!userLoading && !isFemale) {
+      navigate("/dashboard");
+    }
     
     // Auto-select current phase logic
     if (user && user.lastPeriod) {
@@ -240,7 +243,7 @@ export default function HormoneNutrition() {
       else if (day <= 16) setActivePhase(2);
       else setActivePhase(3);
     }
-  }, [loading, isFemale, user, navigate]);
+  }, [userLoading, isFemale, user, navigate]);
 
   const phase = PHASES[activePhase];
 
@@ -375,7 +378,7 @@ export default function HormoneNutrition() {
             <div className="hn-sub">
               Eat in sync with your cycle. Each phase has different hormonal needs — the right foods can dramatically
               reduce PMS, improve energy and support hormonal balance naturally.
-              {user.lastPeriod && <span style={{color:T.green,fontWeight:700}}> Your current phase is auto-selected below.</span>}
+              {user?.lastPeriod && <span style={{color:T.green,fontWeight:700}}> Your current phase is auto-selected below.</span>}
             </div>
           </div>
 

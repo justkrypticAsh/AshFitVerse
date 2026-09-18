@@ -24,6 +24,8 @@ import {
   todayStr,
   getChallengeStats,
 } from "../config/challengesConfig";
+import useIsMobile from "../hooks/useIsMobile";
+import MobileAppShell from "../mobile/MobileAppShell";
 
 // ─── Workout plans ────────────────────────────────────────────────────────────
 function getWorkouts(goal, equipment) {
@@ -124,9 +126,10 @@ const SLANGS = [
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate  = useNavigate();
+  const isMobile  = useIsMobile(840);
   const { dark, toggleTheme, T } = useTheme();
   const { user, authUid, clearUser, loading, isMale, isFemale, bmi, calorieTarget, getCycleDay, getPhaseName, isPro, isAdmin, updateUser } = useUser();
-  const { ready: logsReady, weeklyWeight, calData, todayCalories, todayBurned, todayNetCalories, todayMacros, mealGroups, streak: liveStreak, activeDates = [], isTodayActive = false, workouts, weights, todayWorkouts, meals } = useUserLogs(authUid);
+  const { ready: logsReady, weeklyWeight, calData, todayCalories, todayBurned, todayNetCalories, todayMacros, mealGroups, streak: liveStreak, activeDates = [], isTodayActive = false, workouts, weights, todayWorkouts, todayMeals, meals } = useUserLogs(authUid);
   const { items: notifications, unread: unreadNotifications, markRead, markAllRead, requestPermission } = useAppNotifications(authUid);
 
   const [mounted,     setMounted]     = useState(false);
@@ -659,7 +662,7 @@ export default function Dashboard() {
     }
     .tb-right{display:flex;align-items:center;gap:10px;position:relative;z-index:2;flex-shrink:0;}
     .streak-pill{
-      display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:99px;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 14px;border-radius:99px;box-sizing:border-box;
       background:${dark ? "linear-gradient(135deg, rgba(249,115,22,0.18), rgba(234,88,12,0.08))" : "linear-gradient(135deg, #fff7ed, #ffedd5)"};
       border:1.5px solid ${dark ? "rgba(249,115,22,0.35)" : "#fed7aa"};
       font-size:12px;font-weight:800;color:${dark ? "#fb923c" : "#ea580c"};
@@ -673,6 +676,7 @@ export default function Dashboard() {
       border-color:#f97316;
     }
     .streak-pill.zero{
+      display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 14px;border-radius:99px;box-sizing:border-box;
       background:${dark ? "rgba(255,255,255,0.06)" : "#f1f5f9"};
       border:1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"};
       color:${dark ? T.textSub : "#475569"};
@@ -693,7 +697,7 @@ export default function Dashboard() {
       width:8px;height:8px;border-radius:50%;background:#f97316;display:inline-block;
       box-shadow:0 0 8px #f97316;animation:flamePulse 1.5s infinite;
     }
-    .tb-btn{width:38px;height:38px;border-radius:12px;border:1px solid ${GB_BORDER};
+    .tb-btn{width:38px;height:38px;border-radius:12px;border:1px solid ${GB_BORDER};box-sizing:border-box;
       background:${dark?"rgba(255,255,255,0.06)":"rgba(255,252,245,0.72)"};
       backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;
       font-size:14px;cursor:pointer;color:${T.textSub};
@@ -707,17 +711,17 @@ export default function Dashboard() {
     .tb-notif-head{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-bottom:1px solid ${GB_BORDER};}
     .tb-notif-item{padding:11px 14px;border-bottom:1px solid ${GB_BORDER};cursor:pointer;font-size:12px;color:${T.textSub};line-height:1.45;}
     .tb-notif-item:hover,.tb-notif-item.unread{background:${T.accentSoft};color:${T.text};}
-    .tb-toggle{width:50px;height:27px;border-radius:99px;border:1px solid ${GB_BORDER};
+    .tb-toggle{width:50px;height:30px;border-radius:99px;border:1px solid ${GB_BORDER};box-sizing:border-box;
       background:${dark?"rgba(255,255,255,0.07)":"rgba(255,252,245,0.80)"};
-      cursor:pointer;position:relative;flex-shrink:0;}
-    .tb-knob{position:absolute;top:3px;left:${dark?"26px":"3px"};width:21px;height:21px;border-radius:50%;
+      cursor:pointer;position:relative;flex-shrink:0;align-self:center;}
+    .tb-knob{position:absolute;top:3.5px;left:${dark?"24px":"3px"};width:21px;height:21px;border-radius:50%;
       background:linear-gradient(135deg,${T.accent},${T.purple});
       display:flex;align-items:center;justify-content:center;font-size:10px;
       transition:left 0.35s cubic-bezier(0.34,1.56,0.64,1);
       box-shadow:0 2px 8px ${T.accentGlow};}
 
     .tb-admin-btn{
-      display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:12px;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 14px;border-radius:12px;box-sizing:border-box;
       background:linear-gradient(135deg,rgba(56,189,248,0.18),rgba(99,102,241,0.22));
       border:1px solid rgba(56,189,248,0.45);
       color:#38bdf8;font-size:12px;font-weight:800;font-family:${FONT.body};
@@ -739,7 +743,7 @@ export default function Dashboard() {
       50%{transform:scale(1.4);opacity:1;}
     }
     .tb-feedback-btn{
-      display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:12px;
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 14px;border-radius:12px;box-sizing:border-box;
       background:${dark?"rgba(255,255,255,0.06)":"rgba(255,252,245,0.85)"};
       border:1px solid ${GB_BORDER};
       color:${T.text};font-size:12px;font-weight:700;font-family:${FONT.body};
@@ -1220,6 +1224,39 @@ export default function Dashboard() {
   );
 
   const profileIncomplete = !user.weight || !user.height || !user.age;
+
+  if (isMobile) {
+    return (
+      <MobileAppShell
+        user={user}
+        authUid={authUid}
+        dark={dark}
+        toggleTheme={toggleTheme}
+        T={T}
+        displayStreak={displayStreak}
+        calorieTarget={calorieTarget}
+        todayCalories={todayCalories}
+        todayBurned={todayBurned}
+        todayNetCalories={todayNetCalories}
+        todayMacros={todayMacros}
+        mealGroups={mealGroups}
+        weights={weights}
+        workouts={workouts}
+        todayWorkouts={todayWorkouts}
+        todayMeals={todayMeals}
+        activeChallenges={activeChallenges}
+        handleDashboardCheckIn={handleDashboardCheckIn}
+        workoutPlan={getWorkouts(user?.goal, user?.equipment)}
+        isFemale={isFemale}
+        isMale={isMale}
+        getCycleDay={getCycleDay}
+        getPhaseName={getPhaseName}
+        bmi={bmi}
+        isPro={isPro}
+        clearUser={clearUser}
+      />
+    );
+  }
 
   return (
     <>

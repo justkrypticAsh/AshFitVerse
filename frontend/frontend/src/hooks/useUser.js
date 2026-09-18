@@ -76,8 +76,18 @@ export default function useUser() {
   const [onboarded, setOnboarded] = useState(
     () => localStorage.getItem("ashfitverse_onboarded") === "true"
   );
-  const [loading,   setLoading]   = useState(true);
+  const [loading,   setLoading]   = useState(() => {
+    try {
+      return !localStorage.getItem("ashfitverse_user");
+    } catch { return false; }
+  });
   const [authUid,   setAuthUid]   = useState(() => getEffectiveUid());
+
+  // Safety fallback: never leave UI on a blank loader
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   // ── Auth listener ──────────────────────────────────────────
   useEffect(() => {
