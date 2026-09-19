@@ -129,9 +129,9 @@ const SLANGS = [
 export default function Dashboard() {
   const navigate  = useNavigate();
   const isMobile  = useIsMobile(840);
-  const { hasCommunityUpdate, incomingMessageToast, dismissToast } = useCommunityUnread(authUid);
   const { dark, toggleTheme, T } = useTheme();
   const { user, authUid, clearUser, loading, isMale, isFemale, bmi, calorieTarget, getCycleDay, getPhaseName, isPro, isAdmin, updateUser } = useUser();
+  const { hasCommunityUpdate, incomingMessageToast, dismissToast } = useCommunityUnread(authUid);
   const { ready: logsReady, weeklyWeight, calData, todayCalories, todayBurned, todayNetCalories, todayMacros, mealGroups, streak: liveStreak, activeDates = [], isTodayActive = false, workouts, weights, todayWorkouts, todayMeals, meals } = useUserLogs(authUid);
   const { items: notifications, unread: unreadNotifications, markRead, markAllRead, requestPermission } = useAppNotifications(authUid);
 

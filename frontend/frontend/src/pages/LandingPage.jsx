@@ -188,19 +188,18 @@ export default function LandingPage() {
     if (currentEl) {
       currentEl.muted = true;
       currentEl.defaultMuted = true;
-      if (currentEl.readyState >= 2) {
-        try { currentEl.currentTime = 0; } catch (_) {}
-      }
-      const p = currentEl.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      currentEl.play().catch(() => {});
     }
     // Pause other clips to preserve GPU/CPU
     Object.entries(videoRefs.current).forEach(([idx, el]) => {
       if (el && Number(idx) !== clipIdx) {
-        try { el.pause(); } catch (_) {}
+        try {
+          el.pause();
+          el.currentTime = 0;
+        } catch (_) {}
       }
     });
-  }, [clipIdx, iPhase]);
+  }, [clipIdx]);
 
   // Global user interaction unblocker for browser autoplay policy
   useEffect(() => {
@@ -904,7 +903,7 @@ export default function LandingPage() {
               <div
                 key={i}
                 className={`iv-wrapper ${i === clipIdx ? "active" : ""}`}
-                style={{ backgroundImage: `url(${c.poster})` }}
+                style={{ background: "#050712" }}
               >
                 {shouldMountVideo && (
                   <video
@@ -917,7 +916,6 @@ export default function LandingPage() {
                     }}
                     className="iv"
                     src={c.src}
-                    poster={c.poster}
                     autoPlay
                     muted
                     defaultMuted
@@ -925,12 +923,6 @@ export default function LandingPage() {
                     loop
                     preload="auto"
                     disablePictureInPicture
-                    onCanPlay={(e) => {
-                      if (i === clipIdx) {
-                        e.currentTarget.muted = true;
-                        e.currentTarget.play().catch(() => {});
-                      }
-                    }}
                   />
                 )}
               </div>

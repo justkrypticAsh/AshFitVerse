@@ -643,26 +643,26 @@ export default function Login() {
             {/* Badge */}
             <div className="lbadge">
               <div className="live-dot" />
-              <span className="lbltxt">24K+ Active Members</span>
+              <span className="lbltxt">Elite Athlete Operating System</span>
             </div>
 
             {/* Headline */}
             <div className="lhl">
               <h2>Break<span>Every</span>Limit.</h2>
-              <p>A premium fitness ecosystem built for athletes who refuse to settle. Track. Train. Transform.</p>
+              <p>A science-backed training and nutrition operating system built for athletes who refuse to settle. Track. Train. Transform.</p>
             </div>
 
-            {/* Stats */}
+            {/* Genuine Platform Highlights */}
             <div className="lstats">
               <div className="sblk">
-                <span className="slbl">Active Members</span>
-                <span className="sval">24K+</span>
+                <span className="slbl">Exercise Library</span>
+                <span className="sval">500+</span>
               </div>
               <div className="sblk">
-                <span className="slbl">Workouts Logged</span>
-                <span className="sval">180K</span>
+                <span className="slbl">Health Telemetry</span>
+                <span className="sval">23+</span>
               </div>
-              <div className="sico">↑</div>
+              <div className="sico">⚡</div>
             </div>
           </div>
 

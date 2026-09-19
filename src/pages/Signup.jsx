@@ -509,7 +509,7 @@ export default function Signup() {
                   { ico: "📊", txt: "Progress Tracking" },
                   { ico: "🏋️", txt: "500+ Workouts" },
                   { ico: "🔥", txt: "Daily Streaks" },
-                  { ico: "🤝", txt: "24K Community" },
+                  { ico: "🤝", txt: "Squad & Challenges" },
                 ].map((p, i) => (
                   <div key={i} className="spitem">
                     <div className="spico">{p.ico}</div>
