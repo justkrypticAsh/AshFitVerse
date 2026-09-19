@@ -295,7 +295,7 @@ export default function App() {
         <Route path="/contraception"       element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Contraception Guide"><ContraceptionGuide /></RequirePlan></RequireOnboarding>} />
         <Route path="/contraception-guide" element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Contraception Guide"><ContraceptionGuide /></RequirePlan></RequireOnboarding>} />
         <Route path="/pregnancy-guide"     element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Pregnancy Guide"><PregnancyGuide /></RequirePlan></RequireOnboarding>} />
-        <Route path="/female-shop"         element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Women's Wellness Shop"><FemaleShop /></RequirePlan></RequireOnboarding>} />
+        <Route path="/female-shop"         element={<RequireOnboarding><FemaleShop /></RequireOnboarding>} />
 
 
         {/* ── Male Health ── */}
@@ -304,7 +304,7 @@ export default function App() {
         <Route path="/male-mental-health"  element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Men's Mental Health"><MentalHealth /></RequirePlan></RequireOnboarding>} />
         <Route path="/sexual-wellness"     element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Sexual Wellness"><SexualWellness /></RequirePlan></RequireOnboarding>} />
         <Route path="/sleep-tracker"       element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Sleep Tracker"><SleepTracker /></RequirePlan></RequireOnboarding>} />
-        <Route path="/male-shop"           element={<RequireOnboarding><RequirePlan minPlan="pro" feature="Men's Wellness Shop"><MaleShop /></RequirePlan></RequireOnboarding>} />
+        <Route path="/male-shop"           element={<RequireOnboarding><MaleShop /></RequireOnboarding>} />
 
         {/* ── Fallback ── */}
         <Route path="*" element={<Navigate to="/" replace />} />

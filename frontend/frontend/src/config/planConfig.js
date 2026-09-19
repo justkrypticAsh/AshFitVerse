@@ -37,14 +37,14 @@ export const ROUTE_MIN_PLAN = {
   "/contraception":       "pro",
   "/contraception-guide": "pro",
   "/pregnancy-guide":     "pro",
-  "/female-shop":         "pro",
+  "/female-shop":         "free",
 
   "/male-health":         "pro",
   "/testosterone-health": "pro",
   "/male-mental-health":  "pro",
   "/sexual-wellness":     "pro",
   "/sleep-tracker":       "pro",
-  "/male-shop":           "pro",
+  "/male-shop":           "free",
 };
 
 export const ROUTE_LABELS = {
