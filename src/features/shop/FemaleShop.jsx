@@ -6,7 +6,7 @@ import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
 import { db } from "../../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { buildAmazonAffiliateUrl } from "../../config/affiliateConfig";
+import { buildAmazonAffiliateUrl, getAffiliateTag } from "../../config/affiliateConfig";
 import ProductReviewsModal from "../../components/ProductReviewsModal";
 import AddAffiliateProductModal from "../../components/AddAffiliateProductModal";
 import ShopHeroAdBanner from "../../components/ShopHeroAdBanner";
@@ -505,6 +505,7 @@ export default function FemaleShop() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
   const { user, isAdmin } = useUser();
+  const affiliateTag = getAffiliateTag() || "ashfitverse-21";
 
   const [mounted, setMounted] = useState(false);
   const [category, setCategory] = useState("all");

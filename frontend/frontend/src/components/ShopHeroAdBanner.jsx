@@ -30,7 +30,8 @@ export default function ShopHeroAdBanner({
 
   if (!slides || slides.length === 0) return null;
 
-  const current = slides[currentIdx];
+  const current = slides[currentIdx] || slides[0];
+  if (!current) return null;
   const affiliateUrl = buildAmazonAffiliateUrl(current.asin || current.link, affiliateTag);
 
   const handlePrev = (e) => {

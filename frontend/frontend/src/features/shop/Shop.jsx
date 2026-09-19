@@ -623,6 +623,7 @@ export default function Shop() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
   const { user, isAdmin } = useUser();
+  const affiliateTag = getAffiliateTag() || "ashfitverse-21";
 
   const [mounted, setMounted] = useState(false);
   const [category, setCategory] = useState("all");
