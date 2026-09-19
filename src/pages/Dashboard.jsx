@@ -16,6 +16,7 @@ import WeightLogModal from "../components/WeightLogModal";
 import FeedbackModal from "../components/FeedbackModal";
 import WorkoutDetailModal from "../components/WorkoutDetailModal";
 import StreakModal from "../components/StreakModal";
+import OnboardingModal from "../components/OnboardingModal";
 import { getDefaultQuickActions, QA_THEMES, sanitizeActionsForUser } from "../config/quickActionsCatalog";
 import {
   DEFAULT_CHALLENGES,
@@ -143,8 +144,21 @@ export default function Dashboard() {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [selectedWorkoutLog, setSelectedWorkoutLog] = useState(null);
   const displayStreak = Math.max(Number(liveStreak) || 0, Number(user?.streak) || 0);
+
+  // Automatically trigger onboarding modal if user profile is incomplete and not dismissed for this session
+  useEffect(() => {
+    if (user && (!user.weight || !user.height || !user.age)) {
+      try {
+        const dismissed = sessionStorage.getItem("ashfitverse_onboarding_dismissed");
+        if (!dismissed) {
+          setShowOnboardModal(true);
+        }
+      } catch {}
+    }
+  }, [user?.weight, user?.height, user?.age]);
 
   // Keep user profile streak synchronized with live computed streak from activities
   useEffect(() => {
@@ -490,11 +504,10 @@ export default function Dashboard() {
 
     /* Streak widget */
     .sb-streak-card{
-      margin:8px 12px 0;padding:10px 12px;border-radius:14px;
+      margin:10px 12px 2px;padding:10px 12px;border-radius:14px;
       background:${dark ? "linear-gradient(135deg, rgba(249,115,22,0.14), rgba(234,88,12,0.06))" : "linear-gradient(135deg, #fff7ed, #ffedd5)"};
-      border:1px solid ${dark ? "rgba(249,115,22,0.30)" : "#fed7aa"};
-      display:flex;align-items:center;gap:9px;
-      font-size:12px;font-weight:800;color:${T.orange};
+      border:1.5px solid ${dark ? "rgba(249,115,22,0.32)" : "#fed7aa"};
+      display:flex;align-items:center;gap:10px;
       cursor:pointer;
       transition:all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow:${dark ? "0 4px 14px rgba(249,115,22,0.12)" : "0 2px 8px rgba(249,115,22,0.08)"};
@@ -504,8 +517,32 @@ export default function Dashboard() {
       border-color:rgba(249,115,22,0.55);
       box-shadow:${dark ? "0 6px 20px rgba(249,115,22,0.25)" : "0 4px 14px rgba(249,115,22,0.16)"};
     }
+    .sb-streak-flame-box{
+      width:32px;height:32px;border-radius:10px;
+      background:linear-gradient(135deg,#f97316,#ea580c);
+      display:flex;align-items:center;justify-content:center;
+      font-size:16px;box-shadow:0 2px 8px rgba(249,115,22,0.4);
+      flex-shrink:0;
+    }
+    .sb-streak-info{
+      flex:1;min-width:0;
+    }
+    .sb-streak-header-row{
+      display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px;
+    }
+    .sb-streak-count{
+      font-size:11.5px;font-weight:800;color:${dark ? "#fb923c" : "#ea580c"};
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .sb-streak-status-pill{
+      font-size:9px;font-weight:800;padding:1px 6px;border-radius:99px;
+      background:${isTodayActive ? "rgba(16,185,129,0.18)" : "rgba(249,115,22,0.18)"};
+      color:${isTodayActive ? "#10b981" : "#f97316"};
+      border:1px solid ${isTodayActive ? "rgba(16,185,129,0.3)" : "rgba(249,115,22,0.3)"};
+      white-space:nowrap;
+    }
     .sb-streak-bar{
-      flex:1;height:6px;background:${dark ? "rgba(249,115,22,0.18)" : "#fed7aa"};
+      width:100%;height:5px;background:${dark ? "rgba(249,115,22,0.18)" : "#fed7aa"};
       border-radius:99px;overflow:hidden;
     }
     .sb-streak-fill{
@@ -638,19 +675,28 @@ export default function Dashboard() {
     }
 
     /* ── MAIN ── */
-    .mn{flex:1;overflow-y:auto;padding:32px 36px 60px;position:relative;z-index:1;}
+    .mn{
+      flex:1;min-width:0;max-width:100%;
+      overflow-y:auto;overflow-x:hidden;
+      padding:24px 28px 60px;position:relative;z-index:1;
+    }
+    .mn-container{
+      max-width:1420px;margin:0 auto;width:100%;min-width:0;
+    }
 
     /* ── TOPBAR — elevated stacking context for absolute popups ── */
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;
-      padding:20px 26px;border-radius:22px;margin-bottom:32px;
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+      padding:18px 24px;border-radius:22px;margin-bottom:24px;
       background:${GB};border:1px solid ${GB_BORDER};
       backdrop-filter:blur(50px) saturate(180%);
       box-shadow:inset 0 1.5px 0 ${GB_TOP},0 4px 20px rgba(0,0,0,${dark?"0.16":"0.05"});
       animation:fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
-      position:relative;z-index:80;overflow:visible;}
+      position:relative;z-index:80;overflow:visible;
+    }
     .topbar::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
       background:linear-gradient(135deg,rgba(255,255,255,${dark?"0.04":"0.35"}) 0%,transparent 42%);}
-    .tb-left{position:relative;z-index:1;min-width:0;flex:1;}
+    .tb-left{position:relative;z-index:1;min-width:240px;flex:1;}
     .tb-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
     .tb-period{
       display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;
@@ -864,8 +910,8 @@ export default function Dashboard() {
     }
     .qa-grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-      gap:12px;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:14px;
       margin-bottom:28px;
     }
     .qa-card{
@@ -1266,6 +1312,10 @@ export default function Dashboard() {
         bmi={bmi}
         isPro={isPro}
         clearUser={clearUser}
+        updateUser={updateUser}
+        activeDates={activeDates}
+        isTodayActive={isTodayActive}
+        meals={meals}
         hasCommunityUpdate={hasCommunityUpdate}
         incomingMessageToast={incomingMessageToast}
         dismissToast={dismissToast}
@@ -1320,19 +1370,31 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {displayStreak > 0 && (
-            <div
-              className="sb-streak-card"
-              onClick={() => setShowStreakModal(true)}
-              title="Click to view streak telemetry and 7-day breakdown"
-            >
-              <span className="streak-flame-icon" style={{ fontSize: 16 }}>🔥</span>
-              <span style={{ flex: 1 }}>{displayStreak}d active streak</span>
+          <div
+            className="sb-streak-card"
+            onClick={() => setShowStreakModal(true)}
+            title="Click to view streak telemetry and monthly calendar"
+          >
+            <div className="sb-streak-flame-box">
+              <span className="streak-flame-icon">🔥</span>
+            </div>
+            <div className="sb-streak-info">
+              <div className="sb-streak-header-row">
+                <span className="sb-streak-count">
+                  {displayStreak > 0 ? `${displayStreak} Day Streak` : "0d Streak"}
+                </span>
+                <span className="sb-streak-status-pill">
+                  {isTodayActive ? "✓ Active" : displayStreak > 0 ? "⚡ Pending" : "Start"}
+                </span>
+              </div>
               <div className="sb-streak-bar">
-                <div className="sb-streak-fill" style={{ width: `${Math.min((displayStreak / 30) * 100, 100)}%` }} />
+                <div
+                  className="sb-streak-fill"
+                  style={{ width: `${Math.min(Math.max((displayStreak / 30) * 100, displayStreak > 0 ? 8 : 4), 100)}%` }}
+                />
               </div>
             </div>
-          )}
+          </div>
 
           <div className="sb-nav-section">Core Navigation</div>
           {NAV_MAIN.map((n) => (
@@ -1407,6 +1469,7 @@ export default function Dashboard() {
             MAIN
         ══════════════════════════════════════════════ */}
         <main className="mn">
+          <div className="mn-container">
 
           {/* Topbar */}
           <div className="topbar">
@@ -1594,13 +1657,26 @@ export default function Dashboard() {
           {/* Banners */}
           {profileIncomplete && (
             <Reveal delay={0.02}>
-              <div className="banner-warn">
+              <div
+                className="banner-warn"
+                onClick={() => setShowOnboardModal(true)}
+                style={{ cursor: "pointer", border: "1.5px solid rgba(251,191,36,0.35)" }}
+                title="Click to complete your profile"
+              >
                 <span style={{fontSize:20}}>⚠️</span>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:13.5,fontWeight:700,color:"#fbbf24"}}>Complete your profile</div>
-                  <div style={{fontSize:11.5,color:T.textSub,marginTop:2}}>Add height, weight and age to unlock calorie targets and BMI.</div>
+                  <div style={{fontSize:13.5,fontWeight:700,color:"#fbbf24"}}>Complete your athlete profile</div>
+                  <div style={{fontSize:11.5,color:T.textSub,marginTop:2}}>Add height, weight and age to unlock customized calorie targets and live telemetry.</div>
                 </div>
-                <button onClick={() => navigate("/onboarding")} style={{padding:"8px 15px",borderRadius:10,border:"1px solid rgba(251,191,36,0.28)",background:"rgba(251,191,36,0.08)",color:"#fbbf24",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT.body,whiteSpace:"nowrap"}}>Complete →</button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowOnboardModal(true);
+                  }}
+                  style={{padding:"8px 15px",borderRadius:10,border:"1px solid rgba(251,191,36,0.28)",background:"rgba(251,191,36,0.08)",color:"#fbbf24",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:FONT.body,whiteSpace:"nowrap"}}
+                >
+                  Set Up Now →
+                </button>
               </div>
             </Reveal>
           )}
@@ -1654,9 +1730,7 @@ export default function Dashboard() {
                 ⚙️ Customize Shortcuts
               </button>
             </div>
-            <div className="qa-grid" style={{
-              gridTemplateColumns: `repeat(${Math.min(currentActions.length, 6)}, minmax(0, 1fr))`
-            }}>
+            <div className="qa-grid">
               {currentActions.map((t, i) => (
                 <div
                   key={t.id || i}
@@ -2396,6 +2470,7 @@ export default function Dashboard() {
             </div>
           </Reveal>
 
+          </div>
         </main>
       </div>
 
@@ -2464,49 +2539,6 @@ export default function Dashboard() {
           <span>Checked in for {challengeToast.title} (Day {challengeToast.day})!</span>
         </div>
       )}
-      {/* Mobile Floating Bottom Navigation Dock */}
-      <div className="mobile-bottom-dock">
-        <button
-          className="mbd-item active"
-          onClick={() => { setActiveNav("Dashboard"); navigate("/dashboard"); }}
-          aria-label="Dashboard"
-        >
-          <span className="mbd-icon">🏠</span>
-          <span className="mbd-lbl">Home</span>
-        </button>
-        <button
-          className="mbd-item"
-          onClick={() => navigate("/community")}
-          aria-label="Community"
-        >
-          <span className="mbd-icon">👥</span>
-          <span className="mbd-lbl">Community</span>
-        </button>
-        <button
-          className="mbd-item"
-          onClick={() => navigate("/workout-logger")}
-          aria-label="Workouts"
-        >
-          <span className="mbd-icon">🏋️</span>
-          <span className="mbd-lbl">Workouts</span>
-        </button>
-        <button
-          className="mbd-item"
-          onClick={() => navigate("/diet-logger")}
-          aria-label="Diet"
-        >
-          <span className="mbd-icon">🥗</span>
-          <span className="mbd-lbl">Diet</span>
-        </button>
-        <button
-          className="mbd-item"
-          onClick={() => setShowProfile(true)}
-          aria-label="Profile"
-        >
-          <span className="mbd-icon">👤</span>
-          <span className="mbd-lbl">Profile</span>
-        </button>
-      </div>
 
       <StreakModal
         isOpen={showStreakModal}
@@ -2516,6 +2548,17 @@ export default function Dashboard() {
         isTodayActive={isTodayActive}
         totalWorkouts={workouts.length}
         totalMeals={meals.length}
+        dark={dark}
+        T={T}
+      />
+
+      {/* Real-time Executive Onboarding & Profile Setup Modal for new / incomplete users */}
+      <OnboardingModal
+        isOpen={showOnboardModal}
+        onClose={() => setShowOnboardModal(false)}
+        user={user}
+        authUid={authUid}
+        updateUser={updateUser}
         dark={dark}
         T={T}
       />

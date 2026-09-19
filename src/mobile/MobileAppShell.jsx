@@ -7,6 +7,7 @@ import MobileActionSheet from "./components/MobileActionSheet";
 import WeightLogModal from "../components/WeightLogModal";
 import StreakModal from "../components/StreakModal";
 import FeedbackModal from "../components/FeedbackModal";
+import OnboardingModal from "../components/OnboardingModal";
 import { recordDailyActivity } from "../lib/userLogs";
 
 export default function MobileAppShell({
@@ -26,6 +27,7 @@ export default function MobileAppShell({
   workouts,
   todayWorkouts,
   todayMeals,
+  meals = [],
   activeChallenges,
   handleDashboardCheckIn,
   workoutPlan,
@@ -36,12 +38,31 @@ export default function MobileAppShell({
   bmi,
   isPro,
   clearUser,
+  updateUser,
+  activeDates = [],
+  isTodayActive = false,
+  hasCommunityUpdate,
+  incomingMessageToast,
+  dismissToast,
 }) {
   const navigate = useNavigate();
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showOnboardModal, setShowOnboardModal] = useState(false);
+
+  // Auto trigger onboarding modal for new / incomplete profiles on mobile
+  React.useEffect(() => {
+    if (user && (!user.weight || !user.height || !user.age)) {
+      try {
+        const dismissed = sessionStorage.getItem("ashfitverse_onboarding_dismissed");
+        if (!dismissed) {
+          setShowOnboardModal(true);
+        }
+      } catch {}
+    }
+  }, [user?.weight, user?.height, user?.age]);
 
   // Quick hydration tracker state (Defaults honestly to 0 ml if not logged today)
   const [waterMl, setWaterMl] = useState(() => {
@@ -118,7 +139,7 @@ export default function MobileAppShell({
         <div className="mob-app-bar-actions">
           {/* Streak pill */}
           <div className="mob-streak-pill" onClick={() => setShowStreakModal(true)}>
-            <span>🔥</span> {displayStreak || 1}d
+            <span>🔥</span> {displayStreak > 0 ? `${displayStreak}d` : "0d"}
           </div>
 
           {/* Theme toggle */}
@@ -209,9 +230,23 @@ export default function MobileAppShell({
         isOpen={showStreakModal}
         onClose={() => setShowStreakModal(false)}
         streak={displayStreak}
-        activeDates={[]}
-        isTodayActive={true}
-        onCheckIn={() => {}}
+        activeDates={activeDates}
+        isTodayActive={isTodayActive}
+        totalWorkouts={workouts?.length || 0}
+        totalMeals={meals?.length || 0}
+        dark={dark}
+        T={T}
+      />
+
+      {/* Onboarding & Profile Completion Modal for Mobile */}
+      <OnboardingModal
+        isOpen={showOnboardModal}
+        onClose={() => setShowOnboardModal(false)}
+        user={user}
+        authUid={authUid}
+        updateUser={updateUser}
+        dark={dark}
+        T={T}
       />
 
       <FeedbackModal

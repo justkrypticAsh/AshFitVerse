@@ -133,7 +133,7 @@ export default function MobileHomeScreen({
             color: "#f97316",
           }}
         >
-          <span>🔥</span> {displayStreak || 1}d Streak
+          <span>🔥</span> {displayStreak > 0 ? `${displayStreak}d Streak` : "Start Streak"}
         </button>
       </div>
 
