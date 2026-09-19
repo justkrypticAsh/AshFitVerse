@@ -10,6 +10,7 @@ import {
   setAffiliateTag,
 } from "../config/affiliateConfig";
 import { Plus, X, Link, Image, Tag, Sparkles, Check, Settings, ExternalLink } from "lucide-react";
+import useUser from "../hooks/useUser";
 
 export default function AddAffiliateProductModal({
   isOpen,
@@ -19,6 +20,7 @@ export default function AddAffiliateProductModal({
   dark = true,
   T = {},
 }) {
+  const { isAdmin } = useUser();
   const [shop, setShop] = useState(defaultShop);
   const [urlInput, setUrlInput] = useState("");
   const [name, setName] = useState("");
@@ -38,7 +40,7 @@ export default function AddAffiliateProductModal({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const detectedAsin = extractAsin(urlInput);
 

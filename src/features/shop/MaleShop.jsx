@@ -306,7 +306,7 @@ const MALE_CATEGORIES = [
 export default function MaleShop() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const { user } = useUser();
+  const { user, isAdmin } = useUser();
 
   const [mounted, setMounted] = useState(false);
   const [category, setCategory] = useState("all");
@@ -463,25 +463,28 @@ export default function MaleShop() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            onClick={() => setShowAddProductModal(true)}
-            style={{
-              padding: "7px 14px",
-              borderRadius: 10,
-              background: "linear-gradient(135deg, rgba(59,130,246,0.18), rgba(29,78,216,0.18))",
-              border: "1px solid rgba(59,130,246,0.4)",
-              color: "#3b82f6",
-              fontSize: 12.5,
-              fontWeight: 800,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <Plus size={14} strokeWidth={2.5} />
-            <span>Add Men's Item</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowAddProductModal(true)}
+              style={{
+                padding: "7px 14px",
+                borderRadius: 10,
+                background: "linear-gradient(135deg, rgba(59,130,246,0.18), rgba(29,78,216,0.18))",
+                border: "1px solid rgba(59,130,246,0.4)",
+                color: "#3b82f6",
+                fontSize: 12.5,
+                fontWeight: 800,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+              title="Admin Only: Add new men's affiliate product"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              <span>Add Men's Item</span>
+            </button>
+          )}
 
           <button
             onClick={toggleTheme}

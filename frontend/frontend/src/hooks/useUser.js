@@ -272,3 +272,5 @@ export default function useUser() {
     effectivePlan, hasPlan, isLite, isPro,
   };
 }
+
+export { useUser };
