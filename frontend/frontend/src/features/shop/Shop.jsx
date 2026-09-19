@@ -1,728 +1,960 @@
-// src/features/shop/Shop.jsx
-import React, { useState, useEffect } from "react";
+// src/features/shop/Shop.jsx — Common Fitness & Wellness Amazon Affiliate Shop
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/usetheme";
-import { generateCSS, BG_IMAGES, FONT } from "../../theme";
+import useUser from "../../hooks/useUser";
+import { generateCSS, FONT } from "../../theme";
+import { db } from "../../firebase";
+import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { buildAmazonAffiliateUrl, getAffiliateTag } from "../../config/affiliateConfig";
+import ProductReviewsModal from "../../components/ProductReviewsModal";
+import AddAffiliateProductModal from "../../components/AddAffiliateProductModal";
+import {
+  Star,
+  Search,
+  Plus,
+  ArrowLeft,
+  Heart,
+  MessageSquare,
+  ShieldCheck,
+  Check,
+  Sparkles,
+  ShoppingBag,
+  ExternalLink,
+  Flame,
+  Zap,
+} from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────
-// AFFILIATE PRODUCTS DATABASE
+// CURATED MASTER AFFILIATE PRODUCTS (COMMON FITNESS & NUTRITION)
 // ─────────────────────────────────────────────────────────────
-
-const PRODUCTS = [
-  // ── SUPPLEMENTS ──
+const BASE_PRODUCTS = [
+  // ── WHEY & PROTEIN ──
   {
-    id: 1, category: "supplements",
-    name: "Optimum Nutrition Gold Standard Whey",
+    id: 1,
+    category: "protein",
+    name: "Optimum Nutrition (ON) Gold Standard 100% Whey Protein (2 lbs / 907g)",
     brand: "Optimum Nutrition",
-    platform: "Amazon",
-    rating: 4.8, reviews: 12400,
-    price: "₹3,499", originalPrice: "₹4,499",
+    asin: "B000QSNY54",
+    rating: 4.8,
+    reviews: 28400,
+    price: "₹3,499",
+    originalPrice: "₹4,499",
     discount: "22% OFF",
-    image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&q=80",
-    tags: ["Whey Protein", "Best Seller", "24g Protein"],
-    description: "100% Whey protein with 24g protein per serving. Double Rich Chocolate flavour.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Best Seller",
-    badgeColor: "#fbbf24",
+    image: "https://m.media-amazon.com/images/I/716uVVqU+TL._SL1500_.jpg",
+    tags: ["Whey Blend", "24g Protein", "5.5g BCAAs", "Gluten Free"],
+    description: "The world's #1 selling whey protein. 24g pure whey isolate & concentrate blend with 5.5g natural BCAAs per scoop.",
+    badge: "#1 Best Seller",
+    badgeColor: "#f59e0b",
   },
   {
-    id: 2, category: "supplements",
-    name: "MyProtein Impact Whey Isolate",
-    brand: "MyProtein",
-    platform: "MyProtein",
-    rating: 4.7, reviews: 8900,
-    price: "₹2,999", originalPrice: "₹3,999",
-    discount: "25% OFF",
-    image: "https://images.unsplash.com/photo-1612532275214-e4ca76d0e4d1?w=400&q=80",
-    tags: ["Whey Isolate", "Low Fat", "25g Protein"],
-    description: "90% protein content, ultra-low fat and carb. Perfect for lean gains.",
-    href: "https://www.myprotein.com/YOUR_AFFILIATE_LINK",
-    badge: "Top Rated",
-    badgeColor: "#4f8ef7",
-  },
-  {
-    id: 3, category: "supplements",
-    name: "Creatine Monohydrate 500g",
-    brand: "Healthkart",
-    platform: "Healthkart",
-    rating: 4.6, reviews: 5200,
-    price: "₹899", originalPrice: "₹1,299",
-    discount: "31% OFF",
-    image: "https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=400&q=80",
-    tags: ["Creatine", "Strength", "5g per serving"],
-    description: "Pure micronised creatine monohydrate. Increase strength and power output.",
-    href: "https://www.healthkart.com/YOUR_AFFILIATE_LINK",
-    badge: "Value Pick",
-    badgeColor: "#34d399",
-  },
-  {
-    id: 4, category: "supplements",
-    name: "MuscleBlaze Mass Gainer XXL",
+    id: 2,
+    category: "protein",
+    name: "MuscleBlaze Biozyme Performance Whey (2kg / 4.4 lbs, Rich Chocolate)",
     brand: "MuscleBlaze",
-    platform: "Amazon",
-    rating: 4.5, reviews: 9800,
-    price: "₹2,799", originalPrice: "₹3,499",
-    discount: "20% OFF",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
-    tags: ["Mass Gainer", "Bulk", "High Carb"],
-    description: "1250 kcal per serving. Ideal for hardgainers looking to pack on mass fast.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: null,
-    badgeColor: null,
+    asin: "B07T48L8H3",
+    rating: 4.7,
+    reviews: 19800,
+    price: "₹4,799",
+    originalPrice: "₹6,299",
+    discount: "24% OFF",
+    image: "https://m.media-amazon.com/images/I/61kLg2eQZSL._SL1100_.jpg",
+    tags: ["Enhanced Absorption Formula", "25g Protein", "Clinically Tested"],
+    description: "Formulated for Indian bodies with Enhanced Absorption Formula (EAF). 50% higher protein absorption and zero stomach discomfort.",
+    badge: "Clinical Tested",
+    badgeColor: "#10b981",
   },
   {
-    id: 5, category: "supplements",
-    name: "Optimum Nutrition BCAA 200 Caps",
-    brand: "Optimum Nutrition",
-    platform: "Amazon",
-    rating: 4.7, reviews: 4300,
-    price: "₹1,499", originalPrice: "₹1,999",
-    discount: "25% OFF",
-    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&q=80",
-    tags: ["BCAA", "Recovery", "2:1:1 ratio"],
-    description: "Essential amino acids in 2:1:1 ratio for muscle recovery and endurance.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: null,
-    badgeColor: null,
-  },
-  {
-    id: 6, category: "supplements",
-    name: "Dymatize ISO100 Hydrolyzed Whey",
+    id: 3,
+    category: "protein",
+    name: "Dymatize ISO100 Hydrolyzed 100% Whey Isolate (5 lbs / 2.3kg, Gourmet Chocolate)",
     brand: "Dymatize",
-    platform: "Healthkart",
-    rating: 4.9, reviews: 3100,
-    price: "₹5,999", originalPrice: "₹7,499",
-    discount: "20% OFF",
-    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80",
-    tags: ["Hydrolyzed", "Fast Absorb", "25g Protein"],
-    description: "Hydrolyzed whey protein for maximum absorption post-workout.",
-    href: "https://www.healthkart.com/YOUR_AFFILIATE_LINK",
-    badge: "Premium",
-    badgeColor: "#a78bfa",
-  },
-
-  // ── MULTIVITAMINS ──
-  {
-    id: 7, category: "multivitamins",
-    name: "Centrum Silver Multivitamin",
-    brand: "Centrum",
-    platform: "Amazon",
-    rating: 4.6, reviews: 7800,
-    price: "₹649", originalPrice: "₹899",
-    discount: "28% OFF",
-    image: "https://images.unsplash.com/photo-1550572017-edd951b55104?w=400&q=80",
-    tags: ["Complete Formula", "30+ Vitamins", "Daily"],
-    description: "Complete multivitamin with 30+ essential vitamins and minerals for active adults.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Best Seller",
-    badgeColor: "#fbbf24",
-  },
-  {
-    id: 8, category: "multivitamins",
-    name: "Vitamin D3 + K2 5000 IU",
-    brand: "Now Foods",
-    platform: "Amazon",
-    rating: 4.8, reviews: 5600,
-    price: "₹899", originalPrice: "₹1,199",
-    discount: "25% OFF",
-    image: "https://images.unsplash.com/photo-1559181567-c3190ca9d222?w=400&q=80",
-    tags: ["Vitamin D3", "Bone Health", "Immune Support"],
-    description: "High potency D3 + K2 for bone health, immune function and testosterone support.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Top Rated",
-    badgeColor: "#4f8ef7",
-  },
-  {
-    id: 9, category: "multivitamins",
-    name: "Omega-3 Fish Oil 1000mg",
-    brand: "HealthKart",
-    platform: "Healthkart",
-    rating: 4.5, reviews: 11200,
-    price: "₹499", originalPrice: "₹699",
-    discount: "29% OFF",
-    image: "https://images.unsplash.com/photo-1587854680352-936b22b91030?w=400&q=80",
-    tags: ["EPA + DHA", "Heart Health", "Joint Support"],
-    description: "Triple strength omega-3 with 360mg EPA and 240mg DHA per softgel.",
-    href: "https://www.healthkart.com/YOUR_AFFILIATE_LINK",
-    badge: null,
-    badgeColor: null,
-  },
-  {
-    id: 10, category: "multivitamins",
-    name: "Magnesium Glycinate 400mg",
-    brand: "Doctor's Best",
-    platform: "Amazon",
-    rating: 4.7, reviews: 4200,
-    price: "₹1,299", originalPrice: "₹1,699",
+    asin: "B002DYJZXE",
+    rating: 4.9,
+    reviews: 14200,
+    price: "₹8,499",
+    originalPrice: "₹10,999",
     discount: "23% OFF",
-    image: "https://images.unsplash.com/photo-1576671081837-49000212a370?w=400&q=80",
-    tags: ["Sleep", "Recovery", "Muscle Relaxation"],
-    description: "Highly bioavailable magnesium for better sleep, muscle recovery and stress relief.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Staff Pick",
-    badgeColor: "#34d399",
+    image: "https://m.media-amazon.com/images/I/71d1V-w2wzL._SL1500_.jpg",
+    tags: ["Hydrolyzed Isolate", "25g Protein", "<1g Sugar", "Ultra Fast Digest"],
+    description: "Hydrolyzed whey isolate for instant post-workout amino uptake. Perfect for lean competition prep and rapid muscular recovery.",
+    badge: "Elite Choice",
+    badgeColor: "#8b5cf6",
+  },
+  {
+    id: 4,
+    category: "protein",
+    name: "The Whole Truth 100% Raw Whey Isolate Unflavoured (1kg)",
+    brand: "The Whole Truth",
+    asin: "B09WDPCS8J",
+    rating: 4.6,
+    reviews: 6400,
+    price: "₹2,699",
+    originalPrice: "₹3,299",
+    discount: "18% OFF",
+    image: "https://m.media-amazon.com/images/I/61b7U2QjVLL._SL1500_.jpg",
+    tags: ["Zero Artificial Flavours", "Cold Filtered", "27g Protein", "Clean Label"],
+    description: "Only one single ingredient: 100% cold-microfiltered whey isolate from grass-fed cows. Zero gums, zero artificial sweeteners.",
+    badge: "100% Clean",
+    badgeColor: "#06b6d4",
   },
 
-  // ── ENHANCERS ──
+  // ── CREATINE & STRENGTH ──
   {
-    id: 12, category: "enhancers",
-    name: "C4 Original Pre-Workout",
-    brand: "Cellucor",
-    platform: "Amazon",
-    rating: 4.7, reviews: 15600,
-    price: "₹2,199", originalPrice: "₹2,999",
-    discount: "27% OFF",
-    image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80",
-    tags: ["Pre-Workout", "Energy", "150mg Caffeine"],
-    description: "Explosive energy, focus and pumps. 150mg caffeine + beta-alanine formula.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Best Seller",
-    badgeColor: "#fbbf24",
-  },
-  {
-    id: 15, category: "enhancers",
-    name: "Ashwagandha KSM-66 600mg",
-    brand: "Himalaya",
-    platform: "Amazon",
-    rating: 4.6, reviews: 8200,
-    price: "₹549", originalPrice: "₹749",
-    discount: "27% OFF",
-    image: "https://images.unsplash.com/photo-1615485500704-8e3b20b25571?w=400&q=80",
-    tags: ["Adaptogen", "Testosterone", "Stress Relief"],
-    description: "KSM-66 extract — clinically proven to reduce cortisol and boost testosterone naturally.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Natural",
-    badgeColor: "#34d399",
-  },
-
-  // ── GEAR & EQUIPMENT ──
-  {
-    id: 17, category: "gear",
-    name: "Harbinger Pro Lifting Belt",
-    brand: "Harbinger",
-    platform: "Amazon",
-    rating: 4.8, reviews: 3400,
-    price: "₹2,499", originalPrice: "₹3,499",
+    id: 5,
+    category: "creatine",
+    name: "Optimum Nutrition Micronized Creatine Monohydrate Powder (250g)",
+    brand: "Optimum Nutrition",
+    asin: "B002DYIZEO",
+    rating: 4.8,
+    reviews: 32000,
+    price: "₹999",
+    originalPrice: "₹1,399",
     discount: "29% OFF",
-    image: "https://images.unsplash.com/photo-1581009137042-c552e485697a?w=400&q=80",
-    tags: ["Lifting Belt", "Back Support", "Powerlifting"],
-    description: "4-inch foam core belt for maximum lumbar support during heavy compound lifts.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Best Seller",
-    badgeColor: "#fbbf24",
+    image: "https://m.media-amazon.com/images/I/61m1N4Xp3tL._SL1500_.jpg",
+    tags: ["100% Pure Creatine", "3g Per Scoop", "ATP Regeneration", "Unflavoured"],
+    description: "Micronized for superior water solubility. Clinically shown to dramatically increase heavy compound strength, sprint power, and muscle volume.",
+    badge: "#1 Creatine",
+    badgeColor: "#f59e0b",
   },
   {
-    id: 18, category: "gear",
-    name: "Versa Gripps Pro Straps",
+    id: 6,
+    category: "creatine",
+    name: "MuscleBlaze Creatine Monohydrate with Creapure Germany (250g)",
+    brand: "MuscleBlaze",
+    asin: "B07T48L8H4",
+    rating: 4.9,
+    reviews: 9100,
+    price: "₹1,499",
+    originalPrice: "₹1,999",
+    discount: "25% OFF",
+    image: "https://m.media-amazon.com/images/I/61q5d9vX6+L._SL1500_.jpg",
+    tags: ["Creapure Germany", "99.99% Purity", "Heavy Metals Tested"],
+    description: "Manufactured using world-renowned Creapure from Alzchem Germany. Guaranteed 99.99% pure without creatinine impurities.",
+    badge: "Creapure Gold",
+    badgeColor: "#3b82f6",
+  },
+
+  // ── PRE-WORKOUT & ENERGY ──
+  {
+    id: 7,
+    category: "preworkout",
+    name: "Cellucor C4 Original Pre-Workout Explosive Energy (30 Servings)",
+    brand: "Cellucor",
+    asin: "B00U46447S",
+    rating: 4.7,
+    reviews: 21500,
+    price: "₹2,299",
+    originalPrice: "₹3,199",
+    discount: "28% OFF",
+    image: "https://m.media-amazon.com/images/I/71oO46j2zUL._SL1500_.jpg",
+    tags: ["150mg Caffeine", "1.6g CarnoSyn Beta-Alanine", "1g Arginine AKG"],
+    description: "Explosive energy and laser focus. Formulated with TeaCrine, Beta-Alanine and Arginine for high volume lifting sessions.",
+    badge: "Fan Favorite",
+    badgeColor: "#f43f5e",
+  },
+  {
+    id: 8,
+    category: "preworkout",
+    name: "Fast&Up Reload Electrolyte Hydration Tablets (Pack of 3 Tubes, 60 Tabs)",
+    brand: "Fast&Up",
+    asin: "B07V2Q21PL",
+    rating: 4.6,
+    reviews: 18700,
+    price: "₹799",
+    originalPrice: "₹1,050",
+    discount: "24% OFF",
+    image: "https://m.media-amazon.com/images/I/71H2l6Y1pGL._SL1500_.jpg",
+    tags: ["5 Essential Electrolytes", "Instant Energy", "Effervescent", "No Cramps"],
+    description: "Informed-Choice certified effervescent hydration tablets. Replenishes sodium, potassium, magnesium, and calcium lost in sweat.",
+    badge: "Hydration Pro",
+    badgeColor: "#06b6d4",
+  },
+
+  // ── VITAMINS & WELLNESS ──
+  {
+    id: 9,
+    category: "vitamins",
+    name: "Doctor's Best High Absorption Magnesium Glycinate 400mg (240 Tablets)",
+    brand: "Doctor's Best",
+    asin: "B000BD0RT0",
+    rating: 4.8,
+    reviews: 36000,
+    price: "₹2,199",
+    originalPrice: "₹2,899",
+    discount: "24% OFF",
+    image: "https://m.media-amazon.com/images/I/61gR2z-L1VL._SL1500_.jpg",
+    tags: ["100% Cheated TRAACS", "Deep Sleep", "Muscle Relaxation", "No Laxative Effect"],
+    description: "Fully chelated TRAACS magnesium glycinate. Restores muscular recovery, prevents night cramps, and supports deep REM sleep.",
+    badge: "Sleep Essential",
+    badgeColor: "#8b5cf6",
+  },
+  {
+    id: 10,
+    category: "vitamins",
+    name: "NOW Foods Ultra Omega-3 Deep Sea Fish Oil 500 EPA / 250 DHA (180 Softgels)",
+    brand: "NOW Foods",
+    asin: "B000SE5SY6",
+    rating: 4.8,
+    reviews: 24500,
+    price: "₹2,499",
+    originalPrice: "₹3,299",
+    discount: "24% OFF",
+    image: "https://m.media-amazon.com/images/I/71E+qF6Uu2L._SL1500_.jpg",
+    tags: ["Molecularly Distilled", "750mg Active EPA/DHA", "Joint Health", "Enteric Coated"],
+    description: "Molecularly distilled fish oil free from mercury and heavy metals. Reduces systemic inflammation, protects cartilage, and optimizes cardiac output.",
+    badge: "Heart & Joints",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 11,
+    category: "vitamins",
+    name: "HealthKart HK Vitals Multivitamin with Zinc, Vitamin C, D3 & Ginseng (60 Tablets)",
+    brand: "HealthKart",
+    asin: "B08R7NDW5T",
+    rating: 4.5,
+    reviews: 42000,
+    price: "₹499",
+    originalPrice: "₹749",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/61F+w8R19zL._SL1000_.jpg",
+    tags: ["100% RDA Minerals", "Korean Ginseng", "Immunity", "Energy"],
+    description: "Complete daily multivitamin with Ginseng extract and 9 essential amino acids to fight workout fatigue and bolster immune health.",
+    badge: "Daily Vital",
+    badgeColor: "#3b82f6",
+  },
+  {
+    id: 12,
+    category: "vitamins",
+    name: "Pintola All-Natural Organic Peanut Butter Crunchy 1kg (100% Roasted Peanuts)",
+    brand: "Pintola",
+    asin: "B07H83LBNP",
+    rating: 4.7,
+    reviews: 38000,
+    price: "₹449",
+    originalPrice: "₹599",
+    discount: "25% OFF",
+    image: "https://m.media-amazon.com/images/I/71jY3S7R2TL._SL1500_.jpg",
+    tags: ["30g Protein / 100g", "Zero Added Sugar", "Zero Hydrogenated Oil", "Non-GMO"],
+    description: "100% pure roasted peanuts. Zero palm oil, zero sugar, zero emulsifiers. Healthy caloric density for lean bulking and muscle repair.",
+    badge: "Top Snack",
+    badgeColor: "#f59e0b",
+  },
+
+  // ── GYM GEAR & ACCESSORIES ──
+  {
+    id: 13,
+    category: "gear",
+    name: "Harbinger 4-Inch Padded Leather Weightlifting Belt (Heavy Duty Lumbar Support)",
+    brand: "Harbinger",
+    asin: "B00074H6MI",
+    rating: 4.8,
+    reviews: 12500,
+    price: "₹2,799",
+    originalPrice: "₹3,699",
+    discount: "24% OFF",
+    image: "https://m.media-amazon.com/images/I/81R6S0Y1p1L._SL1500_.jpg",
+    tags: ["Genuine Split Leather", "Contoured Fit", "Steel Roller Buckle", "Heavy Squats"],
+    description: "Full-grain leather with interior foam padding. Stabilizes intra-abdominal pressure during heavy deadlifts, squats, and overhead presses.",
+    badge: "Powerlifter Pick",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 14,
+    category: "gear",
+    name: "Versa Gripps Pro Weightlifting Straps & Hooks (Official Patented Grip Assist)",
     brand: "Versa Gripps",
-    platform: "Amazon",
-    rating: 4.9, reviews: 2100,
-    price: "₹3,999", originalPrice: "₹5,499",
-    discount: "27% OFF",
-    image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=80",
-    tags: ["Wrist Straps", "Grip", "Pull Day"],
-    description: "Replace gloves forever. The ultimate gripping tool for deadlifts, rows and pull-downs.",
-    href: "https://amzn.to/YOUR_AFFILIATE_LINK_HERE",
-    badge: "Premium",
-    badgeColor: "#a78bfa",
+    asin: "B007R6X49M",
+    rating: 4.9,
+    reviews: 8400,
+    price: "₹4,999",
+    originalPrice: "₹6,499",
+    discount: "23% OFF",
+    image: "https://m.media-amazon.com/images/I/71j6+y8zYIL._SL1500_.jpg",
+    tags: ["Eliminates Grip Fatigue", "Pull Day King", "Quick Release", "Made in USA"],
+    description: "Replaces lifting straps and hooks entirely. Locks onto barbells and dumbbells instantaneously, isolating the lats and upper back.",
+    badge: "Pro Choice",
+    badgeColor: "#8b5cf6",
+  },
+  {
+    id: 15,
+    category: "gear",
+    name: "Boldfit Heavy Duty Resistance Loop Bands for Workout & Warmup (Set of 5)",
+    brand: "Boldfit",
+    asin: "B0892B19F6",
+    rating: 4.6,
+    reviews: 26000,
+    price: "₹499",
+    originalPrice: "₹999",
+    discount: "50% OFF",
+    image: "https://m.media-amazon.com/images/I/71wL1eL1eTL._SL1500_.jpg",
+    tags: ["100% Natural Latex", "5 Resistance Tiers", "Portability Pouch"],
+    description: "Essential for rotator cuff activation, glute bridges, pull-up assistance, and dynamic mobility before heavy compound sessions.",
+    badge: "Warm-Up Essential",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 16,
+    category: "gear",
+    name: "Strauss High Density Deep Tissue Foam Roller with Grid Matrix (33cm)",
+    brand: "Strauss",
+    asin: "B01NAO9IJE",
+    rating: 4.6,
+    reviews: 14800,
+    price: "₹699",
+    originalPrice: "₹1,299",
+    discount: "46% OFF",
+    image: "https://m.media-amazon.com/images/I/71Q3Z1d1zPL._SL1500_.jpg",
+    tags: ["Myofascial Release", "Trigger Point Relief", "EVA Foam", "Durable Core"],
+    description: "3D multi-density zones mimic sports therapist fingertips. Breaks down tight muscular adhesions and accelerates lactic acid clearance.",
+    badge: "Recovery Essential",
+    badgeColor: "#06b6d4",
+  },
+  {
+    id: 17,
+    category: "gear",
+    name: "HealthSense Ultra-Accurate Bluetooth Smart Body Fat Scale (13 Fitness Metrics)",
+    brand: "HealthSense",
+    asin: "B07P7H5J4N",
+    rating: 4.7,
+    reviews: 31000,
+    price: "₹1,799",
+    originalPrice: "₹2,999",
+    discount: "40% OFF",
+    image: "https://m.media-amazon.com/images/I/61S1k1d1eAL._SL1200_.jpg",
+    tags: ["BIA Technology", "Body Fat %", "Muscle Mass", "Bluetooth Sync"],
+    description: "Bioelectrical Impedance Analysis measures visceral fat, skeletal muscle mass, BMR, and hydration percentage. Syncs seamlessly with fitness apps.",
+    badge: "High Tech",
+    badgeColor: "#3b82f6",
+  },
+  {
+    id: 18,
+    category: "gear",
+    name: "BlenderBottle Pro Series 820ml Shaker Bottle with Wire Whisk Ball",
+    brand: "BlenderBottle",
+    asin: "B01LZE4K6U",
+    rating: 4.8,
+    reviews: 44000,
+    price: "₹899",
+    originalPrice: "₹1,299",
+    discount: "31% OFF",
+    image: "https://m.media-amazon.com/images/I/71K1e1d1zBL._SL1500_.jpg",
+    tags: ["Eastman Tritan Plastic", "Odor Resistant", "Leak Proof Lid", "BPA Free"],
+    description: "Durable Eastman Tritan plastic resists protein odour retention. 316 surgical-grade stainless steel BlenderBall mixes thickest mass gainers silky smooth.",
+    badge: "#1 Shaker",
+    badgeColor: "#f59e0b",
   },
 ];
 
 const CATEGORIES = [
   { id: "all", label: "All Products", icon: "🛒" },
-  { id: "supplements", label: "Supplements", icon: "🥤" },
-  { id: "multivitamins", label: "Multivitamins", icon: "💊" },
-  { id: "enhancers", label: "Enhancers", icon: "⚡" },
-  { id: "gear", label: "Gear & Equipment", icon: "🏋️" },
+  { id: "protein", label: "Protein & Whey", icon: "🥤" },
+  { id: "creatine", label: "Creatine & Strength", icon: "⚡" },
+  { id: "preworkout", label: "Pre-Workout & Energy", icon: "🔥" },
+  { id: "vitamins", label: "Vitamins & Recovery", icon: "💊" },
+  { id: "gear", label: "Gym Gear & Equipment", icon: "🏋️" },
 ];
-
-const PLATFORMS = [
-  { id: "all", label: "All Platforms" },
-  { id: "Amazon", label: "Amazon" },
-  { id: "MyProtein", label: "MyProtein" },
-  { id: "Healthkart", label: "Healthkart" },
-];
-
-const PLATFORM_COLORS = {
-  Amazon: "#fb923c",
-  MyProtein: "#4f8ef7",
-  Healthkart: "#34d399",
-};
-
-function StarRating({ rating }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-      {[1, 2, 3, 4, 5].map(i => (
-        <span
-          key={i}
-          style={{
-            fontSize: 11,
-            color: i <= Math.round(rating) ? "#fbbf24" : "rgba(150,150,150,0.3)"
-          }}
-        >★</span>
-      ))}
-    </div>
-  );
-}
 
 export default function Shop() {
   const navigate = useNavigate();
   const { dark, toggleTheme, T } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { user } = useUser();
 
+  const [mounted, setMounted] = useState(false);
   const [category, setCategory] = useState("all");
-  const [platform, setPlatform] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("popular");
   const [wishlist, setWishlist] = useState([]);
+  const [dynamicProducts, setDynamicProducts] = useState([]);
 
-  useEffect(() => { setMounted(true); }, []);
+  // Modals state
+  const [selectedReviewProduct, setSelectedReviewProduct] = useState(null);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    // Real-time Firestore dynamic affiliate products sync
+    try {
+      const q = query(
+        collection(db, "affiliate_products"),
+        where("shop", "in", ["common", "all"])
+      );
+      const unsub = onSnapshot(
+        q,
+        (snap) => {
+          const custom = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setDynamicProducts(custom);
+        },
+        (err) => console.warn("Shop dynamic products sync warning:", err)
+      );
+      return () => unsub();
+    } catch {}
+  }, []);
 
   const toggleWishlist = (id) => {
-    setWishlist(w => w.includes(id) ? w.filter(x => x !== id) : [...w, id]);
+    setWishlist((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  let filtered = PRODUCTS
-    .filter(p => category === "all" || p.category === category)
-    .filter(p => platform === "all" || p.platform === platform)
-    .filter(p =>
-      search === "" ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase()) ||
-      p.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
-    );
+  // Combine curated base products with newly added dynamic affiliate products
+  const allProducts = useMemo(() => {
+    return [...dynamicProducts, ...BASE_PRODUCTS];
+  }, [dynamicProducts]);
 
-  if (sort === "popular") filtered = [...filtered].sort((a, b) => b.reviews - a.reviews);
-  if (sort === "rating") filtered = [...filtered].sort((a, b) => b.rating - a.rating);
-  if (sort === "price_low") filtered = [...filtered].sort((a, b) => parseInt(a.price.replace(/[^\d]/g, "")) - parseInt(b.price.replace(/[^\d]/g, "")));
-  if (sort === "price_high") filtered = [...filtered].sort((a, b) => parseInt(b.price.replace(/[^\d]/g, "")) - parseInt(a.price.replace(/[^\d]/g, "")));
+  const filtered = useMemo(() => {
+    return allProducts
+      .filter((p) => category === "all" || p.category === category)
+      .filter(
+        (p) =>
+          !search ||
+          p.name.toLowerCase().includes(search.toLowerCase()) ||
+          p.brand?.toLowerCase().includes(search.toLowerCase()) ||
+          p.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase()))
+      )
+      .sort((a, b) => {
+        if (sort === "rating") return (b.rating || 0) - (a.rating || 0);
+        if (sort === "reviews") return (b.reviews || 0) - (a.reviews || 0);
+        if (sort === "price-low") {
+          const pA = Number(String(a.price).replace(/[^0-9]/g, "")) || 0;
+          const pB = Number(String(b.price).replace(/[^0-9]/g, "")) || 0;
+          return pA - pB;
+        }
+        if (sort === "price-high") {
+          const pA = Number(String(a.price).replace(/[^0-9]/g, "")) || 0;
+          const pB = Number(String(b.price).replace(/[^0-9]/g, "")) || 0;
+          return pB - pA;
+        }
+        return (b.reviews || 0) - (a.reviews || 0); // default: popularity
+      });
+  }, [allProducts, category, search, sort]);
 
-  const css = generateCSS(T, dark) + `
-    .shop-root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};opacity:${mounted?1:0};transition:opacity 0.7s ease,background 0.5s,color 0.5s;position:relative;overflow-x:hidden;}
-
-    /* UNIFIED HEADER BAR WITH MATCHING NAVIGATION BUTTON */
-    .header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;position:sticky;top:0;z-index:50;border-bottom:1px solid ${T.glassBorder};background:${dark?"rgba(8,8,12,0.85)":"rgba(255,255,255,0.85)"};backdrop-filter:blur(40px);}
-    .pr-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};color:${T.text};font-size:13px;font-weight:600;cursor:pointer;font-family:${FONT.body};transition:all 0.15s ease;}
-    .pr-back:hover{background:${T.accentSoft};border-color:${T.accent}40;color:${T.accent};}
-    .h-logo{font-family:${FONT.display};font-size:18px;font-weight:800;color:${T.text};}
-    .h-logo span{color:${T.accent};}
-    .h-right{display:flex;align-items:center;gap:10px;}
-
-    .theme-toggle{width:48px;height:26px;border-radius:99px;border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"};cursor:pointer;position:relative;}
-    .toggle-thumb{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:${T.accent};display:flex;align-items:center;justify-content:center;font-size:10px;transition:left .2s ease;left:${dark?"24px":"2px"};}
-
-    .shop-wishlist-h{
-      display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;
-      border:1px solid ${T.glassBorder};background:${dark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)"};
-      color:${T.textSub};font-size:13px;font-weight:700;cursor:pointer;font-family:${FONT.body};transition:all 0.22s;
+  const css =
+    generateCSS(T, dark) +
+    `
+    .shop-root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};opacity:${mounted ? 1 : 0};transition:opacity 0.6s ease;position:relative;overflow-x:hidden;}
+    .shop-header{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:64px;position:sticky;top:0;z-index:50;border-bottom:1px solid ${T.glassBorder};background:${dark ? "rgba(8,9,13,0.92)" : "rgba(255,255,255,0.92)"};backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);}
+    .shop-brand{font-family:${FONT.display};font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;}
+    .shop-switcher-bar{display:flex;align-items:center;gap:6px;background:${dark ? "rgba(255,255,255,0.05)" : "#f1f5f9"};padding:4px;border-radius:14px;border:1px solid ${T.glassBorder};}
+    .shop-switch-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:none;background:transparent;color:${dark ? T.textSub : "#64748b"};font-size:12.5px;font-weight:750;cursor:pointer;transition:all 0.16s ease;}
+    .shop-switch-pill.active{background:linear-gradient(135deg,#f59e0b,#ea580c);color:#ffffff;box-shadow:0 2px 10px rgba(245,158,11,0.35);}
+    .shop-main{max-width:1200px;margin:0 auto;padding:24px 24px 80px;}
+    .shop-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;}
+    .shop-card{border-radius:20px;overflow:hidden;background:${T.glass};border:1px solid ${T.glassBorder};display:flex;flex-direction:column;transition:all 0.24s cubic-bezier(0.16,1,0.3,1);position:relative;}
+    .shop-card:hover{transform:translateY(-4px);border-color:${T.glassBorderHover};box-shadow:0 16px 40px rgba(0,0,0,${dark ? "0.45" : "0.08"});}
+    .shop-img-box{position:relative;width:100%;height:190px;background:${dark ? "rgba(255,255,255,0.02)" : "#ffffff"};display:flex;align-items:center;justify-content:center;overflow:hidden;padding:12px;box-sizing:border-box;}
+    .shop-img-box img{max-width:100%;max-height:100%;object-fit:contain;transition:transform 0.3s ease;}
+    .shop-card:hover .shop-img-box img{transform:scale(1.05);}
+    .shop-buy-btn{width:100%;height:42px;border-radius:12px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#ffffff;font-size:13px;font-weight:800;font-family:${FONT.display};cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 3px 12px rgba(245,158,11,0.3);transition:all 0.16s ease;}
+    .shop-buy-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+    @media(max-width:768px){
+      .shop-header{padding:0 14px;height:56px;}
+      .shop-switcher-bar{overflow-x:auto;scrollbar-width:none;}
+      .shop-card-grid{grid-template-columns:1fr 1fr;gap:12px;}
+      .shop-img-box{height:140px;}
     }
-    .shop-wishlist-h:hover{color:${T.orange};border-color:${T.orange}40;}
-
-    /* Hero Banner */
-    .shop-hero {
-      background: linear-gradient(135deg, ${dark ? "rgba(79,142,247,0.12)" : "rgba(79,142,247,0.07)"} 0%, ${dark ? "rgba(251,146,60,0.08)" : "rgba(251,146,60,0.05)"} 100%);
-      border-bottom: 1px solid ${T.glassBorder};
-      padding: 36px 40px;
-      position: relative;
-      z-index: 1;
-      overflow: hidden;
-    }
-    .shop-hero-content {
-      max-width: 1100px; margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between; gap: 24px;
-    }
-    .shop-hero-title {
-      font-family: ${FONT.display};
-      font-size: 38px; font-weight: 800; letter-spacing: -0.03em;
-      color: ${T.text}; line-height: 1.1; margin-bottom: 8px;
-    }
-    .shop-hero-title span {
-      background: linear-gradient(135deg, ${T.orange}, ${T.accent});
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .shop-hero-sub {
-      font-size: 14.5px; color: ${T.textSub}; line-height: 1.6; max-width: 500px;
-    }
-    .shop-hero-stats { display: flex; gap: 28px; margin-top: 20px; }
-    .shop-hero-stat-val { font-family: ${FONT.display}; font-size: 24px; font-weight: 800; color: ${T.text}; }
-    .shop-hero-stat-lbl { font-size: 10.5px; color: ${T.textMuted}; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
-    .shop-aff-badges { display: flex; gap: 10px; flex-wrap: wrap; }
-    .shop-aff-badge {
-      padding: 10px 18px; border-radius: 12px;
-      border: 1px solid ${T.glassBorder};
-      background: ${T.glass};
-      backdrop-filter: blur(20px);
-      font-size: 13px; font-weight: 700;
-      display: flex; align-items: center; gap: 8px;
-    }
-
-    /* Main Content */
-    .shop-main {
-      max-width: 1100px; margin: 0 auto;
-      padding: 32px 40px;
-      position: relative; z-index: 1;
-    }
-
-    /* Filters */
-    .shop-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; align-items: center; }
-    .shop-cat-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-    .shop-cat-tab {
-      display: flex; align-items: center; gap: 7px;
-      padding: 10px 18px; border-radius: 13px;
-      border: 1.5px solid ${T.glassBorder};
-      background: ${T.glass}; backdrop-filter: blur(20px);
-      cursor: pointer; font-size: 13px; font-weight: 700;
-      color: ${T.textSub}; transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-      white-space: nowrap; font-family: ${FONT.body};
-    }
-    .shop-cat-tab:hover { color: ${T.text}; border-color: ${T.glassBorderHover}; transform: translateY(-2px); }
-    .shop-cat-tab.active {
-      background: linear-gradient(135deg, ${T.orange}18, ${T.accent}10);
-      color: ${T.orange}; border-color: ${T.orange}35;
-      box-shadow: 0 0 18px ${T.orange}20;
-    }
-
-    .shop-search-sort { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
-    .shop-search-inp {
-      height: 44px; background: ${dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"};
-      border: 1.5px solid ${T.glassBorder}; border-radius: 13px; padding: 0 18px;
-      font-size: 13px; font-family: ${FONT.body}; color: ${T.text}; outline: none; transition: all 0.25s; width: 220px;
-    }
-    .shop-search-inp:focus { border-color: ${T.accent}; box-shadow: 0 0 0 4px ${T.accentGlow}; }
-    .shop-search-inp::placeholder { color: ${T.textMuted}; }
-    .shop-sort-sel {
-      height: 44px; background: ${dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"};
-      border: 1.5px solid ${T.glassBorder}; border-radius: 13px; padding: 0 14px;
-      font-size: 13px; font-family: ${FONT.body}; color: ${T.text}; outline: none; cursor: pointer; transition: all 0.25s;
-    }
-    .shop-sort-sel:focus { border-color: ${T.accent}; }
-
-    .shop-plat-filters { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 24px; }
-    .shop-plat-btn {
-      padding: 7px 14px; border-radius: 10px; border: 1.5px solid ${T.glassBorder};
-      background: ${T.glass}; color: ${T.textSub}; font-size: 12px; font-weight: 700;
-      cursor: pointer; font-family: ${FONT.body}; transition: all 0.22s;
-    }
-    .shop-plat-btn:hover { color: ${T.text}; }
-    .shop-plat-btn.active { color: #fff; border-color: transparent; }
-
-    /* Product Grid */
-    .shop-product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-    }
-
-    .shop-p-card {
-      background: ${T.glass};
-      border: 1px solid ${T.glassBorder};
-      border-radius: 22px;
-      backdrop-filter: blur(28px) saturate(180%);
-      overflow: hidden;
-      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
-      display: flex; flex-direction: column;
-      animation: fadeUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-      position: relative;
-    }
-    .shop-p-card:hover {
-      transform: translateY(-6px);
-      border-color: ${T.glassBorderHover};
-      box-shadow: 0 24px 60px rgba(0,0,0,${dark ? "0.35" : "0.1"});
-    }
-
-    .shop-p-img-wrap {
-      position: relative; overflow: hidden; height: 190px;
-      background: ${dark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)"};
-    }
-    .shop-p-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-    .shop-p-card:hover .shop-p-img { transform: scale(1.06); }
-    
-    .shop-p-badge { position: absolute; top: 12px; left: 12px; padding: 4px 11px; border-radius: 99px; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
-    .shop-p-discount { position: absolute; top: 12px; right: 44px; padding: 4px 10px; border-radius: 99px; font-size: 10px; font-weight: 800; background: rgba(239,68,68,0.88); color: #fff; }
-    
-    .shop-p-wishlist {
-      position: absolute; top: 10px; right: 10px;
-      width: 30px; height: 30px; border-radius: 50%;
-      background: ${dark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.85)"};
-      backdrop-filter: blur(8px); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px; transition: all 0.25s;
-    }
-    .shop-p-wishlist:hover { transform: scale(1.15); }
-
-    .shop-p-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
-    .shop-p-platform {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 10px; border-radius: 99px;
-      font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
-      margin-bottom: 8px; border: 1px solid; align-self: flex-start;
-    }
-    .shop-p-name { font-family: ${FONT.display}; font-size: 15px; font-weight: 800; color: ${T.text}; margin-bottom: 4px; line-height: 1.3; }
-    .shop-p-brand { font-size: 12px; color: ${T.textMuted}; font-weight: 600; margin-bottom: 8px; }
-    .shop-p-desc { font-size: 12px; color: ${T.textSub}; line-height: 1.6; margin-bottom: 12px; flex: 1; }
-    
-    .shop-p-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-    .shop-p-tag { padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; background: ${T.accentSoft}; color: ${T.accent}; border: 1px solid ${T.accent}22; }
-    
-    .shop-p-rating-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-    .shop-p-rating-num { font-size: 12px; font-weight: 800; color: ${T.text}; }
-    .shop-p-reviews { font-size: 11px; color: ${T.textMuted}; }
-    
-    .shop-p-price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
-    .shop-p-price { font-family: ${FONT.display}; font-size: 22px; font-weight: 800; color: ${T.text}; }
-    .shop-p-original { font-size: 13px; color: ${T.textMuted}; text-decoration: line-through; }
-    
-    .shop-p-buy-btn {
-      width: 100%; height: 44px; border-radius: 13px; border: none;
-      background: linear-gradient(135deg, ${T.orange}, ${T.accent});
-      color: #fff; font-size: 13px; font-weight: 800;
-      font-family: ${FONT.body}; cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      letter-spacing: 0.04em; text-transform: uppercase;
-      box-shadow: 0 6px 20px ${T.orange}30;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .shop-p-buy-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px ${T.orange}40; filter: brightness(1.08); }
-
-    .shop-empty { text-align: center; padding: 70px 20px; color: ${T.textSub}; }
-    .shop-empty-icon { font-size: 52px; margin-bottom: 14px; }
-    .shop-empty-title { font-family: ${FONT.display}; font-size: 19px; font-weight: 800; color: ${T.text}; margin-bottom: 6px; }
-
-    @media (max-width: 900px) {
-      .shop-hero-content { flex-direction: column; align-items: flex-start; }
-      .shop-search-sort { margin-left: 0; width: 100%; }
-      .shop-search-inp { width: 100%; }
-    }
-    @media (max-width: 600px) {
-      .header { padding: 0 16px; }
-      .shop-main { padding: 20px 16px; }
-      .shop-hero { padding: 24px 20px; }
-      .shop-hero-title { font-size: 28px; }
-      .shop-product-grid { grid-template-columns: 1fr; gap: 16px; }
+    @media(max-width:480px){
+      .shop-card-grid{grid-template-columns:1fr;}
     }
   `;
 
   return (
-    <>
+    <div className="shop-root">
       <style>{css}</style>
-      <div className="shop-root">
-        <div className="bg-image-layer"><img src={BG_IMAGES.shop || BG_IMAGES.diet} alt="" loading="lazy" /></div>
-        <div className="orb orb-1" /><div className="orb orb-2" />
 
-        {/* UNIFIED HEADER BAR WITH MATCHING NAVIGATION BUTTON */}
-        <div className="header">
-          <button className="pr-back" onClick={() => navigate("/dashboard")}>← Dashboard</button>
-          <div className="h-logo">AshFit<span>Store</span></div>
-          <div className="h-right">
-            <button className="shop-wishlist-h" onClick={() => setCategory(category === "wishlist" ? "all" : "wishlist")}>
-              ♡ Wishlist {wishlist.length > 0 && `(${wishlist.length})`}
-            </button>
-            <button className="theme-toggle" onClick={toggleTheme}>
-              <div className="toggle-thumb">{dark ? "🌙" : "☀️"}</div>
-            </button>
+      {/* ── Top Header Navigation Bar ── */}
+      <header className="shop-header">
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button
+            onClick={() => navigate("/dashboard")}
+            style={{
+              padding: "7px 12px",
+              borderRadius: 10,
+              border: `1px solid ${T.glassBorder}`,
+              background: dark ? "rgba(255,255,255,0.05)" : "#f1f5f9",
+              color: T.text,
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <ArrowLeft size={14} />
+            <span>Dashboard</span>
+          </button>
+
+          <div className="shop-brand" onClick={() => navigate("/dashboard")}>
+            <span>🛍️</span>
+            <span>
+              FitVerse<span>Shop</span>
+            </span>
           </div>
         </div>
 
-        {/* Hero Banner */}
-        <div className="shop-hero">
-          <div className="shop-hero-content">
-            <div>
-              <div className="shop-hero-title">
-                AshFit<span>Store</span>
+        {/* Unified 3-Shop Switcher */}
+        <div className="shop-switcher-bar">
+          <button className="shop-switch-pill active">
+            <span>🛒</span>
+            <span>All Fitness</span>
+          </button>
+          <button
+            className="shop-switch-pill"
+            onClick={() => navigate("/male-shop")}
+            title="Open Men's Performance & Testosterone Shop"
+          >
+            <span>⚡</span>
+            <span>Men's Shop</span>
+          </button>
+          <button
+            className="shop-switch-pill"
+            onClick={() => navigate("/female-shop")}
+            title="Open Women's Health & PCOS Shop"
+          >
+            <span>🌸</span>
+            <span>Women's Shop</span>
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            onClick={() => setShowAddProductModal(true)}
+            style={{
+              padding: "7px 14px",
+              borderRadius: 10,
+              background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(234,88,12,0.18))",
+              border: "1px solid rgba(245,158,11,0.4)",
+              color: "#f59e0b",
+              fontSize: 12.5,
+              fontWeight: 800,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            <span>Add Affiliate Item</span>
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              border: `1px solid ${T.glassBorder}`,
+              background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+              color: T.text,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            {dark ? "🌙" : "☀️"}
+          </button>
+        </div>
+      </header>
+
+      {/* ── Main Container ── */}
+      <main className="shop-main">
+        {/* Banner Section */}
+        <div
+          style={{
+            padding: "24px 28px",
+            borderRadius: 22,
+            background: dark
+              ? "linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(59, 130, 246, 0.08))"
+              : "linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(59, 130, 246, 0.05))",
+            border: dark ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid #fed7aa",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 16,
+          }}
+        >
+          <div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 99, background: "rgba(245, 158, 11, 0.18)", color: "#f59e0b", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+              <ShieldCheck size={13} /> Vetted & Lab-Certified Fitness Essentials
+            </div>
+            <h1 style={{ margin: "4px 0 6px", fontFamily: FONT.display, fontSize: 26, fontWeight: 900, color: T.text }}>
+              Common Fitness & Performance Shop
+            </h1>
+            <p style={{ margin: 0, fontSize: 13.5, color: T.textSub, maxWidth: 560, lineHeight: 1.5 }}>
+              Handpicked, authentic whey isolates, German creapure, heavy duty lifting gear, and vitamins. Direct Amazon Prime delivery with verified athlete in-app reviews.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b" }}>
+                {allProducts.length}+
               </div>
-              <div className="shop-hero-sub">
-                Handpicked supplements, vitamins, enhancers and gear — curated directly from trusted brand partners.
-              </div>
-              <div className="shop-hero-stats">
-                {[
-                  { val: PRODUCTS.length + "+", lbl: "Products" },
-                  { val: "3", lbl: "Platforms" },
-                  { val: "4", lbl: "Categories" },
-                ].map((s, i) => (
-                  <div key={i}>
-                    <div className="shop-hero-stat-val">{s.val}</div>
-                    <div className="shop-hero-stat-lbl">{s.lbl}</div>
-                  </div>
-                ))}
+              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
+                Verified Products
               </div>
             </div>
-            <div className="shop-aff-badges">
-              {[
-                { name: "Amazon", color: "#fb923c", icon: "📦" },
-                { name: "MyProtein", color: "#4f8ef7", icon: "💪" },
-                { name: "Healthkart", color: "#34d399", icon: "🌿" },
-              ].map((a, i) => (
-                <div
-                  key={i}
-                  className="shop-aff-badge"
-                  style={{ color: a.color, borderColor: `${a.color}30` }}
-                >
-                  <span>{a.icon}</span> {a.name}
-                </div>
-              ))}
+
+            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#10b981" }}>
+                100%
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
+                Prime Authentic
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="shop-main">
-          {/* Category tabs + search/sort */}
-          <div className="shop-filters">
-            <div className="shop-cat-tabs">
-              {CATEGORIES.map(c => (
+        {/* Filters & Search Row */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          {/* Category tabs */}
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            {CATEGORIES.map((c) => {
+              const active = category === c.id;
+              return (
                 <button
                   key={c.id}
-                  className={`shop-cat-tab ${category === c.id ? "active" : ""}`}
                   onClick={() => setCategory(c.id)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: 12,
+                    border: active ? "1.5px solid #f59e0b" : `1px solid ${T.glassBorder}`,
+                    background: active
+                      ? (dark ? "rgba(245, 158, 11, 0.18)" : "rgba(245, 158, 11, 0.1)")
+                      : dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                    color: active ? "#f59e0b" : T.textSub,
+                    fontSize: 12.5,
+                    fontWeight: active ? 800 : 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    whiteSpace: "nowrap",
+                    transition: "all 0.16s ease",
+                  }}
                 >
-                  {c.icon} {c.label}
+                  <span>{c.icon}</span>
+                  <span>{c.label}</span>
                 </button>
-              ))}
-            </div>
-            <div className="shop-search-sort">
+              );
+            })}
+          </div>
+
+          {/* Search & Sort */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginLeft: "auto" }}>
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <Search size={14} style={{ position: "absolute", left: 12, color: T.textMuted, pointerEvents: "none" }} />
               <input
-                className="shop-search-inp"
-                placeholder="Search products, brands..."
+                type="text"
+                placeholder="Search protein, creatine..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  height: 38,
+                  padding: "0 14px 0 34px",
+                  borderRadius: 11,
+                  border: `1px solid ${T.glassBorder}`,
+                  background: dark ? "rgba(255,255,255,0.04)" : "#ffffff",
+                  color: T.text,
+                  fontSize: 12.5,
+                  outline: "none",
+                  width: 190,
+                }}
               />
-              <select
-                className="shop-sort-sel"
-                value={sort}
-                onChange={e => setSort(e.target.value)}
-              >
-                <option value="popular">Most Popular</option>
-                <option value="rating">Top Rated</option>
-                <option value="price_low">Price: Low to High</option>
-                <option value="price_high">Price: High to Low</option>
-              </select>
+            </div>
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              style={{
+                height: 38,
+                padding: "0 10px",
+                borderRadius: 11,
+                border: `1px solid ${T.glassBorder}`,
+                background: dark ? "rgba(255,255,255,0.04)" : "#ffffff",
+                color: T.text,
+                fontSize: 12,
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              <option value="popular">Most Popular</option>
+              <option value="rating">Highest Rated</option>
+              <option value="reviews">Most Reviews</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Product Cards Grid */}
+        {filtered.length === 0 ? (
+          <div style={{ padding: "60px 20px", textAlign: "center", borderRadius: 20, background: T.glass, border: `1px solid ${T.glassBorder}` }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>No products found</div>
+            <div style={{ fontSize: 12.5, color: T.textSub, marginTop: 4 }}>
+              Try adjusting your search or category filter.
             </div>
           </div>
+        ) : (
+          <div className="shop-card-grid">
+            {filtered.map((p) => {
+              const affiliateUrl = buildAmazonAffiliateUrl(p.asin || p.href || p.name);
+              const isWished = wishlist.includes(p.id);
 
-          {/* Platform filter */}
-          <div className="shop-plat-filters">
-            {PLATFORMS.map(p => (
-              <button
-                key={p.id}
-                className={`shop-plat-btn ${platform === p.id ? "active" : ""}`}
-                onClick={() => setPlatform(p.id)}
-                style={platform === p.id ? {
-                  background: p.id === "all"
-                    ? `linear-gradient(135deg, ${T.accent}, ${T.purple})`
-                    : PLATFORM_COLORS[p.id] || T.accent,
-                  borderColor: "transparent",
-                  color: "#fff",
-                } : {}}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+              return (
+                <div key={p.id} className="shop-card">
+                  {/* Image Container with Badges */}
+                  <div className="shop-img-box">
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src =
+                          "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&q=80";
+                      }}
+                    />
 
-          {/* Product grid */}
-          {filtered.length > 0 ? (
-            <div className="shop-product-grid">
-              {filtered.map((p, i) => (
-                <div
-                  key={p.id}
-                  className="shop-p-card"
-                  style={{ animationDelay: `${i * 0.04}s` }}
-                >
-                  <div className="shop-p-img-wrap">
-                    <img src={p.image} alt={p.name} className="shop-p-img" />
                     {p.badge && (
                       <div
-                        className="shop-p-badge"
-                        style={{ background: p.badgeColor, color: "#000" }}
+                        style={{
+                          position: "absolute",
+                          top: 10,
+                          left: 10,
+                          padding: "3px 9px",
+                          borderRadius: 99,
+                          background: p.badgeColor || "#f59e0b",
+                          color: "#ffffff",
+                          fontSize: 10,
+                          fontWeight: 800,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                        }}
                       >
                         {p.badge}
                       </div>
                     )}
-                    <div className="shop-p-discount">{p.discount}</div>
+
+                    {p.discount && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 10,
+                          right: 44,
+                          padding: "3px 8px",
+                          borderRadius: 99,
+                          background: "rgba(239, 68, 68, 0.9)",
+                          color: "#ffffff",
+                          fontSize: 9.5,
+                          fontWeight: 800,
+                        }}
+                      >
+                        {p.discount}
+                      </div>
+                    )}
+
                     <button
-                      className="shop-p-wishlist"
                       onClick={() => toggleWishlist(p.id)}
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        width: 28,
+                        height: 28,
+                        borderRadius: "50%",
+                        border: "none",
+                        background: dark ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.85)",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 13,
+                      }}
                     >
-                      {wishlist.includes(p.id) ? "❤️" : "🤍"}
+                      {isWished ? "❤️" : "🤍"}
                     </button>
                   </div>
 
-                  <div className="shop-p-body">
+                  {/* Body Info */}
+                  <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {p.brand}
+                    </div>
+
                     <div
-                      className="shop-p-platform"
                       style={{
-                        color: PLATFORM_COLORS[p.platform] || T.accent,
-                        borderColor: `${PLATFORM_COLORS[p.platform] || T.accent}30`,
-                        background: `${PLATFORM_COLORS[p.platform] || T.accent}10`,
+                        fontFamily: FONT.display,
+                        fontSize: 13.5,
+                        fontWeight: 800,
+                        color: T.text,
+                        margin: "3px 0 6px",
+                        lineHeight: 1.35,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        minHeight: 36,
                       }}
                     >
-                      {p.platform === "Amazon" ? "📦" : p.platform === "MyProtein" ? "💪" : "🌿"} {p.platform}
+                      {p.name}
                     </div>
 
-                    <div className="shop-p-name">{p.name}</div>
-                    <div className="shop-p-brand">{p.brand}</div>
-                    <div className="shop-p-desc">{p.description}</div>
-
-                    <div className="shop-p-tags">
-                      {p.tags.map((t, ti) => (
-                        <span key={ti} className="shop-p-tag">{t}</span>
-                      ))}
+                    <div
+                      style={{
+                        fontSize: 11.5,
+                        color: T.textSub,
+                        lineHeight: 1.4,
+                        marginBottom: 10,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {p.description}
                     </div>
 
-                    <div className="shop-p-rating-row">
-                      <StarRating rating={p.rating} />
-                      <span className="shop-p-rating-num">{p.rating}</span>
-                      <span className="shop-p-reviews">
-                        ({p.reviews.toLocaleString()} reviews)
+                    {/* Tags */}
+                    {p.tags && p.tags.length > 0 && (
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12 }}>
+                        {p.tags.slice(0, 3).map((tag, idx) => (
+                          <span
+                            key={idx}
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "2px 7px",
+                              borderRadius: 6,
+                              background: dark ? "rgba(255,255,255,0.05)" : "#f1f5f9",
+                              color: dark ? "#94a3b8" : "#64748b",
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* In-App Review Row (Clickable to open Reviews Modal) */}
+                    <div
+                      onClick={() => setSelectedReviewProduct(p)}
+                      title="Read community reviews and post yours"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginBottom: 12,
+                        cursor: "pointer",
+                        padding: "5px 8px",
+                        borderRadius: 8,
+                        background: dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                        border: `1px solid ${T.glassBorder}`,
+                      }}
+                    >
+                      <div style={{ color: "#f59e0b", fontSize: 12, display: "flex", gap: 1 }}>
+                        {"★".repeat(Math.round(Number(p.rating) || 5))}
+                      </div>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: T.text }}>
+                        {p.rating}
+                      </span>
+                      <span style={{ fontSize: 10.5, color: T.textMuted }}>
+                        ({p.reviews?.toLocaleString?.() || p.reviews})
+                      </span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: "#3b82f6",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 3,
+                        }}
+                      >
+                        <MessageSquare size={11} />
+                        <span>Reviews</span>
                       </span>
                     </div>
 
-                    <div className="shop-p-price-row">
-                      <span className="shop-p-price">{p.price}</span>
-                      <span className="shop-p-original">{p.originalPrice}</span>
+                    {/* Pricing */}
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 14, marginTop: "auto" }}>
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#10b981", fontFamily: FONT.display }}>
+                        {p.price}
+                      </span>
+                      {p.originalPrice && (
+                        <span style={{ fontSize: 12, color: T.textMuted, textDecoration: "line-through" }}>
+                          {p.originalPrice}
+                        </span>
+                      )}
+                      <span style={{ marginLeft: "auto", fontSize: 10, color: dark ? "#94a3b8" : "#64748b", fontWeight: 700 }}>
+                        Amazon Prime
+                      </span>
                     </div>
 
+                    {/* Amazon Buy Button */}
                     <a
-                      href={p.href}
+                      href={affiliateUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ textDecoration: "none" }}
                     >
-                      <button className="shop-p-buy-btn">
-                        Buy on {p.platform} ↗
+                      <button className="shop-buy-btn">
+                        <span>📦 Buy on Amazon</span>
+                        <span>↗</span>
                       </button>
                     </a>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="shop-empty">
-              <div className="shop-empty-icon">🔍</div>
-              <div className="shop-empty-title">No products found</div>
-              <div>Try a different search or category</div>
-            </div>
-          )}
-
-          {/* Affiliate disclaimer */}
-          <div style={{
-            marginTop: 48,
-            padding: "16px 20px",
-            background: T.glass,
-            border: `1px solid ${T.glassBorder}`,
-            borderRadius: 14,
-            backdropFilter: "blur(20px)",
-            fontSize: 12,
-            color: T.textMuted,
-            lineHeight: 1.65,
-            textAlign: "center"
-          }}>
-            <strong style={{ color: T.textSub }}>Affiliate Disclosure:</strong> AshFitStore participates in partner affiliate programmes.
-            When you click a product link and make a purchase, we may earn a small commission at no extra cost to you.
+              );
+            })}
           </div>
+        )}
+
+        {/* Affiliate Transparency Footer */}
+        <div
+          style={{
+            marginTop: 48,
+            padding: "16px 22px",
+            borderRadius: 16,
+            background: dark ? "rgba(255,255,255,0.02)" : "#f8fafc",
+            border: `1px solid ${T.glassBorder}`,
+            fontSize: 11.5,
+            color: T.textMuted,
+            lineHeight: 1.6,
+            textAlign: "center",
+          }}
+        >
+          <strong style={{ color: T.textSub }}>Amazon Associate Disclosure:</strong> AshFitVerse is a participant in the Amazon Services LLC Associates Program. When you purchase through our links, we may earn an affiliate commission at no extra cost to you. All product recommendations are independently vetted and selected for quality and athletic performance.
         </div>
-      </div>
-    </>
+      </main>
+
+      {/* ── Modals ── */}
+      <ProductReviewsModal
+        isOpen={Boolean(selectedReviewProduct)}
+        onClose={() => setSelectedReviewProduct(null)}
+        product={selectedReviewProduct}
+        user={user}
+        dark={dark}
+        T={T}
+      />
+
+      <AddAffiliateProductModal
+        isOpen={showAddProductModal}
+        onClose={() => setShowAddProductModal(false)}
+        defaultShop="common"
+        onProductAdded={(newP) => {
+          setDynamicProducts((prev) => [newP, ...prev]);
+        }}
+        dark={dark}
+        T={T}
+      />
+    </div>
   );
 }
