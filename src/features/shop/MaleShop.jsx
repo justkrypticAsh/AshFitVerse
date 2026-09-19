@@ -9,6 +9,7 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { buildAmazonAffiliateUrl } from "../../config/affiliateConfig";
 import ProductReviewsModal from "../../components/ProductReviewsModal";
 import AddAffiliateProductModal from "../../components/AddAffiliateProductModal";
+import ShopHeroAdBanner from "../../components/ShopHeroAdBanner";
 import {
   Star,
   Search,
@@ -291,6 +292,221 @@ const BASE_MALE_PRODUCTS = [
     badge: "IPF Legal",
     badgeColor: "#3b82f6",
   },
+  {
+    id: 15,
+    category: "testosterone",
+    name: "TrueBasics KSM-66 Ashwagandha with Korean Ginseng & Vitamin D3 (60 Veg Capsules)",
+    brand: "TrueBasics",
+    asin: "B084DV1635",
+    rating: 4.7,
+    reviews: 16800,
+    price: "₹999",
+    originalPrice: "₹1,499",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/61c1e1d1zWL._SL1200_.jpg",
+    tags: ["KSM-66 Full Spectrum", "Korean Ginseng", "Cortisol Blocker", "Stress Relief"],
+    description: "Standardized 5% withanolides reduce evening salivary cortisol, facilitating deep REM sleep and natural morning testosterone surges.",
+    badge: "Vitality Formula",
+    badgeColor: "#3b82f6",
+  },
+  {
+    id: 16,
+    category: "testosterone",
+    name: "Rasayanam Pure Himalayan Shilajit (30g Semi-Liquid Resin with Wooden Spoon)",
+    brand: "Rasayanam",
+    asin: "B093C4C6N2",
+    rating: 4.8,
+    reviews: 24500,
+    price: "₹1,399",
+    originalPrice: "₹1,999",
+    discount: "30% OFF",
+    image: "https://m.media-amazon.com/images/I/71b1e1d1zXL._SL1500_.jpg",
+    tags: ["75%+ Fulvic Acid", "Sourced from 18,000 ft", "Lab Tested NABL", "Endurance"],
+    description: "Purified via traditional Surya Tapi ayurvedic methodology. Rich in fulvic acid and 84+ ionic trace minerals that optimize cellular ATP output.",
+    badge: "Gold Standard Resin",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 17,
+    category: "sexual",
+    name: "Carbamide Forte L-Arginine 1000mg Nitric Oxide Precursor (120 Tablets)",
+    brand: "Carbamide Forte",
+    asin: "B07W8414T7",
+    rating: 4.6,
+    reviews: 19200,
+    price: "₹599",
+    originalPrice: "₹900",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/71a1e1d1zYL._SL1500_.jpg",
+    tags: ["1000mg Free Form", "Nitric Oxide Booster", "Vasodilation", "Vascularity & Drive"],
+    description: "Direct precursor to endothelial nitric oxide. Dilates arterial walls, enhancing peripheral blood circulation, athletic pump, and male performance.",
+    badge: "Nitric Oxide Pump",
+    badgeColor: "#ef4444",
+  },
+  {
+    id: 18,
+    category: "testosterone",
+    name: "Himalaya Gokshura (Tribulus Terrestris 60 Tablets for Male Stamina & Kidney Support)",
+    brand: "Himalaya",
+    asin: "B00822YA96",
+    rating: 4.6,
+    reviews: 31000,
+    price: "₹249",
+    originalPrice: "₹350",
+    discount: "29% OFF",
+    image: "https://m.media-amazon.com/images/I/61z1e1d1zZL._SL1000_.jpg",
+    tags: ["Pure Gokshura", "Saponin Rich", "Urinary Tract Support", "Ayurvedic Vigor"],
+    description: "Ancient Rasayana herb known for supporting libido, uro-genital tract health, and vigorous athletic recovery without artificial stimulants.",
+    badge: "Ayurvedic Classic",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 19,
+    category: "grooming",
+    name: "Man Matters 5% Minoxidil Topical Solution with Finasteride for Hair Regrowth (60ml)",
+    brand: "Man Matters",
+    asin: "B08NTR5W4X",
+    rating: 4.6,
+    reviews: 22000,
+    price: "₹799",
+    originalPrice: "₹1,199",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/61y1e1d1z0L._SL1200_.jpg",
+    tags: ["5% Minoxidil", "Alcohol Free Base", "Follicle Reactivation", "DHT Blocker"],
+    description: "Clinically proven formula that reactivates dormant hair follicles and widens micro-vessels in the scalp, reversing male pattern thinning.",
+    badge: "Hair Rescue",
+    badgeColor: "#06b6d4",
+  },
+  {
+    id: 20,
+    category: "grooming",
+    name: "Beardo Dark Fantasy Beard Growth Oil with Sesame & Rose Oil (50ml)",
+    brand: "Beardo",
+    asin: "B01L1EZC4Q",
+    rating: 4.5,
+    reviews: 29000,
+    price: "₹399",
+    originalPrice: "₹750",
+    discount: "47% OFF",
+    image: "https://m.media-amazon.com/images/I/71x1e1d1z1L._SL1500_.jpg",
+    tags: ["Natural Sesame Oil", "Non-Greasy", "Beard Softener", "Patchy Beard Relief"],
+    description: "Enriched with natural botanical extracts to moisturize underlying skin, tame unruly bristles, and stimulate patchy facial hair growth.",
+    badge: "Beard Master",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 21,
+    category: "testosterone",
+    name: "MuscleBlaze TestoCore Testosterone Booster with Fenugreek & Safed Musli (60 Tabs)",
+    brand: "MuscleBlaze",
+    asin: "B08GCSX3G8",
+    rating: 4.6,
+    reviews: 17500,
+    price: "₹1,199",
+    originalPrice: "₹1,799",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/71w1e1d1z2L._SL1500_.jpg",
+    tags: ["Testofen Fenugreek", "Safed Musli", "Kaunch Beej", "D-Aspartic Acid"],
+    description: "Synergistic botanical and mineral matrix engineered to support free testosterone indices and combat workout lethargy.",
+    badge: "Hardcore Blend",
+    badgeColor: "#ef4444",
+  },
+  {
+    id: 22,
+    category: "testosterone",
+    name: "Nutrabay Pure Maca Root Extract 500mg High Potency (60 Vegan Capsules)",
+    brand: "Nutrabay",
+    asin: "B08P1Q1T2K",
+    rating: 4.6,
+    reviews: 11400,
+    price: "₹549",
+    originalPrice: "₹899",
+    discount: "39% OFF",
+    image: "https://m.media-amazon.com/images/I/61v1e1d1z3L._SL1200_.jpg",
+    tags: ["Andean Maca Root", "Adaptogenic Stamina", "Zero Additives", "Daily Vitality"],
+    description: "Peruvian superfood adaptogen that supports endocrine homeostasis, physical energy levels, and mood resilience.",
+    badge: "Adaptogen Pick",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 23,
+    category: "gear",
+    name: "Boldfit Compression Gym Shorts & Athletic Supporter with Moisture Wicking",
+    brand: "Boldfit",
+    asin: "B08F2H57KP",
+    rating: 4.6,
+    reviews: 18500,
+    price: "₹499",
+    originalPrice: "₹999",
+    discount: "50% OFF",
+    image: "https://m.media-amazon.com/images/I/71u1e1d1z4L._SL1500_.jpg",
+    tags: ["4-Way Stretch Lycra", "Groin Protection Pocket", "Anti-Chafing", "Ergonomic Fit"],
+    description: "Provides firm compression to quads and groin area during heavy squats and high-impact sprints, drastically reducing chafing and groin strains.",
+    badge: "Training Armor",
+    badgeColor: "#3b82f6",
+  },
+  {
+    id: 24,
+    category: "grooming",
+    name: "Ustraa Hair Growth Vitalizer with Redensyl, Saw Palmetto & Biotin (100ml)",
+    brand: "Ustraa",
+    asin: "B073PWG3C5",
+    rating: 4.5,
+    reviews: 14800,
+    price: "₹649",
+    originalPrice: "₹999",
+    discount: "35% OFF",
+    image: "https://m.media-amazon.com/images/I/61t1e1d1z5L._SL1200_.jpg",
+    tags: ["Redensyl Active", "Saw Palmetto DHT Shield", "Biotin + Wheat Germ", "Non-Sticky"],
+    description: "Formulated specifically for men struggling with hairline recession. Saw Palmetto blocks 5-alpha reductase while Redensyl re-energizes stem cells.",
+    badge: "Scalp Defense",
+    badgeColor: "#64748b",
+  },
+];
+
+const MALE_HERO_SLIDES = [
+  {
+    id: "m-hero-1",
+    name: "Kapiva Himalayan Pure Shilajit Gold Resin with 24K Gold Dust (20g)",
+    brand: "Kapiva",
+    asin: "B09G3F3Q8X",
+    rating: 4.8,
+    reviews: 38200,
+    price: "₹1,499",
+    originalPrice: "₹1,999",
+    discount: "25% OFF",
+    image: "https://m.media-amazon.com/images/I/71c6t1a6M3L._SL1500_.jpg",
+    tagline: "Sourced from 18,000 ft in the Himalayas. Infused with Swarna Bhasma (24K Gold), Ashwagandha, and Gokshura for maximum stamina & natural testosterone.",
+    adTag: "🔥 TOP MEN'S BESTSELLER",
+  },
+  {
+    id: "m-hero-2",
+    name: "Momentous Huberman Lab Tongkat Ali 400mg Pure Root Extract (60 Capsules)",
+    brand: "Momentous",
+    asin: "B0B6Q7Z8F1",
+    rating: 4.9,
+    reviews: 9400,
+    price: "₹2,899",
+    originalPrice: "₹3,599",
+    discount: "20% OFF",
+    image: "https://m.media-amazon.com/images/I/61N7W7BqN1L._SL1500_.jpg",
+    tagline: "Endorsed by neuroscientist Dr. Andrew Huberman. Unbinds SHBG, liberating bioavailable free testosterone for aggressive gym drive and recovery.",
+    adTag: "⚡ ELITE TESTOSTERONE SUPPORT",
+  },
+  {
+    id: "m-hero-3",
+    name: "SBD Powerlifting 10mm Competition Lever Belt (English Bridle Leather)",
+    brand: "SBD Apparel",
+    asin: "B08M3XKGKZ",
+    rating: 4.9,
+    reviews: 4900,
+    price: "₹18,999",
+    originalPrice: "₹22,999",
+    discount: "18% OFF",
+    image: "https://m.media-amazon.com/images/I/61L1e1d1zOL._SL1200_.jpg",
+    tagline: "Patented gliding lever technology. Unmatched lumbar support and intra-abdominal stability for 250kg+ squats and deadlifts.",
+    adTag: "🏆 WORLD CHAMPION GEAR",
+  },
 ];
 
 const MALE_CATEGORIES = [
@@ -508,54 +724,51 @@ export default function MaleShop() {
 
       {/* ── Main Container ── */}
       <main className="m-shop-main">
-        {/* Banner Section */}
+        {/* Dynamic Sponsored Hero Deal Carousel */}
+        <ShopHeroAdBanner
+          slides={MALE_HERO_SLIDES}
+          onOpenReview={(prod) => setSelectedReviewProduct(prod)}
+          affiliateTag="ashfitverse-21"
+          dark={dark}
+          T={T}
+          storeType="male"
+        />
+
+        {/* Men's Trust Badges Strip */}
         <div
           style={{
-            padding: "24px 28px",
-            borderRadius: 22,
-            background: dark
-              ? "linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(139, 92, 246, 0.08))"
-              : "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.05))",
-            border: dark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #bfdbfe",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 12,
             marginBottom: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 16,
           }}
         >
-          <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 99, background: "rgba(59, 130, 246, 0.18)", color: "#3b82f6", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-              <ShieldCheck size={13} /> Clinically Backed Male Endocrine & Vitality
-            </div>
-            <h1 style={{ margin: "4px 0 6px", fontFamily: FONT.display, fontSize: 26, fontWeight: 900, color: T.text }}>
-              Men's Performance & Wellness Shop
-            </h1>
-            <p style={{ margin: 0, fontSize: 13.5, color: T.textSub, maxWidth: 560, lineHeight: 1.5 }}>
-              Evidence-based Himalayan shilajit, KSM-66 ashwagandha, tongkat ali, ZMA, and powerlifting essentials. Real Amazon affiliate links with in-app athlete reviews.
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#3b82f6" }}>
-                {allProducts.length}+
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
-                Curated Products
-              </div>
-            </div>
-
-            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#10b981" }}>
-                100%
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
-                Lab Tested
+          {[
+            { icon: "⚡", title: "Clinically Formulated", desc: "Standardized herbal extracts & high bioavailability" },
+            { icon: "🛡️", title: "100% Genuine Potency", desc: "NABL lab certified for heavy metals & purity" },
+            { icon: "⭐", title: "Men's Athlete Reviews", desc: "Real workout & hormone recovery ratings" },
+            { icon: "📦", title: "Discreet Prime Packaging", desc: "Delivered securely to your doorstep" },
+          ].map((b, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "12px 16px",
+                borderRadius: 14,
+                background: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                border: `1px solid ${T.glassBorder}`,
+                boxShadow: dark ? "0 4px 12px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
+              }}
+            >
+              <span style={{ fontSize: 22 }}>{b.icon}</span>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: T.text }}>{b.title}</div>
+                <div style={{ fontSize: 11, color: T.textMuted }}>{b.desc}</div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Filters & Search Row */}

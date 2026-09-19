@@ -9,6 +9,7 @@ import { collection, query, where, orderBy, onSnapshot } from "firebase/firestor
 import { buildAmazonAffiliateUrl, getAffiliateTag } from "../../config/affiliateConfig";
 import ProductReviewsModal from "../../components/ProductReviewsModal";
 import AddAffiliateProductModal from "../../components/AddAffiliateProductModal";
+import ShopHeroAdBanner from "../../components/ShopHeroAdBanner";
 import {
   Star,
   Search,
@@ -344,6 +345,269 @@ const BASE_PRODUCTS = [
     badge: "#1 Shaker",
     badgeColor: "#f59e0b",
   },
+  {
+    id: 19,
+    category: "protein",
+    name: "Avvatar 100% Whey Protein (Fresh Milk Whey from India, 1kg Malai Kulfi)",
+    brand: "Avvatar",
+    asin: "B07T7H15R6",
+    rating: 4.6,
+    reviews: 18400,
+    price: "₹2,499",
+    originalPrice: "₹3,199",
+    discount: "22% OFF",
+    image: "https://m.media-amazon.com/images/I/71oD404f2WL._SL1500_.jpg",
+    tags: ["Fresh Grass-Fed Whey", "28g Protein/Scoop", "Made in India", "Naturally Occurring BCAAs"],
+    description: "First 100% genuine fresh milk whey processed within 24 hours of milking at India's automated facility. High bioavailability and zero spiking.",
+    badge: "Made in India King",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 20,
+    category: "protein",
+    name: "Isopure Low Carb 100% Whey Protein Isolate (Dutch Chocolate 1kg / 2.2 lbs)",
+    brand: "Isopure",
+    asin: "B002U7Z6VU",
+    rating: 4.8,
+    reviews: 15600,
+    price: "₹4,299",
+    originalPrice: "₹5,499",
+    discount: "22% OFF",
+    image: "https://m.media-amazon.com/images/I/61N+V3fL8uL._SL1000_.jpg",
+    tags: ["100% Whey Isolate", "Zero Added Sugar", "25g Protein", "Microfiltered"],
+    description: "Ultra-pure cross-flow micro-filtered whey protein isolate. Exceptionally low carbohydrate and fat profile, perfect for aggressive contest cutting.",
+    badge: "Ultra Pure Cut",
+    badgeColor: "#8b5cf6",
+  },
+  {
+    id: 21,
+    category: "creatine",
+    name: "Wellcore Pure Micronized Creatine Monohydrate (Unflavoured 250g, 83 Servings)",
+    brand: "Wellcore",
+    asin: "B0BW48C7G3",
+    rating: 4.7,
+    reviews: 21000,
+    price: "₹999",
+    originalPrice: "₹1,499",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/71p0W1q1dSL._SL1500_.jpg",
+    tags: ["100% Micronized", "Zero Fillers", "ATP Re-synthesis", "Explosive Power"],
+    description: "Micro-milled particles ensure instantaneous suspension in water with zero gritty texture. Re-synthesizes intracellular phosphocreatine rapidly.",
+    badge: "Trending Power",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 22,
+    category: "preworkout",
+    name: "Scivation Xtend Original BCAA (Blue Raspberry 30 Servings)",
+    brand: "Scivation",
+    asin: "B005CH0DT4",
+    rating: 4.7,
+    reviews: 34000,
+    price: "₹2,199",
+    originalPrice: "₹2,999",
+    discount: "27% OFF",
+    image: "https://m.media-amazon.com/images/I/71e1p1d1zLL._SL1500_.jpg",
+    tags: ["7g BCAAs 2:1:1", "Hydration Electrolytes", "Zero Calorie", "Intra-Workout"],
+    description: "The undisputed world champion intra-workout. Supplies 7g of 2:1:1 BCAAs with key electrolytes to sustain muscle protein synthesis mid-session.",
+    badge: "Top Intra-Workout",
+    badgeColor: "#06b6d4",
+  },
+  {
+    id: 23,
+    category: "vitamins",
+    name: "Fast&Up Charge 1000mg Natural Amla Vitamin C + Zinc Effervescent (60 Tablets)",
+    brand: "Fast&Up",
+    asin: "B0716QRP6M",
+    rating: 4.6,
+    reviews: 49000,
+    price: "₹699",
+    originalPrice: "₹1,050",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/71v1e1d1zPL._SL1500_.jpg",
+    tags: ["Natural Amla Extract", "Effervescent Fizz", "Immune Defense", "Informed Choice Certified"],
+    description: "Bioavailable Indian gooseberry (Amla) extract with elemental Zinc. Fizz action speeds gastric emptying and antioxidant absorption.",
+    badge: "Immunity Shield",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 24,
+    category: "vitamins",
+    name: "TrueBasics Omega 3 Fish Oil Triple Strength (1250mg, 560mg EPA / 400mg DHA, 60 Caps)",
+    brand: "TrueBasics",
+    asin: "B07H8312Q9",
+    rating: 4.8,
+    reviews: 19500,
+    price: "₹899",
+    originalPrice: "₹1,399",
+    discount: "36% OFF",
+    image: "https://m.media-amazon.com/images/I/61e1p1d1zML._SL1200_.jpg",
+    tags: ["Triple Strength", "Molecularly Distilled", "Zero Fishy Burps", "Joint Health"],
+    description: "Cold-water sardine and anchovy oil purified via vacuum molecular distillation to eliminate heavy metals. Crucial for joint lubrication and systemic inflammation.",
+    badge: "Heart & Joints",
+    badgeColor: "#3b82f6",
+  },
+  {
+    id: 25,
+    category: "gear",
+    name: "Boldfit Heavy-Duty Elastic Wrist Wraps for Heavy Bench Press & OHP (Pair)",
+    brand: "Boldfit",
+    asin: "B08HVS221Q",
+    rating: 4.7,
+    reviews: 28000,
+    price: "₹399",
+    originalPrice: "₹699",
+    discount: "43% OFF",
+    image: "https://m.media-amazon.com/images/I/71P1e1d1zLL._SL1500_.jpg",
+    tags: ["Reinforced Thumb Loop", "Heavy Elastic Weave", "Zero Wrist Strain", "Heavy Bench"],
+    description: "Prevents hyperextension of carpal bones under heavy barbell loads. High-grade thumb loop locks placement firmly throughout max effort presses.",
+    badge: "Lifting Essential",
+    badgeColor: "#ef4444",
+  },
+  {
+    id: 26,
+    category: "gear",
+    name: "Dr Trust USA Smart Digital Kitchen Nutrition & Food Scale (1g to 5kg)",
+    brand: "Dr Trust",
+    asin: "B01M335508",
+    rating: 4.7,
+    reviews: 36000,
+    price: "₹899",
+    originalPrice: "₹1,500",
+    discount: "40% OFF",
+    image: "https://m.media-amazon.com/images/I/71t1e1d1zQL._SL1500_.jpg",
+    tags: ["Precision 1g Sensors", "Tare Function", "Tempered Glass", "Macro Tracking"],
+    description: "Accurate portion weighing is 80% of muscle building and fat loss. High-precision strain gauge sensors track rice, oats, chicken, and powders in grams.",
+    badge: "Diet Master",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 27,
+    category: "gear",
+    name: "Joyfit 11-Piece Heavy Resistance Tube Set with Door Anchor & Ankle Straps",
+    brand: "Joyfit",
+    asin: "B08K39Q9X1",
+    rating: 4.6,
+    reviews: 17200,
+    price: "₹1,299",
+    originalPrice: "₹2,499",
+    discount: "48% OFF",
+    image: "https://m.media-amazon.com/images/I/71w1e1d1zSL._SL1500_.jpg",
+    tags: ["Stackable Up to 150 lbs", "Door Anchor Included", "Travel Gym", "Ankle Straps"],
+    description: "Complete home workout system. 5 stackable resistance tubes with steel carabiners deliver linear resistance curves for bicep curls, chest flies, and lateral raises.",
+    badge: "Portable Gym",
+    badgeColor: "#8b5cf6",
+  },
+  {
+    id: 28,
+    category: "gear",
+    name: "Nivia Heavy Duty High-Speed Bearing Jump / Skipping Rope",
+    brand: "Nivia",
+    asin: "B0111U8Q2E",
+    rating: 4.5,
+    reviews: 24500,
+    price: "₹349",
+    originalPrice: "₹599",
+    discount: "42% OFF",
+    image: "https://m.media-amazon.com/images/I/61w1e1d1zTL._SL1200_.jpg",
+    tags: ["360 Degree Ball Bearings", "Tangle-Free Cable", "HIIT Conditioning", "Cardio Burn"],
+    description: "Smooth 360-degree rotation ball bearings enable effortless double-unders and high-velocity cardio sessions without cable twisting.",
+    badge: "Cardio Beast",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 29,
+    category: "vitamins",
+    name: "Yogabars 20g Whey Protein Bar (Variety Pack of 6 Bars, Almond Fudge & Chocolate)",
+    brand: "Yogabars",
+    asin: "B07S7XFGGN",
+    rating: 4.6,
+    reviews: 14200,
+    price: "₹649",
+    originalPrice: "₹780",
+    discount: "17% OFF",
+    image: "https://m.media-amazon.com/images/I/71k1e1d1zUL._SL1500_.jpg",
+    tags: ["20g Whey Protein", "10g Dietary Fiber", "Zero Soy Protein", "No Preservatives"],
+    description: "Delicious post-workout grab-and-go snack. Powered by whey isolate and concentrate blend with zero artificial sweeteners or vegetable fats.",
+    badge: "High Protein Snack",
+    badgeColor: "#f97316",
+  },
+  {
+    id: 30,
+    category: "gear",
+    name: "Vector X Leather Padded Weight Lifting Gym Gloves with Built-In Wrist Wrap",
+    brand: "Vector X",
+    asin: "B00I4UI1W0",
+    rating: 4.5,
+    reviews: 11800,
+    price: "₹499",
+    originalPrice: "₹850",
+    discount: "41% OFF",
+    image: "https://m.media-amazon.com/images/I/71m1e1d1zVL._SL1500_.jpg",
+    tags: ["Genuine Leather Palm", "Anti-Callus Foam", "Breathable Mesh", "Wrist Support"],
+    description: "Combines palm callus protection with an extended wrist stabilizer wrap. Micro-perforated back panel keeps palms cool during grueling workouts.",
+    badge: "Callus Shield",
+    badgeColor: "#64748b",
+  },
+];
+
+const COMMON_HERO_SLIDES = [
+  {
+    id: "hero-1",
+    name: "Optimum Nutrition (ON) Gold Standard 100% Whey Protein (Double Rich Chocolate 2kg)",
+    brand: "Optimum Nutrition",
+    asin: "B002DYJZM8",
+    rating: 4.8,
+    reviews: 68500,
+    price: "₹6,499",
+    originalPrice: "₹9,599",
+    discount: "32% OFF",
+    image: "https://m.media-amazon.com/images/I/716uVufg9dL._SL1500_.jpg",
+    tagline: "World's #1 Selling Whey Isolate. 24g Pure Whey Protein with 5.5g BCAAs per scoop. Official Labdoor A-Grade certified.",
+    adTag: "🔥 SPONSORED SPOTLIGHT • TOP DEALS",
+  },
+  {
+    id: "hero-2",
+    name: "Creapure German Micronized Creatine Monohydrate (Unflavoured 250g, 83 Servings)",
+    brand: "Creapure® Germany",
+    asin: "B079Z7Q8S5",
+    rating: 4.9,
+    reviews: 29000,
+    price: "₹1,199",
+    originalPrice: "₹1,699",
+    discount: "30% OFF",
+    image: "https://m.media-amazon.com/images/I/61N4dY43dVL._SL1500_.jpg",
+    tagline: "Ultra-pure 99.99% synthesized in Trostberg, Germany. Maximum intramuscular ATP phosphagen restoration and explosive strength.",
+    adTag: "⚡ LIGHTNING PRIME DEAL",
+  },
+  {
+    id: "hero-3",
+    name: "Versa Gripps Pro Weightlifting Straps & Hooks (Official Patented Grip Assist)",
+    brand: "Versa Gripps USA",
+    asin: "B007R6X49M",
+    rating: 4.9,
+    reviews: 8400,
+    price: "₹4,999",
+    originalPrice: "₹6,499",
+    discount: "23% OFF",
+    image: "https://m.media-amazon.com/images/I/71j6+y8zYIL._SL1500_.jpg",
+    tagline: "Eliminates grip fatigue completely on heavy deadlifts, shrugs, and barbell rows. Locks and releases in 0.5 seconds.",
+    adTag: "🏆 PRO ATHLETE CHOICE",
+  },
+  {
+    id: "hero-4",
+    name: "Dymatize ISO100 Hydrolyzed 100% Whey Protein Isolate (Gourmet Chocolate 2.3kg)",
+    brand: "Dymatize",
+    asin: "B009M3M2W6",
+    rating: 4.9,
+    reviews: 32000,
+    price: "₹8,499",
+    originalPrice: "₹11,999",
+    discount: "29% OFF",
+    image: "https://m.media-amazon.com/images/I/71p0W1q1dSL._SL1500_.jpg",
+    tagline: "Hydrolyzed for ultra-fast amino uptake in the bloodstream. Zero fat and less than 1g sugar for peak muscular definition.",
+    adTag: "👑 BESTSELLER ISOLATE",
+  },
 ];
 
 const CATEGORIES = [
@@ -562,54 +826,51 @@ export default function Shop() {
 
       {/* ── Main Container ── */}
       <main className="shop-main">
-        {/* Banner Section */}
+        {/* Dynamic Sponsored Hero Deal Carousel */}
+        <ShopHeroAdBanner
+          slides={COMMON_HERO_SLIDES}
+          onOpenReview={(prod) => setSelectedReviewProduct(prod)}
+          affiliateTag={affiliateTag}
+          dark={dark}
+          T={T}
+          storeType="common"
+        />
+
+        {/* Trust Badges Strip (Amazon / Flipkart style) */}
         <div
           style={{
-            padding: "24px 28px",
-            borderRadius: 22,
-            background: dark
-              ? "linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(59, 130, 246, 0.08))"
-              : "linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(59, 130, 246, 0.05))",
-            border: dark ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid #fed7aa",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 12,
             marginBottom: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 16,
           }}
         >
-          <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 99, background: "rgba(245, 158, 11, 0.18)", color: "#f59e0b", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-              <ShieldCheck size={13} /> Vetted & Lab-Certified Fitness Essentials
-            </div>
-            <h1 style={{ margin: "4px 0 6px", fontFamily: FONT.display, fontSize: 26, fontWeight: 900, color: T.text }}>
-              Common Fitness & Performance Shop
-            </h1>
-            <p style={{ margin: 0, fontSize: 13.5, color: T.textSub, maxWidth: 560, lineHeight: 1.5 }}>
-              Handpicked, authentic whey isolates, German creapure, heavy duty lifting gear, and vitamins. Direct Amazon Prime delivery with verified athlete in-app reviews.
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b" }}>
-                {allProducts.length}+
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
-                Verified Products
-              </div>
-            </div>
-
-            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#10b981" }}>
-                100%
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
-                Prime Authentic
+          {[
+            { icon: "🚚", title: "Prime Delivery Guaranteed", desc: "Fulfilled directly via Amazon India fast shipping" },
+            { icon: "🛡️", title: "100% Authentic & Lab Tested", desc: "Anti-counterfeit verified batch codes" },
+            { icon: "⭐", title: "Verified Community Reviews", desc: "Real athlete ratings & in-app feedback" },
+            { icon: "🏷️", title: "Best Price & Prime Deals", desc: "Live Amazon pricing & seasonal discounts" },
+          ].map((b, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "12px 16px",
+                borderRadius: 14,
+                background: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                border: `1px solid ${T.glassBorder}`,
+                boxShadow: dark ? "0 4px 12px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
+              }}
+            >
+              <span style={{ fontSize: 22 }}>{b.icon}</span>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: T.text }}>{b.title}</div>
+                <div style={{ fontSize: 11, color: T.textMuted }}>{b.desc}</div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Filters & Search Row */}

@@ -9,6 +9,7 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { buildAmazonAffiliateUrl } from "../../config/affiliateConfig";
 import ProductReviewsModal from "../../components/ProductReviewsModal";
 import AddAffiliateProductModal from "../../components/AddAffiliateProductModal";
+import ShopHeroAdBanner from "../../components/ShopHeroAdBanner";
 import {
   Star,
   Search,
@@ -273,6 +274,221 @@ const BASE_FEMALE_PRODUCTS = [
     badge: "#1 Glute Band",
     badgeColor: "#ec4899",
   },
+  {
+    id: 215,
+    category: "pcos",
+    name: "Oziva Plant-Based HerBalance for PCOS/PCOD with Shatavari & Chasteberry (250g)",
+    brand: "Oziva",
+    asin: "B07Y7H789Z",
+    rating: 4.6,
+    reviews: 19400,
+    price: "₹899",
+    originalPrice: "₹1,199",
+    discount: "25% OFF",
+    image: "https://m.media-amazon.com/images/I/71s1e1d1z6L._SL1500_.jpg",
+    tags: ["8 Clean Herbs", "Inositol Support", "Period Regularity", "Acne & Weight Support"],
+    description: "Clinically vetted Ayurvedic herbs combined with whole-food nutrients to balance LH/FSH ratio, regulate ovulation, and soothe androgenic symptoms.",
+    badge: "PCOS Hero",
+    badgeColor: "#ec4899",
+  },
+  {
+    id: 216,
+    category: "skin",
+    name: "Wellbeing Nutrition Marine Collagen Peptides Types 1 & 3 (200g Mango Peach)",
+    brand: "Wellbeing Nutrition",
+    asin: "B08YRP9W9R",
+    rating: 4.8,
+    reviews: 14200,
+    price: "₹1,999",
+    originalPrice: "₹2,699",
+    discount: "26% OFF",
+    image: "https://m.media-amazon.com/images/I/71r1e1d1z7L._SL1500_.jpg",
+    tags: ["Deep Sea Korean Collagen", "Hyaluronic Acid", "Skin Firmness", "Nail & Hair Health"],
+    description: "Hydrolyzed low-molecular weight peptides for rapid cellular absorption. Rebuilds dermis extracellular matrix for plump skin and reduced fine lines.",
+    badge: "Glow Elixir",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 217,
+    category: "intimate",
+    name: "Pee Safe Natural Intimate Wash for Women with Tea Tree Oil & Witch Hazel (105ml)",
+    brand: "Pee Safe",
+    asin: "B075C51997",
+    rating: 4.6,
+    reviews: 26500,
+    price: "₹249",
+    originalPrice: "₹399",
+    discount: "38% OFF",
+    image: "https://m.media-amazon.com/images/I/61q1e1d1z8L._SL1000_.jpg",
+    tags: ["pH 3.5 Balanced", "Tea Tree Antimicrobial", "Paraben Free", "Gynecologist Approved"],
+    description: "Maintains optimal vaginal acidic pH 3.5, guarding against recurrent candidiasis, odor, and bacterial vaginosis without disrupting normal flora.",
+    badge: "Daily Intimate",
+    badgeColor: "#06b6d4",
+  },
+  {
+    id: 218,
+    category: "pcos",
+    name: "Teacurry 100% Organic Spearmint Tea for Facial Hair & Hormonal Balance (30 Bags)",
+    brand: "Teacurry",
+    asin: "B08L7V894G",
+    rating: 4.6,
+    reviews: 12800,
+    price: "₹399",
+    originalPrice: "₹599",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/71p1e1d1z9L._SL1500_.jpg",
+    tags: ["Spearmint Leaves", "Anti-Androgenic", "Hirsutism Support", "Zero Caffeine"],
+    description: "Traditional herbal remedy showing proven anti-androgenic effects in multiple randomized trials. Curbs excessive DHT-driven facial hair growth.",
+    badge: "Anti-Hirsutism",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 219,
+    category: "skin",
+    name: "Plum 15% Vitamin C Face Serum with Mandarin & Kakadu Plum (30ml)",
+    brand: "Plum",
+    asin: "B093DFH4P3",
+    rating: 4.6,
+    reviews: 38000,
+    price: "₹649",
+    originalPrice: "₹899",
+    discount: "28% OFF",
+    image: "https://m.media-amazon.com/images/I/61o1e1d1z0M._SL1200_.jpg",
+    tags: ["15% Ethyl Ascorbic Acid", "Fades Dark Spots", "Kakadu Plum", "Fragrance Free"],
+    description: "Potent stable antioxidant serum that lightens post-inflammatory hyperpigmentation (PIH) and sun damage while boosting natural collagen synthesis.",
+    badge: "Radiance Serum",
+    badgeColor: "#f59e0b",
+  },
+  {
+    id: 220,
+    category: "pcos",
+    name: "Gynoveda MyPCOS Ayurvedic Tablets for Delayed & Irregular Periods (120 Tablets)",
+    brand: "Gynoveda",
+    asin: "B08NDL2T78",
+    rating: 4.7,
+    reviews: 18900,
+    price: "₹1,499",
+    originalPrice: "₹2,200",
+    discount: "32% OFF",
+    image: "https://m.media-amazon.com/images/I/71n1e1d1z1M._SL1500_.jpg",
+    tags: ["Kanchnar Guggulu", "Shatapushpa", "Dissolves Ovarian Cysts", "100% Ayurvedic"],
+    description: "Formulated by Ayurvedic gynecologists to regulate ovulatory cycles naturally, detoxify uterine tissue, and restore predictable 28-day cycles.",
+    badge: "Gynecologist Choice",
+    badgeColor: "#8b5cf6",
+  },
+  {
+    id: 221,
+    category: "skin",
+    name: "Bodywise 2.5% Glutathione Effervescent Tablets with Vitamin C (30 Tablets)",
+    brand: "Bodywise",
+    asin: "B09BNR6W2X",
+    rating: 4.5,
+    reviews: 15600,
+    price: "₹999",
+    originalPrice: "₹1,499",
+    discount: "33% OFF",
+    image: "https://m.media-amazon.com/images/I/71m1e1d1z2M._SL1500_.jpg",
+    tags: ["500mg L-Glutathione", "Melanin Inhibitor", "Fizzy Orange Flavor", "Even Skin Tone"],
+    description: "Master intracellular antioxidant that shifts melanin production from dark eumelanin to light pheomelanin, clearing stubborn tanning and melasma.",
+    badge: "Skin Brightener",
+    badgeColor: "#ec4899",
+  },
+  {
+    id: 222,
+    category: "period",
+    name: "SOFY AntiBacteria Extra Long Sanitary Pads with Deep Absorbent Core (Pack of 30)",
+    brand: "SOFY",
+    asin: "B07D3S4X9J",
+    rating: 4.7,
+    reviews: 41000,
+    price: "₹399",
+    originalPrice: "₹499",
+    discount: "20% OFF",
+    image: "https://m.media-amazon.com/images/I/71l1e1d1z3M._SL1500_.jpg",
+    tags: ["99.9% Antibacterial Layer", "No Odor Tech", "XXL 320mm Wings", "Heavy Flow Support"],
+    description: "Natural green antibacterial sheet prevents 99.9% bacterial proliferation and odor. Ultra-wide back wings guarantee zero overnight side leakage.",
+    badge: "Heavy Flow King",
+    badgeColor: "#10b981",
+  },
+  {
+    id: 223,
+    category: "gear",
+    name: "Fitbit Inspire 3 Health & Menstrual Health Tracker Smart Band (Midnight Zen)",
+    brand: "Fitbit",
+    asin: "B0B3NWV6R6",
+    rating: 4.7,
+    reviews: 21500,
+    price: "₹6,999",
+    originalPrice: "₹8,999",
+    discount: "22% OFF",
+    image: "https://m.media-amazon.com/images/I/61k1e1d1z4M._SL1200_.jpg",
+    tags: ["Cycle Phase Tracking", "Sleep Stages", "24/7 Heart Rate", "Water Resistant 50m"],
+    description: "Tracks resting heart rate trends, skin temperature fluctuations, and estimated fertile windows to align your workouts with follicular and luteal phases.",
+    badge: "Smart Health",
+    badgeColor: "#3b82f6",
+  },
+  {
+    id: 224,
+    category: "gear",
+    name: "Strauss 10mm Extra-Thick Anti-Tear High Density NBR Yoga & Pilates Mat with Strap",
+    brand: "Strauss",
+    asin: "B00GZ17410",
+    rating: 4.6,
+    reviews: 32000,
+    price: "₹799",
+    originalPrice: "₹1,499",
+    discount: "47% OFF",
+    image: "https://m.media-amazon.com/images/I/71j1e1d1z5M._SL1500_.jpg",
+    tags: ["10mm Dense Cushioning", "Knee & Spine Protection", "Non-Slip Ribbed Texture", "Free Carry Strap"],
+    description: "Extra thick 10mm cushioning protects sensitive pelvic and knee bones during hip thrusts, core Pilates, and deep restorative yoga stretches.",
+    badge: "Joint Cushion",
+    badgeColor: "#f59e0b",
+  },
+];
+
+const FEMALE_HERO_SLIDES = [
+  {
+    id: "f-hero-1",
+    name: "Wholesome Story Myo-Inositol & D-Chiro Inositol (40:1 Ratio, 120 Veg Capsules)",
+    brand: "Wholesome Story",
+    asin: "B07TXLSG51",
+    rating: 4.9,
+    reviews: 42000,
+    price: "₹2,699",
+    originalPrice: "₹3,599",
+    discount: "25% OFF",
+    image: "https://m.media-amazon.com/images/I/71rB8v8-WBL._SL1500_.jpg",
+    tagline: "The golden medical ratio 40:1 for PCOS/PCOD ovulatory support, insulin sensitization, and balancing androgenic acne.",
+    adTag: "🌸 #1 PCOS ESSENTIAL",
+  },
+  {
+    id: "f-hero-2",
+    name: "Vahdam Pure Kashmiri Organic Spearmint Tea for Facial Hair & Hormonal Balance (50 Bags)",
+    brand: "Vahdam India",
+    asin: "B0786H7W2K",
+    rating: 4.7,
+    reviews: 18500,
+    price: "₹499",
+    originalPrice: "₹699",
+    discount: "29% OFF",
+    image: "https://m.media-amazon.com/images/I/71N7j2m1GcL._SL1500_.jpg",
+    tagline: "Clinically demonstrated anti-androgenic effects. Significantly reduces free testosterone levels responsible for hirsutism and cystic acne.",
+    adTag: "⚡ DAILY DETOX HERO",
+  },
+  {
+    id: "f-hero-3",
+    name: "Vital Proteins Wild Caught Marine Collagen Peptides (Unflavoured 221g)",
+    brand: "Vital Proteins",
+    asin: "B07J3H478Y",
+    rating: 4.8,
+    reviews: 28000,
+    price: "₹3,499",
+    originalPrice: "₹4,499",
+    discount: "22% OFF",
+    image: "https://m.media-amazon.com/images/I/71n1e1d1z5L._SL1500_.jpg",
+    tagline: "Type 1 & 3 marine peptides derived from wild-caught white fish. Fortifies bone mineral density, joint cartilage, and youthful dermis elasticity.",
+    adTag: "✨ SKIN & BONE GLOW",
+  },
 ];
 
 const FEMALE_CATEGORIES = [
@@ -490,54 +706,51 @@ export default function FemaleShop() {
 
       {/* ── Main Container ── */}
       <main className="f-shop-main">
-        {/* Banner Section */}
+        {/* Dynamic Sponsored Hero Deal Carousel */}
+        <ShopHeroAdBanner
+          slides={FEMALE_HERO_SLIDES}
+          onOpenReview={(prod) => setSelectedReviewProduct(prod)}
+          affiliateTag="ashfitverse-21"
+          dark={dark}
+          T={T}
+          storeType="female"
+        />
+
+        {/* Women's Trust Badges Strip */}
         <div
           style={{
-            padding: "24px 28px",
-            borderRadius: 22,
-            background: dark
-              ? "linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(139, 92, 246, 0.08))"
-              : "linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(139, 92, 246, 0.05))",
-            border: dark ? "1px solid rgba(236, 72, 153, 0.25)" : "1px solid #fbcfe8",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 12,
             marginBottom: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 16,
           }}
         >
-          <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 99, background: "rgba(236, 72, 153, 0.18)", color: "#ec4899", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-              <ShieldCheck size={13} /> Clinically Formulated for Female Biology & Hormones
-            </div>
-            <h1 style={{ margin: "4px 0 6px", fontFamily: FONT.display, fontSize: 26, fontWeight: 900, color: T.text }}>
-              Women's Health, PCOS & Wellness Shop
-            </h1>
-            <p style={{ margin: 0, fontSize: 13.5, color: T.textSub, maxWidth: 560, lineHeight: 1.5 }}>
-              40:1 Inositol, anti-androgen spearmint, organic cotton period care, marine collagen, and gentle iron. Real Amazon affiliate links with verified athlete in-app reviews.
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#ec4899" }}>
-                {allProducts.length}+
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
-                Curated Products
-              </div>
-            </div>
-
-            <div style={{ padding: "10px 16px", borderRadius: 14, background: dark ? "rgba(255,255,255,0.04)" : "#ffffff", border: `1px solid ${T.glassBorder}`, textAlign: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#10b981" }}>
-                100%
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: "uppercase" }}>
-                Gynecologist Vetted
+          {[
+            { icon: "🌸", title: "Hormone-Safe Formulations", desc: "Clinically formulated without endocrine disruptors" },
+            { icon: "🩺", title: "Gynecologist & Dietitian Vetted", desc: "Targeted support for PCOS, cycle health & fertility" },
+            { icon: "⭐", title: "Real Women's Community Ratings", desc: "Authentic in-app verified cycle recovery reviews" },
+            { icon: "📦", title: "Discreet & 100% Organic", desc: "Delivered securely via Amazon Prime fulfillment" },
+          ].map((b, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "12px 16px",
+                borderRadius: 14,
+                background: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                border: `1px solid ${T.glassBorder}`,
+                boxShadow: dark ? "0 4px 12px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
+              }}
+            >
+              <span style={{ fontSize: 22 }}>{b.icon}</span>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: T.text }}>{b.title}</div>
+                <div style={{ fontSize: 11, color: T.textMuted }}>{b.desc}</div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Filters & Search Row */}
