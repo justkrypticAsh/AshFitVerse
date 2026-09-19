@@ -19,6 +19,12 @@ import CommunityNotificationSettingsModal from "../../components/CommunityNotifi
 import ImageLightboxModal from "../../components/ImageLightboxModal";
 import useCommunityUnread from "../../hooks/useCommunityUnread";
 import {
+  notifyLike,
+  notifyComment,
+  notifyMentions,
+  notifyMessage,
+} from "../../lib/communityNotifications";
+import {
   DEFAULT_CHALLENGES,
   CHALLENGE_STORAGE_KEY,
   loadChallengeProgress,
@@ -32,10 +38,36 @@ import {
   Image as ImageIcon, Video, BookOpen, Award, Moon, Sun,
   Heart, Share2, MoreHorizontal, Check, X, Shield, ArrowLeft,
   Send, Filter, Sparkles, MessageCircle, Flame, Dumbbell,
-  Zap, Star, TrendingUp, Bell
+  Zap, Star, TrendingUp, Bell, AtSign
 } from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+function renderMentionsInText(text) {
+  if (!text) return "";
+  const parts = String(text).split(/(@[a-zA-Z0-9_]+)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("@")) {
+      return (
+        <span
+          key={i}
+          style={{
+            color: "#8b5cf6",
+            fontWeight: 750,
+            background: "rgba(139, 92, 246, 0.12)",
+            padding: "1px 6px",
+            borderRadius: 6,
+            display: "inline-block",
+            lineHeight: 1.2,
+          }}
+        >
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 function timeAgo(ts) {
   if (!ts) return "just now";
   const d = ts?.toDate ? ts.toDate() : new Date(ts);
@@ -273,11 +305,54 @@ export default function Community() {
 
   const chatEndRef = useRef(null);
   const myUid = auth.currentUser?.uid || user?.uid || (typeof localStorage !== "undefined" ? localStorage.getItem("ashfitverse_uid") : "guest_athlete");
-  const { incomingMessageToast, dismissToast, playMessageChime } = useCommunityUnread(myUid);
+  const { incomingMessageToast, dismissToast, playMessageChime, unreadNotifsCount, unreadDMsCount } = useCommunityUnread(myUid);
   const [lightboxImage, setLightboxImage] = useState(null);
   const [showNotifSettingsModal, setShowNotifSettingsModal] = useState(false);
-  const unreadDMs = convList.reduce((a, c) => a + (c.unread || 0), 0);
-  const unreadN = notifs.filter((n) => !n.read).length;
+  const [alertsFilter, setAlertsFilter] = useState("all");
+  const unreadDMs = unreadDMsCount > 0 ? unreadDMsCount : convList.reduce((a, c) => a + (c.unread || 0), 0);
+  const unreadN = unreadNotifsCount > 0 ? unreadNotifsCount : notifs.filter((n) => !n.read).length;
+
+  const handleNotificationClick = async (notif) => {
+    if (!notif) return;
+    if (!notif.read && notif.id && myUid && !myUid.startsWith("guest_")) {
+      try {
+        await updateDoc(doc(db, "users", myUid, "notifications", notif.id), { read: true });
+      } catch (e) {
+        console.warn("Mark notif read error:", e);
+      }
+    }
+    if (notif.type === "message" && notif.senderUid) {
+      openDMWithUser(notif.senderUid);
+      return;
+    }
+    if (notif.postId) {
+      setActiveTab("feed");
+      setSearchParams({ tab: "feed", post: notif.postId });
+      if (notif.type === "comment" || notif.type === "mention") {
+        setExpandedComments((p) => ({ ...p, [notif.postId]: true }));
+      }
+      setTimeout(() => {
+        const el = document.getElementById(`post-${notif.postId}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 350);
+      return;
+    }
+  };
+
+  const markAllNotifsRead = async () => {
+    if (!myUid || myUid.startsWith("guest_")) return;
+    const unreads = notifs.filter((n) => !n.read);
+    for (const n of unreads) {
+      try {
+        await updateDoc(doc(db, "users", myUid, "notifications", n.id), { read: true });
+      } catch {}
+    }
+  };
+
+  const filteredNotifs = useMemo(() => {
+    if (alertsFilter === "all") return notifs;
+    return notifs.filter((n) => n.type === alertsFilter);
+  }, [notifs, alertsFilter]);
 
   // Challenges list
   const challenges = useMemo(() => [
@@ -312,7 +387,7 @@ export default function Community() {
     window.addEventListener("beforeunload", off);
 
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["feed", "explore", "challenges", "messages", "leaderboard", "members"].includes(tabParam)) {
+    if (tabParam && ["feed", "explore", "challenges", "messages", "leaderboard", "members", "alerts"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
 
@@ -320,6 +395,12 @@ export default function Community() {
     if (targetDm) {
       setActiveTab("messages");
       openDMWithUser(targetDm);
+    }
+
+    const targetPost = searchParams.get("post");
+    if (targetPost) {
+      setActiveTab("feed");
+      setExpandedComments((p) => ({ ...p, [targetPost]: true }));
     }
 
     return () => {
@@ -481,10 +562,10 @@ export default function Community() {
     return () => unsub();
   }, [activeDM, myUid]);
 
-  // Notifications
+  // Notifications (Real-Time Listener with 50-limit buffer)
   useEffect(() => {
     if (!myUid || myUid.startsWith("guest_")) return;
-    const q = query(collection(db, "users", myUid, "notifications"), orderBy("createdAt", "desc"), limit(20));
+    const q = query(collection(db, "users", myUid, "notifications"), orderBy("createdAt", "desc"), limit(50));
     return onSnapshot(q, (snap) => setNotifs(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), () => {});
   }, [myUid]);
 
@@ -561,6 +642,7 @@ export default function Community() {
       };
       if (activeDMUser?.uid) {
         updates.unreadBy = arrayUnion(activeDMUser.uid);
+        notifyMessage({ recipientUid: activeDMUser.uid, sender: user, messageText: text, convId: activeDM });
       }
       await updateDoc(doc(db, "conversations", activeDM), updates).catch(() => {});
     } catch (e) {
@@ -571,6 +653,7 @@ export default function Community() {
   // ── Like Post Handler ──────────────────────────────────────────────────────
   const toggleLike = async (postId, isLiked) => {
     if (!myUid) return;
+    const targetPost = posts.find((x) => x.id === postId);
     setPosts((p) =>
       p.map((x) =>
         x.id === postId
@@ -586,6 +669,9 @@ export default function Community() {
       await updateDoc(doc(db, "posts", postId), {
         likes: isLiked ? arrayRemove(myUid) : arrayUnion(myUid),
       });
+      if (!isLiked && targetPost) {
+        notifyLike({ post: targetPost, sender: user });
+      }
     } catch (e) {
       console.error(e);
     }
@@ -595,6 +681,7 @@ export default function Community() {
   const submitComment = async (postId) => {
     const text = (commentInputs[postId] || "").trim();
     if (!text || !myUid) return;
+    const targetPost = posts.find((x) => x.id === postId);
     setCommentInputs((p) => ({ ...p, [postId]: "" }));
     try {
       await addDoc(collection(db, "posts", postId, "comments"), {
@@ -605,6 +692,10 @@ export default function Community() {
         text,
         createdAt: serverTimestamp(),
       });
+      if (targetPost) {
+        notifyComment({ post: targetPost, sender: user, commentText: text });
+      }
+      notifyMentions({ text, sender: user, postId, isComment: true, members });
     } catch (e) {
       console.error(e);
     }
@@ -801,6 +892,7 @@ export default function Community() {
 
     try {
       const docRef = await addDoc(collection(db, "posts"), newPostDoc);
+      notifyMentions({ text: finalContent, sender: user, postId: docRef.id, isComment: false, members });
       setPosts((prev) => [
         { id: docRef.id, ...newPostDoc, createdAt: new Date(), liked: false },
         ...prev,
@@ -1389,19 +1481,22 @@ export default function Community() {
       .cm-nav-tabs{
         width:100% !important;
         display:flex !important;
-        justify-content:space-between !important;
-        padding:3px !important;
+        justify-content:flex-start !important;
+        overflow-x:auto !important;
+        scrollbar-width:none !important;
+        padding:4px !important;
         border-radius:12px !important;
-        gap:3px !important;
+        gap:4px !important;
         box-sizing:border-box !important;
       }
+      .cm-nav-tabs::-webkit-scrollbar{display:none;}
       .cm-nav-pill{
-        flex:1 !important;
+        flex: 0 0 auto !important;
         display:flex !important;
         align-items:center !important;
         justify-content:center !important;
         gap:5px !important;
-        padding:7px 4px !important;
+        padding:7px 12px !important;
         font-size:12px !important;
         font-weight:750 !important;
         border-radius:9px !important;
@@ -1615,15 +1710,21 @@ export default function Community() {
                 </button>
                 <button
                   className="cm-mobile-notif-btn"
-                  onClick={() => setShowNotifSettingsModal(true)}
-                  title="Notification Settings"
+                  onClick={() => {
+                    setActiveTab("alerts");
+                    setSearchParams({ tab: "alerts" });
+                  }}
+                  title="Community Activity & Alerts"
                   style={{
+                    position: "relative",
                     width: 32,
                     height: 32,
                     borderRadius: 9,
                     border: `1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"}`,
-                    background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
-                    color: dark ? "#f8fafc" : "#1e293b",
+                    background: activeTab === "alerts"
+                      ? (dark ? "rgba(59,130,246,0.2)" : "rgba(59,130,246,0.12)")
+                      : (dark ? "rgba(255,255,255,0.06)" : "#f1f5f9"),
+                    color: activeTab === "alerts" ? "#3b82f6" : (dark ? "#f8fafc" : "#1e293b"),
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1631,6 +1732,30 @@ export default function Community() {
                   }}
                 >
                   <Bell size={14} />
+                  {unreadN > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: -3,
+                        right: -3,
+                        minWidth: 16,
+                        height: 16,
+                        borderRadius: 99,
+                        background: "#ef4444",
+                        color: "#ffffff",
+                        fontSize: 9,
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0 3px",
+                        border: `2px solid ${dark ? "#090b10" : "#ffffff"}`,
+                        boxShadow: "0 0 8px rgba(239, 68, 68, 0.6)",
+                      }}
+                    >
+                      {unreadN > 99 ? "99+" : unreadN}
+                    </span>
+                  )}
                 </button>
                 <button className="cm-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
                   {dark ? <Moon size={15} /> : <Sun size={15} />}
@@ -1652,6 +1777,7 @@ export default function Community() {
                 { id: "members", label: "Athletes", icon: Users },
                 { id: "challenges", label: "Challenges", icon: Trophy },
                 { id: "messages", label: "Messages", icon: MessageSquare, badge: unreadDMs },
+                { id: "alerts", label: "Alerts", icon: Bell, badge: unreadN },
               ].map((t) => {
                 const IconComponent = t.icon;
                 const isActive = activeTab === t.id;
@@ -1727,15 +1853,21 @@ export default function Community() {
 
               <button
                 className="cm-notif-btn"
-                onClick={() => setShowNotifSettingsModal(true)}
-                title="Community Notification Settings"
+                onClick={() => {
+                  setActiveTab("alerts");
+                  setSearchParams({ tab: "alerts" });
+                }}
+                title="Community Activity & Alerts"
                 style={{
+                  position: "relative",
                   width: 38,
                   height: 38,
                   borderRadius: 11,
-                  border: `1px solid ${dark ? GB_BORDER : "#e2e8f0"}`,
-                  background: dark ? "rgba(255,255,255,0.05)" : "#ffffff",
-                  color: dark ? T.textSub : "#334155",
+                  border: `1px solid ${activeTab === "alerts" ? "#3b82f6" : dark ? GB_BORDER : "#e2e8f0"}`,
+                  background: activeTab === "alerts"
+                    ? (dark ? "rgba(59,130,246,0.2)" : "rgba(59,130,246,0.12)")
+                    : (dark ? "rgba(255,255,255,0.05)" : "#ffffff"),
+                  color: activeTab === "alerts" ? "#3b82f6" : (dark ? T.textSub : "#334155"),
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1744,6 +1876,30 @@ export default function Community() {
                 }}
               >
                 <Bell size={16} />
+                {unreadN > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      minWidth: 18,
+                      height: 18,
+                      borderRadius: 99,
+                      background: "#ef4444",
+                      color: "#ffffff",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 4px",
+                      border: `2px solid ${dark ? "#08090d" : "#ffffff"}`,
+                      boxShadow: "0 0 10px rgba(239, 68, 68, 0.6)",
+                    }}
+                  >
+                    {unreadN > 99 ? "99+" : unreadN}
+                  </span>
+                )}
               </button>
 
               <button className="cm-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
@@ -1923,7 +2079,7 @@ export default function Community() {
                     const isCommentsOpen = Boolean(expandedComments[p.id]);
 
                     return (
-                      <div key={p.id} className="post-card">
+                      <div key={p.id} id={`post-${p.id}`} className="post-card">
                         {/* Header */}
                         <div className="post-hd">
                           <Avatar
@@ -2011,7 +2167,7 @@ export default function Community() {
                         ) : (
                           /* Standard Post Content */
                           <>
-                            {p.content && <div className="post-body">{p.content}</div>}
+                            {p.content && <div className="post-body">{renderMentionsInText(p.content)}</div>}
 
                             {/* Image Media Preview */}
                             {p.mediaType === "image" && p.mediaUrl && (
@@ -2120,7 +2276,7 @@ export default function Community() {
                                         {timeAgo(c.createdAt)}
                                       </span>
                                     </div>
-                                    <div className="com-text">{c.text}</div>
+                                    <div className="com-text">{renderMentionsInText(c.text)}</div>
                                   </div>
                                 </div>
                               ))
@@ -2130,7 +2286,7 @@ export default function Community() {
                             <div className="com-input-box">
                               <input
                                 className="com-input"
-                                placeholder="Add an encouraging comment…"
+                                placeholder="Add encouraging comment… (use @athlete to mention)"
                                 value={commentInputs[p.id] || ""}
                                 onChange={(e) =>
                                   setCommentInputs((prev) => ({ ...prev, [p.id]: e.target.value }))
@@ -2596,6 +2752,308 @@ export default function Community() {
                 )}
               </div>
             )}
+
+            {/* ════════════ TAB 5: ALERTS & ACTIVITY CENTER ════════════ */}
+            {activeTab === "alerts" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Top Header Card */}
+                <div
+                  className="side-card"
+                  style={{
+                    padding: "20px 22px",
+                    borderRadius: 20,
+                    margin: 0,
+                    background: dark
+                      ? "linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05))"
+                      : "#ffffff",
+                    borderColor: dark ? "rgba(139, 92, 246, 0.25)" : "#e2e8f0",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 14,
+                          background: "linear-gradient(135deg, #8b5cf6, #3b82f6)",
+                          color: "#ffffff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 4px 16px rgba(139, 92, 246, 0.35)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Bell size={22} />
+                      </div>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <h2 style={{ fontFamily: FONT.display, fontSize: 18, fontWeight: 800, margin: 0, color: T.text }}>
+                            Activity & Alerts
+                          </h2>
+                          {unreadN > 0 && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                padding: "2px 8px",
+                                borderRadius: 99,
+                                background: "rgba(239, 68, 68, 0.15)",
+                                color: "#ef4444",
+                                border: "1px solid rgba(239, 68, 68, 0.3)",
+                              }}
+                            >
+                              {unreadN} unread
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ margin: "3px 0 0", fontSize: 12, color: T.textSub }}>
+                          Real-time alerts for mentions (@), cheers, comments & direct messages
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {unreadN > 0 && (
+                        <button
+                          onClick={markAllNotifsRead}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "7px 12px",
+                            borderRadius: 10,
+                            border: dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #cbd5e1",
+                            background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                            color: dark ? "#f8fafc" : "#1e293b",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            transition: "all 0.18s ease",
+                          }}
+                        >
+                          <Check size={14} color="#10b981" />
+                          <span>Mark all read</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowNotifSettingsModal(true)}
+                        title="Configure alerts & audio chimes"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "7px 12px",
+                          borderRadius: 10,
+                          border: `1px solid ${T.accent}35`,
+                          background: T.accentSoft,
+                          color: T.accent,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span>⚙️ Alert Settings</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Channel Filter Pills */}
+                  <div style={{ display: "flex", gap: 7, marginTop: 16, overflowX: "auto", paddingBottom: 2 }}>
+                    {[
+                      { id: "all", label: "All Alerts", count: notifs.length },
+                      { id: "mention", label: "📣 Mentions", count: notifs.filter((n) => n.type === "mention").length },
+                      { id: "like", label: "❤️ Likes", count: notifs.filter((n) => n.type === "like").length },
+                      { id: "comment", label: "💬 Comments", count: notifs.filter((n) => n.type === "comment").length },
+                      { id: "message", label: "⚡ Messages", count: notifs.filter((n) => n.type === "message").length },
+                    ].map((chip) => {
+                      const isActive = alertsFilter === chip.id;
+                      return (
+                        <button
+                          key={chip.id}
+                          onClick={() => setAlertsFilter(chip.id)}
+                          style={{
+                            padding: "6px 13px",
+                            borderRadius: 99,
+                            border: isActive
+                              ? `1.5px solid ${T.accent}`
+                              : dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0",
+                            background: isActive
+                              ? (dark ? "rgba(59,130,246,0.18)" : "rgba(59,130,246,0.1)")
+                              : (dark ? "rgba(255,255,255,0.03)" : "#f8fafc"),
+                            color: isActive ? T.accent : T.textSub,
+                            fontSize: 12,
+                            fontWeight: isActive ? 800 : 600,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 5,
+                            transition: "all 0.16s ease",
+                          }}
+                        >
+                          <span>{chip.label}</span>
+                          {chip.count > 0 && (
+                            <span style={{ fontSize: 10.5, opacity: 0.8, fontWeight: 700 }}>
+                              ({chip.count})
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Alerts List Stream */}
+                {filteredNotifs.length === 0 ? (
+                  <div className="side-card" style={{ padding: "48px 20px", textAlign: "center", borderRadius: 20 }}>
+                    <div style={{ fontSize: 42, marginBottom: 10 }}>🔔</div>
+                    <div style={{ fontFamily: FONT.display, fontSize: 17, fontWeight: 800, color: T.text }}>
+                      {alertsFilter === "all" ? "You're all caught up!" : `No ${alertsFilter} alerts found`}
+                    </div>
+                    <p style={{ fontSize: 13, color: T.textSub, maxWidth: 380, margin: "6px auto 0", lineHeight: 1.5 }}>
+                      {alertsFilter === "all"
+                        ? "When fellow athletes mention your @username, cheer your workout posts, comment on PRs, or DM you, they'll show here in real-time."
+                        : `Incoming ${alertsFilter} notifications will appear here with instant audio and visual alert badges.`}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {filteredNotifs.map((n) => {
+                      const isMention = n.type === "mention";
+                      const isLike = n.type === "like";
+                      const isComment = n.type === "comment";
+                      const isMsg = n.type === "message";
+
+                      const badgeColor = isMention ? "#8b5cf6" : isLike ? "#f43f5e" : isComment ? "#10b981" : "#3b82f6";
+                      const badgeLabel = isMention ? "📣 Mention" : isLike ? "❤️ Like" : isComment ? "💬 Comment" : "⚡ Direct Message";
+
+                      return (
+                        <div
+                          key={n.id}
+                          onClick={() => handleNotificationClick(n)}
+                          style={{
+                            padding: "14px 16px",
+                            borderRadius: 16,
+                            background: dark
+                              ? n.read ? "rgba(255,255,255,0.02)" : "rgba(59,130,246,0.07)"
+                              : n.read ? "#ffffff" : "rgba(59,130,246,0.04)",
+                            border: dark
+                              ? n.read ? "1px solid rgba(255,255,255,0.06)" : `1.5px solid ${badgeColor}45`
+                              : n.read ? "1px solid #e2e8f0" : `1.5px solid ${badgeColor}35`,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 13,
+                            transition: "all 0.18s ease",
+                            boxShadow: !n.read && dark ? `0 0 16px ${badgeColor}18` : "none",
+                          }}
+                        >
+                          {/* Avatar with Type Icon Badge */}
+                          <div style={{ position: "relative", flexShrink: 0 }}>
+                            <Avatar src={n.senderAvatar} name={n.senderName} size={42} />
+                            <div
+                              style={{
+                                position: "absolute",
+                                bottom: -2,
+                                right: -2,
+                                width: 18,
+                                height: 18,
+                                borderRadius: "50%",
+                                background: badgeColor,
+                                color: "#ffffff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 10,
+                                border: `2px solid ${dark ? "#08090d" : "#ffffff"}`,
+                                boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                              }}
+                            >
+                              {isMention ? "📣" : isLike ? "❤️" : isComment ? "💬" : "⚡"}
+                            </div>
+                          </div>
+
+                          {/* Content Details */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 3 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                                <span style={{ fontFamily: FONT.display, fontSize: 13.5, fontWeight: 800, color: T.text }}>
+                                  {n.senderName || "Athlete"}
+                                </span>
+                                {n.senderUsername && (
+                                  <span style={{ fontSize: 11.5, color: T.textMuted }}>
+                                    @{n.senderUsername}
+                                  </span>
+                                )}
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 800,
+                                    padding: "1px 7px",
+                                    borderRadius: 99,
+                                    background: `${badgeColor}18`,
+                                    color: badgeColor,
+                                    border: `1px solid ${badgeColor}30`,
+                                  }}
+                                >
+                                  {badgeLabel}
+                                </span>
+                              </div>
+                              <span style={{ fontSize: 11, color: T.textMuted, whiteSpace: "nowrap" }}>
+                                {timeAgo(n.createdAt)}
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: 13, fontWeight: n.read ? 600 : 800, color: T.text, marginTop: 2 }}>
+                              {n.title}
+                            </div>
+
+                            {n.text && (
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: T.textSub,
+                                  marginTop: 5,
+                                  padding: "6px 10px",
+                                  borderRadius: 9,
+                                  background: dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                                  borderLeft: `3px solid ${badgeColor}`,
+                                  lineHeight: 1.45,
+                                }}
+                              >
+                                {renderMentionsInText(n.text)}
+                              </div>
+                            )}
+
+                            {/* Deep-link action hint */}
+                            <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: badgeColor, display: "flex", alignItems: "center", gap: 4 }}>
+                              {isMsg ? "Tap to open chat conversation →" : "Tap to open post & discussion →"}
+                            </div>
+                          </div>
+
+                          {/* Unread Glowing Dot */}
+                          {!n.read && (
+                            <div
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: badgeColor,
+                                flexShrink: 0,
+                                marginTop: 6,
+                                boxShadow: `0 0 8px ${badgeColor}`,
+                              }}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── RIGHT SIDEBAR ── */}
@@ -2752,6 +3210,9 @@ export default function Community() {
           onPostSuccess={(newP) => {
             setPosts((prev) => [newP, ...prev]);
             setActiveTab("feed");
+            if (newP?.id && newP?.content) {
+              notifyMentions({ text: newP.content, sender: user, postId: newP.id, isComment: false, members });
+            }
           }}
           dark={dark}
           T={T}

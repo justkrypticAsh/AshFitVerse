@@ -1,8 +1,8 @@
 // src/components/CommunityNotificationSettingsModal.jsx
 import React, { useState } from "react";
-import { Bell, Volume2, Heart, Trophy, X, Check } from "lucide-react";
+import { Bell, Volume2, Heart, Trophy, X, Check, AtSign, MessageCircle, MessageSquare } from "lucide-react";
 import { FONT } from "../theme";
-import { getCommunityPrefs, saveCommunityPrefs } from "../hooks/useCommunityUnread";
+import { getCommunityPrefs, saveCommunityPrefs, playAlertChime } from "../hooks/useCommunityUnread";
 
 export default function CommunityNotificationSettingsModal({ isOpen, onClose, onTestChime, dark, T }) {
   const [prefs, setPrefs] = useState(() => getCommunityPrefs());
@@ -22,30 +22,44 @@ export default function CommunityNotificationSettingsModal({ isOpen, onClose, on
 
   const settingsItems = [
     {
+      key: "mentionAlerts",
+      title: "Mentions & Tagging (@)",
+      desc: "Instant real-time popup when an athlete mentions your @username in a post or comment.",
+      icon: AtSign,
+      color: "#8b5cf6",
+    },
+    {
+      key: "commentAlerts",
+      title: "Comments & Replies",
+      desc: "Notify when someone comments on your workout or replies to your threads.",
+      icon: MessageCircle,
+      color: "#10b981",
+    },
+    {
+      key: "likesAlerts",
+      title: "Cheers & Likes",
+      desc: "Notify when other athletes like or cheer your posts and PR achievements.",
+      icon: Heart,
+      color: "#f43f5e",
+    },
+    {
       key: "dmAlerts",
-      title: "Direct Message Popups",
-      desc: "Show a professional floating banner whenever an athlete sends you a message.",
-      icon: Bell,
+      title: "Direct Messages",
+      desc: "Show a floating alert banner whenever an athlete sends you a direct message.",
+      icon: MessageSquare,
       color: "#3b82f6",
     },
     {
       key: "dmSound",
-      title: "Incoming Message Chime",
-      desc: "Play an executive audio chime on incoming messages.",
+      title: "Audio Chimes",
+      desc: "Play harmonic synthesized audio chimes when new community alerts arrive.",
       icon: Volume2,
-      color: "#8b5cf6",
+      color: "#ec4899",
       hasTestBtn: true,
     },
     {
-      key: "likesAlerts",
-      title: "Workout Cheers & Likes",
-      desc: "Notify when other athletes like or cheer your training logs.",
-      icon: Heart,
-      color: "#ff375f",
-    },
-    {
       key: "challengesAlerts",
-      title: "Challenge Quests & Streaks",
+      title: "Challenge Quests",
       desc: "Alerts when squad challenges progress or team quests launch.",
       icon: Trophy,
       color: "#f59e0b",
@@ -201,7 +215,7 @@ export default function CommunityNotificationSettingsModal({ isOpen, onClose, on
                     </div>
                     {item.hasTestBtn && isOn && (
                       <button
-                        onClick={onTestChime}
+                        onClick={onTestChime || (() => playAlertChime("mention"))}
                         style={{
                           marginTop: 6,
                           padding: "3px 8px",

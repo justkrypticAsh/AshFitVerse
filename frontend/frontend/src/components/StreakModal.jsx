@@ -16,37 +16,44 @@ export default function StreakModal({
   T = {},
 }) {
   const navigate = useNavigate();
-  if (!isOpen) return null;
 
-  const now = new Date();
-  const todayStr = todayKey();
-  const hoursLeft = 23 - now.getHours();
-  const minsLeft = 59 - now.getMinutes();
+  const safeActiveDates = Array.isArray(activeDates) ? activeDates : [];
+  const numStreak = Number(streak) || 0;
 
-  // Formatted date string (e.g. Saturday, 19 September 2026)
-  const fullDateLabel = now.toLocaleDateString("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
-  const currentMonthName = now.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  // Generate Current Month's Real Calendar Matrix
-  const { calendarDays, activeCountThisMonth, daysElapsedThisMonth } = useMemo(() => {
+  // Generate Current Month's Real Calendar Matrix (Unconditional hook call)
+  const {
+    calendarDays,
+    activeCountThisMonth,
+    daysElapsedThisMonth,
+    fullDateLabel,
+    currentMonthName,
+    hoursLeft,
+    minsLeft,
+  } = useMemo(() => {
+    const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
-    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sun, 1 = Mon...
-    const startOffset = (firstDayIndex + 6) % 7; // Monday = 0, Sunday = 6
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const startOffset = (firstDayIndex + 6) % 7;
     const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
     const todayNum = now.getDate();
 
+    const fullDate = now.toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    const monthName = now.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const hLeft = Math.max(0, 23 - now.getHours());
+    const mLeft = Math.max(0, 59 - now.getMinutes());
+
     const days = [];
-    // Padding before 1st of month
     for (let i = 0; i < startOffset; i++) {
       days.push({ empty: true, key: `empty-${i}` });
     }
@@ -55,7 +62,7 @@ export default function StreakModal({
 
     for (let d = 1; d <= totalDaysInMonth; d++) {
       const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const isActive = activeDates.includes(dateKey);
+      const isActive = safeActiveDates.includes(dateKey);
       const isToday = d === todayNum;
       const isPast = d < todayNum;
       const isFuture = d > todayNum;
@@ -79,8 +86,15 @@ export default function StreakModal({
       calendarDays: days,
       activeCountThisMonth: activeThisMonth,
       daysElapsedThisMonth: todayNum,
+      fullDateLabel: fullDate,
+      currentMonthName: monthName,
+      hoursLeft: hLeft,
+      minsLeft: mLeft,
     };
-  }, [activeDates, now]);
+  }, [safeActiveDates]);
+
+  // If modal is not open, safely return null after all hooks have executed
+  if (!isOpen) return null;
 
   // Milestone goals
   const MILESTONES = [
@@ -92,10 +106,10 @@ export default function StreakModal({
     { days: 100, label: "100-Day Centurion Legend", icon: "🏆" },
   ];
 
-  const nextMilestone = MILESTONES.find((m) => m.days > streak) || MILESTONES[MILESTONES.length - 1];
-  const prevMilestoneDays = MILESTONES.filter((m) => m.days <= streak).pop()?.days || 0;
+  const nextMilestone = MILESTONES.find((m) => m.days > numStreak) || MILESTONES[MILESTONES.length - 1];
+  const prevMilestoneDays = MILESTONES.filter((m) => m.days <= numStreak).pop()?.days || 0;
   const milestoneRange = Math.max(1, nextMilestone.days - prevMilestoneDays);
-  const milestoneProgress = Math.min(100, Math.round(((streak - prevMilestoneDays) / milestoneRange) * 100));
+  const milestoneProgress = Math.min(100, Math.round(((numStreak - prevMilestoneDays) / milestoneRange) * 100));
 
   const monthConsistencyPct = Math.round(
     (activeCountThisMonth / Math.max(1, daysElapsedThisMonth)) * 100
@@ -516,7 +530,7 @@ export default function StreakModal({
                 Active Days
               </div>
               <div style={{ fontSize: 18, fontWeight: 900, color: "#f97316", marginTop: 2 }}>
-                {activeDates.length}
+                {safeActiveDates.length}
               </div>
             </div>
           </div>
