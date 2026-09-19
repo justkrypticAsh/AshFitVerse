@@ -52,16 +52,18 @@ export default function MobileAppShell({
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showOnboardModal, setShowOnboardModal] = useState(false);
 
-  // Auto trigger onboarding modal for new / incomplete profiles on mobile
+  // Auto trigger onboarding modal once for new / incomplete profiles on mobile
   React.useEffect(() => {
-    if (user && (!user.weight || !user.height || !user.age)) {
-      try {
-        const dismissed = sessionStorage.getItem("ashfitverse_onboarding_dismissed");
-        if (!dismissed) {
-          setShowOnboardModal(true);
-        }
-      } catch {}
-    }
+    if (!user) return;
+    try {
+      const alreadyPrompted = localStorage.getItem("ashfitverse_onboard_prompted") || sessionStorage.getItem("ashfitverse_onboarding_dismissed");
+      if (alreadyPrompted) return;
+
+      const profileIncomplete = !user.weight || !user.height || !user.age;
+      if (profileIncomplete) {
+        setShowOnboardModal(true);
+      }
+    } catch {}
   }, [user?.weight, user?.height, user?.age]);
 
   // Quick hydration tracker state (Defaults honestly to 0 ml if not logged today)
@@ -241,7 +243,13 @@ export default function MobileAppShell({
       {/* Onboarding & Profile Completion Modal for Mobile */}
       <OnboardingModal
         isOpen={showOnboardModal}
-        onClose={() => setShowOnboardModal(false)}
+        onClose={() => {
+          setShowOnboardModal(false);
+          try {
+            sessionStorage.setItem("ashfitverse_onboarding_dismissed", "true");
+            localStorage.setItem("ashfitverse_onboard_prompted", "true");
+          } catch {}
+        }}
         user={user}
         authUid={authUid}
         updateUser={updateUser}

@@ -145,7 +145,7 @@ export default function LandingPage() {
   const [iPhase,     setIPhase]     = useState(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
-      if (sp.get("skipIntro") === "true" || sessionStorage.getItem("ashfit_seen_intro")) {
+      if (sp.get("skipIntro") === "true") {
         return "done";
       }
     }
@@ -164,10 +164,14 @@ export default function LandingPage() {
   const videoRefs  = useRef({});
   useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
 
+  // Clean up any stale intro bypass flag
+  useEffect(() => {
+    try { sessionStorage.removeItem("ashfit_seen_intro"); } catch (_) {}
+  }, []);
+
   // Safe playback for intro videos & hero video
   useEffect(() => {
     if (iPhase === "done") {
-      try { sessionStorage.setItem("ashfit_seen_intro", "1"); } catch (_) {}
       Object.values(videoRefs.current).forEach((el) => {
         if (el) {
           try { el.pause(); } catch (_) {}

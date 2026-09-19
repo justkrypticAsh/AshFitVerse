@@ -148,16 +148,18 @@ export default function Dashboard() {
   const [selectedWorkoutLog, setSelectedWorkoutLog] = useState(null);
   const displayStreak = Math.max(Number(liveStreak) || 0, Number(user?.streak) || 0);
 
-  // Automatically trigger onboarding modal if user profile is incomplete and not dismissed for this session
+  // Automatically trigger onboarding modal once for new users with incomplete profiles
   useEffect(() => {
-    if (user && (!user.weight || !user.height || !user.age)) {
-      try {
-        const dismissed = sessionStorage.getItem("ashfitverse_onboarding_dismissed");
-        if (!dismissed) {
-          setShowOnboardModal(true);
-        }
-      } catch {}
-    }
+    if (!user) return;
+    try {
+      const alreadyPrompted = localStorage.getItem("ashfitverse_onboard_prompted") || sessionStorage.getItem("ashfitverse_onboarding_dismissed");
+      if (alreadyPrompted) return;
+
+      const profileIncomplete = !user.weight || !user.height || !user.age;
+      if (profileIncomplete) {
+        setShowOnboardModal(true);
+      }
+    } catch {}
   }, [user?.weight, user?.height, user?.age]);
 
   // Keep user profile streak synchronized with live computed streak from activities
@@ -364,7 +366,7 @@ export default function Dashboard() {
 
   const css = generateCSS(T, dark) + `
     .dr{min-height:100vh;display:flex;font-family:${FONT.body};background:${BG};color:${T.text};
-      opacity:${mounted?1:0};transition:opacity 0.7s ease,background 0.5s;}
+      opacity:1;transition:background 0.5s;}
 
     .o1{top:-18%;left:-10%;width:800px;height:800px;background:radial-gradient(circle,${dark?"rgba(79,142,247,0.07)":"rgba(200,170,120,0.10)"} 0%,transparent 65%);animation:oF1 24s ease-in-out infinite;}
     .o2{bottom:-20%;right:-12%;width:700px;height:700px;background:radial-gradient(circle,${dark?"rgba(167,139,250,0.06)":"rgba(180,145,100,0.08)"} 0%,transparent 65%);animation:oF2 30s ease-in-out infinite;}
@@ -404,7 +406,7 @@ export default function Dashboard() {
     }
 
     .sb-head{
-      padding:18px 16px 14px;
+      padding:18px 16px 14px;flex-shrink:0;
       display:flex;align-items:center;justify-content:space-between;
       border-bottom:1px solid ${dark ? "rgba(255,255,255,0.07)" : "#f1f5f9"};
     }
@@ -437,7 +439,7 @@ export default function Dashboard() {
 
     /* Athlete Telemetry Card */
     .sb-athlete-card{
-      margin:12px 12px 0;
+      margin:12px 12px 0;width:calc(100% - 24px);box-sizing:border-box;flex-shrink:0;
       padding:11px 12px;
       border-radius:16px;
       background:${dark ? "#0f1322" : "#f8fafc"};
@@ -504,7 +506,8 @@ export default function Dashboard() {
 
     /* Streak widget */
     .sb-streak-card{
-      margin:10px 12px 2px;padding:10px 12px;border-radius:14px;
+      margin:10px 12px 2px;width:calc(100% - 24px);box-sizing:border-box;flex-shrink:0;
+      padding:10px 12px;border-radius:14px;
       background:${dark ? "linear-gradient(135deg, rgba(249,115,22,0.14), rgba(234,88,12,0.06))" : "linear-gradient(135deg, #fff7ed, #ffedd5)"};
       border:1.5px solid ${dark ? "rgba(249,115,22,0.32)" : "#fed7aa"};
       display:flex;align-items:center;gap:10px;
@@ -552,13 +555,13 @@ export default function Dashboard() {
 
     /* Section titles */
     .sb-nav-section{
-      font-size:9.5px;font-weight:900;letter-spacing:0.16em;text-transform:uppercase;
+      flex-shrink:0;font-size:9.5px;font-weight:900;letter-spacing:0.16em;text-transform:uppercase;
       color:${dark ? T.textMuted : "#64748b"};padding:16px 16px 5px;
     }
 
     /* Nav items */
     .sb-nav-item{
-      display:flex;align-items:center;gap:11px;
+      flex-shrink:0;display:flex;align-items:center;gap:11px;
       margin:2px 8px;padding:9px 12px;border-radius:12px;
       cursor:pointer;font-size:13px;font-weight:600;
       color:${dark ? T.textSub : "#334155"};
@@ -601,7 +604,7 @@ export default function Dashboard() {
 
     /* Tool item */
     .sb-tool-item{
-      display:flex;align-items:center;gap:10px;
+      flex-shrink:0;display:flex;align-items:center;gap:10px;
       margin:1px 8px;padding:7.5px 12px;border-radius:10px;
       cursor:pointer;font-size:12.5px;font-weight:600;
       color:${dark ? T.textSub : "#475569"};
@@ -617,13 +620,14 @@ export default function Dashboard() {
     }
 
     .sb-divider{
-      height:1px;background:${dark ? "rgba(255,255,255,0.07)" : "#f1f5f9"};
+      flex-shrink:0;height:1px;background:${dark ? "rgba(255,255,255,0.07)" : "#f1f5f9"};
       margin:10px 14px;
     }
 
     /* Pro Upgrade Box */
     .sb-pro-box{
-      margin:10px 12px 6px;
+      flex-shrink:0;box-sizing:border-box;width:calc(100% - 24px);
+      margin:12px 12px 8px;
       padding:14px 14px 12px;
       border-radius:16px;
       background:${dark
@@ -648,25 +652,28 @@ export default function Dashboard() {
       font-size:11px;color:${dark ? T.textSub : "#64748b"};line-height:1.45;margin-bottom:10px;
     }
     .sb-pro-button{
-      width:100%;padding:8px 0;border-radius:10px;border:none;
+      width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;
+      padding:10px 14px;border-radius:10px;border:none;
       background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;
-      font-size:11.5px;font-weight:800;cursor:pointer;
+      font-size:12px;font-weight:800;font-family:inherit;cursor:pointer;
       box-shadow:0 3px 12px rgba(37,99,235,0.35);
-      transition:transform 0.16s ease;
+      transition:transform 0.16s ease, box-shadow 0.16s ease;
+      text-align:center;
     }
-    .sb-pro-button:hover{transform:translateY(-1px);}
+    .sb-pro-button:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,0.45);}
 
     /* Bottom logout / profile dock */
     .sb-dock{
-      display:flex;align-items:center;gap:8px;padding:8px 12px 0;margin-top:auto;
+      flex-shrink:0;box-sizing:border-box;width:calc(100% - 24px);margin:4px 12px 16px;padding:0;
+      display:flex;align-items:center;gap:8px;
     }
     .sb-dock-btn{
-      flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
-      padding:8px 10px;border-radius:11px;
+      flex:1;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;
+      padding:8.5px 10px;border-radius:11px;
       border:1px solid ${dark ? "rgba(255,255,255,0.09)" : "#e2e8f0"};
       background:${dark ? "rgba(255,255,255,0.04)" : "#f8fafc"};
       color:${dark ? T.textSub : "#475569"};font-size:12px;font-weight:700;
-      cursor:pointer;transition:all 0.16s ease;
+      font-family:inherit;cursor:pointer;transition:all 0.16s ease;
     }
     .sb-dock-btn:hover{
       color:${dark ? "#f8fafc" : "#0f172a"};
@@ -1265,21 +1272,6 @@ export default function Dashboard() {
       </div>
     );
   };
-
-  if (loading) return (
-    <>
-      <style>{css}</style>
-      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:BG}}>
-        <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:FONT.display,fontSize:22,fontWeight:800,color:T.text,marginBottom:16}}>
-            AshFit<span style={{color:T.accent}}>Verse</span>
-          </div>
-          <div style={{width:36,height:36,border:`3px solid ${GB_BORDER}`,borderTopColor:T.accent,borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto"}}/>
-          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-        </div>
-      </div>
-    </>
-  );
 
   const profileIncomplete = !user.weight || !user.height || !user.age;
 
@@ -2546,8 +2538,8 @@ export default function Dashboard() {
         streak={displayStreak}
         activeDates={activeDates}
         isTodayActive={isTodayActive}
-        totalWorkouts={workouts.length}
-        totalMeals={meals.length}
+        totalWorkouts={workouts?.length || 0}
+        totalMeals={meals?.length || 0}
         dark={dark}
         T={T}
       />
@@ -2555,7 +2547,13 @@ export default function Dashboard() {
       {/* Real-time Executive Onboarding & Profile Setup Modal for new / incomplete users */}
       <OnboardingModal
         isOpen={showOnboardModal}
-        onClose={() => setShowOnboardModal(false)}
+        onClose={() => {
+          setShowOnboardModal(false);
+          try {
+            sessionStorage.setItem("ashfitverse_onboarding_dismissed", "true");
+            localStorage.setItem("ashfitverse_onboard_prompted", "true");
+          } catch {}
+        }}
         user={user}
         authUid={authUid}
         updateUser={updateUser}
