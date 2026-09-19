@@ -14,6 +14,10 @@ import AthleteProfileModal from "../../components/AthleteProfileModal";
 import EditAthleteModal from "../../components/EditAthleteModal";
 import PostCreatorModal from "../../components/PostCreatorModal";
 import ArticleReaderModal from "../../components/ArticleReaderModal";
+import CommunityNotificationToast from "../../components/CommunityNotificationToast";
+import CommunityNotificationSettingsModal from "../../components/CommunityNotificationSettingsModal";
+import ImageLightboxModal from "../../components/ImageLightboxModal";
+import useCommunityUnread from "../../hooks/useCommunityUnread";
 import {
   DEFAULT_CHALLENGES,
   CHALLENGE_STORAGE_KEY,
@@ -28,7 +32,7 @@ import {
   Image as ImageIcon, Video, BookOpen, Award, Moon, Sun,
   Heart, Share2, MoreHorizontal, Check, X, Shield, ArrowLeft,
   Send, Filter, Sparkles, MessageCircle, Flame, Dumbbell,
-  Zap, Star, TrendingUp
+  Zap, Star, TrendingUp, Bell
 } from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -269,6 +273,9 @@ export default function Community() {
 
   const chatEndRef = useRef(null);
   const myUid = auth.currentUser?.uid || user?.uid || (typeof localStorage !== "undefined" ? localStorage.getItem("ashfitverse_uid") : "guest_athlete");
+  const { incomingMessageToast, dismissToast, playMessageChime } = useCommunityUnread(myUid);
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [showNotifSettingsModal, setShowNotifSettingsModal] = useState(false);
   const unreadDMs = convList.reduce((a, c) => a + (c.unread || 0), 0);
   const unreadN = notifs.filter((n) => !n.read).length;
 
@@ -935,7 +942,8 @@ export default function Community() {
       display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
       gap:16px;padding:12px 24px;box-sizing:border-box;
     }
-    .cm-header-left{display:flex;align-items:center;gap:14px;justify-self:start;}
+    .cm-header-top-row{display:flex;align-items:center;justify-self:start;}
+    .cm-header-left{display:flex;align-items:center;gap:14px;}
     .cm-back-btn{
       display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:11px;
       border:1px solid ${dark?GB_BORDER:"#e2e8f0"};background:${dark?"rgba(255,255,255,0.05)":"#ffffff"};
@@ -1181,9 +1189,19 @@ export default function Community() {
 
     .post-body{font-size:14.5px;line-height:1.65;color:${dark?T.text:"#0f172a"};margin-bottom:16px;white-space:pre-line;font-weight:500;}
 
-    /* Media views */
-    .post-media-container{border-radius:18px;overflow:hidden;margin-bottom:16px;background:rgba(0,0,0,0.25);position:relative;border:1.5px solid ${GB_BORDER};}
-    .post-media-img{width:100%;max-height:480px;object-fit:cover;display:block;cursor:pointer;}
+    /* Media views - Aspect Ratio Containment (No Cropping on Phone or Laptop) */
+    .post-media-container{
+      border-radius:18px;overflow:hidden;margin-bottom:16px;
+      background:${dark ? "#05070f" : "#f1f5f9"};position:relative;
+      border:1.5px solid ${GB_BORDER};display:flex;align-items:center;justify-content:center;
+      max-height:500px;box-sizing:border-box;
+    }
+    .post-media-img{
+      width:100%;height:auto;max-height:480px;object-fit:contain;
+      display:block;cursor:pointer;margin:0 auto;
+      transition:transform 0.2s ease;
+    }
+    .post-media-img:hover{transform:scale(1.01);}
     .post-media-video{width:100%;max-height:480px;display:block;}
 
     /* Blog Card View */
@@ -1319,122 +1337,223 @@ export default function Community() {
     .online-user-item:last-child{border-bottom:none;}
     .online-user-item:hover .oui-name{color:${T.accent};}
 
-    /* Mobile Floating Bottom Navigation Dock — Hidden on Desktop */
-    .mobile-bottom-dock{display:none !important;}
+    .cm-header-mobile-actions{display:none;}
+    .cm-mobile-search-row{display:none;}
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-    
+
     @media(max-width:900px){
+      .cm-header{
+        position:sticky;top:0;z-index:50;
+      }
       .cm-header-inner{
         display:flex !important;
         flex-direction:column !important;
         align-items:stretch !important;
-        gap:10px !important;
-        padding:12px 14px !important;
+        gap:8px !important;
+        padding:10px 14px 8px !important;
+      }
+      .cm-header-top-row{
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        width:100% !important;
       }
       .cm-header-left{
+        width:auto !important;
+        gap:10px !important;
+      }
+      .cm-back-btn{
+        padding:6px 10px !important;
+        font-size:12px !important;
+      }
+      .cm-brand-title{
+        font-size:17px !important;
+      }
+      .cm-brand-badge{
+        display:none !important;
+      }
+      .cm-header-mobile-actions{
+        display:flex !important;
+        align-items:center !important;
+        gap:8px !important;
+      }
+      .cm-header-right{
+        display:none !important;
+      }
+      .cm-mobile-search-row{
+        display:flex !important;
         width:100% !important;
-        justify-content:space-between !important;
+        margin-top:2px !important;
       }
       .cm-nav-tabs{
         width:100% !important;
-        overflow-x:auto !important;
-        -webkit-overflow-scrolling:touch !important;
-        scrollbar-width:none !important;
-        justify-content:flex-start !important;
-        padding:4px 6px !important;
-      }
-      .cm-nav-tabs::-webkit-scrollbar{display:none;}
-      .cm-nav-pill{
-        flex-shrink:0 !important;
-        padding:7px 12px !important;
-        font-size:12px !important;
-      }
-      .cm-header-right{
-        width:100% !important;
+        display:flex !important;
         justify-content:space-between !important;
-        gap:8px !important;
-        flex-wrap:wrap !important;
+        padding:3px !important;
+        border-radius:12px !important;
+        gap:3px !important;
+        box-sizing:border-box !important;
       }
-      .cm-search-wrapper{
-        flex:1 1 120px !important;
-        min-width:100px !important;
-      }
-      .cm-search-input{
-        width:100% !important;
-      }
-      .cm-search-input:focus{
-        width:100% !important;
-      }
-      .cm-create-post-btn{
-        padding:8px 12px !important;
-        font-size:11.5px !important;
-      }
-      .cm-edit-profile-btn{
-        padding:6px 10px !important;
-        font-size:11.5px !important;
-      }
-      .cm-ep-label{
-        display:none !important;
+      .cm-nav-pill{
+        flex:1 !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        gap:5px !important;
+        padding:7px 4px !important;
+        font-size:12px !important;
+        font-weight:750 !important;
+        border-radius:9px !important;
+        font-family:${FONT.display} !important;
       }
       .cm-body{
         grid-template-columns:1fr !important;
-        padding:16px 14px 110px !important;
-        gap:18px !important;
+        padding:12px 14px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+        gap:14px !important;
+        box-sizing:border-box !important;
       }
       .cm-body>div:first-child{
         order:1 !important;
+        min-width:0 !important;
+        width:100% !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
+        overflow-x:hidden !important;
       }
-      .cm-body>div:last-child{
+      .cm-sidebar{
         order:2 !important;
-        margin-top:8px !important;
+        margin-top:6px !important;
+        min-width:0 !important;
+        width:100% !important;
+        box-sizing:border-box !important;
       }
       .cm-hero{
-        padding:20px 16px !important;
+        padding:16px 14px !important;
         border-radius:18px !important;
+        margin-bottom:14px !important;
       }
       .cm-hero-title{
-        font-size:22px !important;
+        font-size:19px !important;
+        line-height:1.25 !important;
+        margin-bottom:6px !important;
+      }
+      .cm-hero-desc{
+        font-size:12px !important;
+        line-height:1.45 !important;
+        margin-bottom:12px !important;
+        display:-webkit-box !important;
+        -webkit-line-clamp:2 !important;
+        -webkit-box-orient:vertical !important;
+        overflow:hidden !important;
+      }
+      .cm-hero-metrics{
+        display:grid !important;
+        grid-template-columns:1fr 1fr !important;
+        gap:8px !important;
+      }
+      .cm-hm-item{
+        padding:8px 10px !important;
+        font-size:11.5px !important;
+        border-radius:10px !important;
+      }
+      .cm-composer-trigger{
+        padding:14px 14px !important;
+        border-radius:18px !important;
+        margin-bottom:14px !important;
+      }
+      .cm-ct-top{
+        gap:10px !important;
+        margin-bottom:12px !important;
+      }
+      .cm-ct-publish-btn{
+        padding:8px 12px !important;
+        font-size:11.5px !important;
+      }
+      .cm-ct-shortcuts{
+        display:grid !important;
+        grid-template-columns:1fr 1fr !important;
+        gap:8px !important;
+      }
+      .cm-ct-shortcut-btn{
+        justify-content:center !important;
+        padding:8px 8px !important;
+        font-size:11.5px !important;
+        border-radius:9px !important;
+      }
+      .feed-filter-bar{
+        padding:12px 14px !important;
+        border-radius:16px !important;
+        margin-bottom:14px !important;
+      }
+      .ff-chips-row{
+        gap:6px !important;
+        padding-bottom:2px !important;
+      }
+      .ff-chip{
+        padding:6px 11px !important;
+        font-size:11.5px !important;
       }
       .post-card{
-        padding:18px 16px !important;
+        box-sizing:border-box !important;
+        width:100% !important;
+        max-width:100% !important;
+        overflow:hidden !important;
+        word-break:break-word !important;
+        padding:16px 14px !important;
+        border-radius:18px !important;
+        margin-bottom:14px !important;
+      }
+      .post-media-container{
+        border-radius:14px !important;
+        max-height:380px !important;
+        width:100% !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
+        background:${dark ? "#04060c" : "#f1f5f9"} !important;
+      }
+      .post-media-img{
+        max-height:360px !important;
+        object-fit:contain !important;
+        width:100% !important;
+        height:auto !important;
+      }
+      .post-body{
+        font-size:13.5px !important;
+        line-height:1.55 !important;
+      }
+      .act-btn{
+        padding:6px 10px !important;
+        font-size:11.5px !important;
+        border-radius:9px !important;
+      }
+      .chat-container{
+        height:calc(100dvh - 185px) !important;
+        min-height:420px !important;
         border-radius:18px !important;
       }
-      
-      /* Mobile Floating Bottom Navigation Dock */
-      .mobile-bottom-dock{
-        position:fixed;bottom:14px;left:14px;right:14px;z-index:998;
-        display:flex !important;align-items:center;justify-content:space-around;
-        padding:7px 8px;border-radius:22px;
-        background:${dark ? "rgba(15,17,26,0.92)" : "rgba(255,255,255,0.94)"};
-        backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
-        border:1px solid ${dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"};
-        box-shadow:0 12px 36px rgba(0,0,0,${dark ? "0.55" : "0.15"});
+      .chat-topbar{
+        padding:10px 14px !important;
       }
-      .mbd-item{
-        display:flex;flex-direction:column;align-items:center;justify-content:center;
-        gap:3px;background:none;border:none;cursor:pointer;
-        padding:6px 12px;border-radius:14px;transition:all 0.18s ease;
-        color:${dark ? "#94a3b8" : "#64748b"};
-        font-family:${FONT.body};
+      .chat-messages-scroll{
+        padding:14px !important;
+        gap:8px !important;
       }
-      .mbd-item.active{
-        color:${T.accent};
-        background:${dark ? "rgba(79,142,247,0.16)" : "rgba(79,142,247,0.10)"};
+      .chat-input-row{
+        padding:10px 12px !important;
       }
-      .mbd-icon{font-size:18px;line-height:1;}
-      .mbd-lbl{font-size:10px;font-weight:750;letter-spacing:0.01em;}
-    }
-
-    @media(max-width:480px){
-      .cm-header-right{
-        gap:6px !important;
+      .mem-grid{
+        grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)) !important;
+        gap:10px !important;
       }
-      .cm-create-post-btn span{
-        display:none !important;
+      .mem-card{
+        padding:14px !important;
+        border-radius:16px !important;
       }
-      .cm-create-post-btn{
-        padding:8px !important;
+      .side-card{
+        padding:16px !important;
+        border-radius:18px !important;
+        margin-bottom:14px !important;
       }
     }
   `;
@@ -1451,17 +1570,78 @@ export default function Community() {
         {/* ── UNIFIED EXECUTIVE HEADER ── */}
         <header className="cm-header">
           <div className="cm-header-inner">
-            {/* Left: Back to Dashboard + Brand */}
-            <div className="cm-header-left">
-              <button className="cm-back-btn" onClick={() => navigate("/dashboard")} title="Back to Dashboard">
-                <ArrowLeft size={15} />
-                <span>Dashboard</span>
-              </button>
-              <div className="cm-brand">
-                <div className="cm-brand-title">
-                  AshFit<span>Verse</span>
+            {/* Top Row: Left Brand + Mobile Action Controls */}
+            <div className="cm-header-top-row">
+              <div className="cm-header-left">
+                <button className="cm-back-btn" onClick={() => navigate("/dashboard")} title="Back to Dashboard">
+                  <ArrowLeft size={15} />
+                  <span>Dashboard</span>
+                </button>
+                <div className="cm-brand">
+                  <div className="cm-brand-title">
+                    AshFit<span>Verse</span>
+                  </div>
+                  <span className="cm-brand-badge">COMMUNITY</span>
                 </div>
-                <span className="cm-brand-badge">COMMUNITY</span>
+              </div>
+
+              {/* Mobile Quick Action Buttons (<= 900px only) */}
+              <div className="cm-header-mobile-actions">
+                <button
+                  className="cm-mobile-post-btn"
+                  onClick={() => {
+                    setCreatorFormat("photo");
+                    setCreatorCategory("workout");
+                    setShowPostCreator(true);
+                  }}
+                  title="Create Post"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "6px 11px",
+                    borderRadius: 10,
+                    background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                    color: "#fff",
+                    border: "none",
+                    fontSize: 12,
+                    fontWeight: 750,
+                    cursor: "pointer",
+                    boxShadow: "0 2px 8px rgba(59,130,246,0.35)",
+                  }}
+                >
+                  <Plus size={14} strokeWidth={2.5} />
+                  <span>Post</span>
+                </button>
+                <button
+                  className="cm-mobile-notif-btn"
+                  onClick={() => setShowNotifSettingsModal(true)}
+                  title="Notification Settings"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9,
+                    border: `1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"}`,
+                    background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                    color: dark ? "#f8fafc" : "#1e293b",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Bell size={14} />
+                </button>
+                <button className="cm-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
+                  {dark ? <Moon size={15} /> : <Sun size={15} />}
+                </button>
+                <div
+                  style={{ cursor: "pointer", position: "relative" }}
+                  onClick={() => setSelectedAthlete(user)}
+                  title="View your athlete profile"
+                >
+                  <Avatar src={user?.avatar} name={user?.name} size={32} />
+                </div>
               </div>
             </div>
 
@@ -1545,6 +1725,27 @@ export default function Community() {
                 <span className="cm-ep-label">Edit Profile</span>
               </button>
 
+              <button
+                className="cm-notif-btn"
+                onClick={() => setShowNotifSettingsModal(true)}
+                title="Community Notification Settings"
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 11,
+                  border: `1px solid ${dark ? GB_BORDER : "#e2e8f0"}`,
+                  background: dark ? "rgba(255,255,255,0.05)" : "#ffffff",
+                  color: dark ? T.textSub : "#334155",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.16s ease",
+                }}
+              >
+                <Bell size={16} />
+              </button>
+
               <button className="cm-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
                 {dark ? <Moon size={15} /> : <Sun size={15} />}
               </button>
@@ -1582,11 +1783,11 @@ export default function Community() {
                   <div className="cm-hero-metrics">
                     <div className="cm-hm-item">
                       <Zap size={14} color="#3b82f6" />
-                      <div>1,840+ <span>Workouts Logged</span></div>
+                      <div>{posts.length} <span>Posts Shared</span></div>
                     </div>
                     <div className="cm-hm-item">
                       <Flame size={14} color="#f97316" />
-                      <div>340+ <span>Active Streaks</span></div>
+                      <div>{members.length} <span>Athletes Joined</span></div>
                     </div>
                     <div className="cm-hm-item">
                       <span className="cm-pulse-dot" />
@@ -1820,7 +2021,8 @@ export default function Community() {
                                   alt="Community post media"
                                   className="post-media-img"
                                   loading="lazy"
-                                  onClick={() => window.open(p.mediaUrl, "_blank")}
+                                  onClick={() => setLightboxImage(p.mediaUrl)}
+                                  title="Tap to view full resolution"
                                 />
                               </div>
                             )}
@@ -2606,11 +2808,11 @@ export default function Community() {
             style={{
               position: "fixed",
               inset: 0,
-              zIndex: 9999,
+              zIndex: 10005,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "rgba(0,0,0,0.7)",
+              background: "rgba(0,0,0,0.75)",
               backdropFilter: "blur(10px)",
               padding: 16,
             }}
@@ -2621,9 +2823,13 @@ export default function Community() {
                 background: dark ? "#0a0d18" : "#fff",
                 border: `1px solid ${T.glassBorder}`,
                 borderRadius: 20,
-                padding: 24,
-                width: 340,
+                padding: 22,
+                width: "100%",
+                maxWidth: 360,
+                maxHeight: "85vh",
+                overflowY: "auto",
                 color: T.text,
+                boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
               }}
             >
               {reportSent ? (
@@ -2685,11 +2891,11 @@ export default function Community() {
             style={{
               position: "fixed",
               inset: 0,
-              zIndex: 9999,
+              zIndex: 10005,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "rgba(0,0,0,0.7)",
+              background: "rgba(0,0,0,0.75)",
               backdropFilter: "blur(10px)",
               padding: 16,
             }}
@@ -2700,9 +2906,13 @@ export default function Community() {
                 background: dark ? "#0a0d18" : "#fff",
                 border: `1px solid ${T.glassBorder}`,
                 borderRadius: 24,
-                padding: 26,
-                width: 440,
+                padding: "24px 20px",
+                width: "100%",
+                maxWidth: 440,
+                maxHeight: "88vh",
+                overflowY: "auto",
                 color: T.text,
+                boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
               }}
             >
               <h3 style={{ margin: "0 0 6px", fontFamily: FONT.display, fontSize: 18, fontWeight: 800 }}>
@@ -3103,49 +3313,24 @@ export default function Community() {
           </div>
         )}
 
-        {/* Mobile Floating Bottom Navigation Dock */}
-        <div className="mobile-bottom-dock">
-          <button
-            className="mbd-item"
-            onClick={() => navigate("/dashboard")}
-            aria-label="Dashboard"
-          >
-            <span className="mbd-icon">🏠</span>
-            <span className="mbd-lbl">Home</span>
-          </button>
-          <button
-            className="mbd-item active"
-            onClick={() => { setActiveTab("feed"); setSearchParams({ tab: "feed" }); }}
-            aria-label="Community"
-          >
-            <span className="mbd-icon">👥</span>
-            <span className="mbd-lbl">Community</span>
-          </button>
-          <button
-            className="mbd-item"
-            onClick={() => navigate("/workout-logger")}
-            aria-label="Workouts"
-          >
-            <span className="mbd-icon">🏋️</span>
-            <span className="mbd-lbl">Workouts</span>
-          </button>
-          <button
-            className="mbd-item"
-            onClick={() => navigate("/diet-logger")}
-            aria-label="Diet"
-          >
-            <span className="mbd-icon">🥗</span>
-            <span className="mbd-lbl">Diet</span>
-          </button>
-          <button
-            className="mbd-item"
-            onClick={() => setSelectedAthlete(user)}
-            aria-label="Profile"
-          >
-            <span className="mbd-icon">👤</span>
-            <span className="mbd-lbl">Profile</span>
-          </button>
-        </div>
+        {/* Real-Time Incoming Message Toast */}
+        <CommunityNotificationToast toast={incomingMessageToast} onDismiss={dismissToast} />
+
+        {/* Community Notification Settings Modal */}
+        <CommunityNotificationSettingsModal
+          isOpen={showNotifSettingsModal}
+          onClose={() => setShowNotifSettingsModal(false)}
+          onTestChime={playMessageChime}
+          dark={dark}
+          T={T}
+        />
+
+        {/* Fullscreen Photo Lightbox Modal */}
+        <ImageLightboxModal
+          isOpen={Boolean(lightboxImage)}
+          imageUrl={lightboxImage}
+          onClose={() => setLightboxImage(null)}
+        />
       </div>
     </>
   );

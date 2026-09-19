@@ -15,6 +15,7 @@ export default function MobileHomeScreen({
   weights,
   todayWorkouts,
   todayMeals,
+  mealGroups,
   activeChallenges,
   handleDashboardCheckIn,
   workoutPlan,
@@ -56,6 +57,15 @@ export default function MobileHomeScreen({
   const waterTarget = 3000; // 3 Liters
   const currentWater = Number(waterMl) || 0;
   const waterPct = Math.min(Math.round((currentWater / waterTarget) * 100), 100);
+
+  // Daily protocol checklist calculation
+  const dailyProtocolItems = [
+    { label: "Morning Hydration", sub: `${currentWater} / 1000 ml`, done: currentWater >= 1000, path: null },
+    { label: "Workout Logged", sub: todayWorkouts?.length ? "Completed ✓" : "Log session", done: (todayWorkouts?.length || 0) > 0, path: "/workout-logger" },
+    { label: "Daily Fuel", sub: consumed > 0 ? `${consumed} kcal` : "Log meals", done: consumed > 0, path: "/diet-logger" },
+    { label: "Stats & Profile", sub: latestWeight ? `${latestWeight} kg` : "Weigh in", done: Boolean(latestWeight), path: null },
+  ];
+  const dailyCompletedCount = dailyProtocolItems.filter((i) => i.done).length;
 
   // Today's primary routine
   const primaryWorkout = Array.isArray(workoutPlan) && workoutPlan.length > 0
@@ -125,6 +135,71 @@ export default function MobileHomeScreen({
         >
           <span>🔥</span> {displayStreak || 1}d Streak
         </button>
+      </div>
+
+      {/* ── Daily Protocol Checklist (Interactive Accountability) ── */}
+      <div
+        className="mob-card"
+        style={{
+          background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+          border: `1px solid ${dark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)"}`,
+          padding: "16px 18px",
+          margin: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ fontSize: 15 }}>🎯</span>
+            <span style={{ fontFamily: "var(--mobile-font-display)", fontSize: 14, fontWeight: 800, color: dark ? "#f8fafc" : "#0f172a" }}>
+              Daily Protocol
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              padding: "2px 8px",
+              borderRadius: 8,
+              background: dailyCompletedCount === dailyProtocolItems.length ? "rgba(34, 197, 94, 0.15)" : "rgba(59, 130, 246, 0.15)",
+              color: dailyCompletedCount === dailyProtocolItems.length ? "#22c55e" : "#3b82f6",
+            }}
+          >
+            {dailyCompletedCount} / {dailyProtocolItems.length} Done
+          </span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {dailyProtocolItems.map((item) => (
+            <div
+              key={item.label}
+              onClick={() => item.path && navigate(item.path)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 10px",
+                borderRadius: 12,
+                background: item.done
+                  ? (dark ? "rgba(34, 197, 94, 0.1)" : "rgba(34, 197, 94, 0.08)")
+                  : (dark ? "rgba(255, 255, 255, 0.025)" : "rgba(0, 0, 0, 0.02)"),
+                border: item.done
+                  ? "1px solid rgba(34, 197, 94, 0.3)"
+                  : `1px solid ${dark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)"}`,
+                cursor: item.path ? "pointer" : "default",
+              }}
+            >
+              <span style={{ fontSize: 13 }}>{item.done ? "✅" : "⭕"}</span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 750, color: item.done ? (dark ? "#4ade80" : "#16a34a") : (dark ? "#e2e8f0" : "#334155"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {item.label}
+                </div>
+                <div style={{ fontSize: 9.5, color: dark ? "#94a3b8" : "#64748b" }}>
+                  {item.sub}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Daily Energy & Fuel Card (Apple Fitness Style) ── */}
@@ -202,6 +277,74 @@ export default function MobileHomeScreen({
             </div>
             <div style={{ fontSize: 10, color: dark ? "#64748b" : "#94a3b8" }}>Target: {fTarget}g</div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Today's Meals Breakdown Card ── */}
+      <div
+        className="mob-card"
+        style={{
+          background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+          border: `1px solid ${dark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)"}`,
+          padding: "16px 18px",
+          margin: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ fontSize: 15 }}>🥗</span>
+            <span style={{ fontFamily: "var(--mobile-font-display)", fontSize: 14, fontWeight: 800, color: dark ? "#f8fafc" : "#0f172a" }}>
+              Today's Meals
+            </span>
+          </div>
+          <button
+            onClick={() => navigate("/diet-logger")}
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              padding: "3px 9px",
+              borderRadius: 8,
+              border: "none",
+              background: "rgba(16, 185, 129, 0.15)",
+              color: "#10b981",
+              cursor: "pointer",
+            }}
+          >
+            + Log Food
+          </button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {[
+            { name: "Breakfast", icon: "🌅", cal: mealGroups?.breakfast?.reduce((s, m) => s + (Number(m.calories) || 0), 0) || 0, count: mealGroups?.breakfast?.length || 0 },
+            { name: "Lunch", icon: "☀️", cal: mealGroups?.lunch?.reduce((s, m) => s + (Number(m.calories) || 0), 0) || 0, count: mealGroups?.lunch?.length || 0 },
+            { name: "Dinner", icon: "🌆", cal: mealGroups?.dinner?.reduce((s, m) => s + (Number(m.calories) || 0), 0) || 0, count: mealGroups?.dinner?.length || 0 },
+            { name: "Snacks", icon: "🍎", cal: mealGroups?.snacks?.reduce((s, m) => s + (Number(m.calories) || 0), 0) || 0, count: mealGroups?.snacks?.length || 0 },
+          ].map((slot) => (
+            <div
+              key={slot.name}
+              onClick={() => navigate("/diet-logger")}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 14,
+                background: dark ? "rgba(255, 255, 255, 0.025)" : "rgba(0, 0, 0, 0.015)",
+                border: `1px solid ${dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)"}`,
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                <span style={{ fontSize: 11, color: dark ? "#94a3b8" : "#64748b", fontWeight: 700 }}>
+                  {slot.icon} {slot.name}
+                </span>
+                <span style={{ fontSize: 9.5, color: dark ? "#64748b" : "#94a3b8" }}>
+                  {slot.count > 0 ? `${slot.count} item` : "Empty"}
+                </span>
+              </div>
+              <div style={{ fontFamily: "var(--mobile-font-mono)", fontSize: 15, fontWeight: 800, color: slot.cal > 0 ? "#10b981" : (dark ? "#94a3b8" : "#64748b") }}>
+                {slot.cal} <span style={{ fontSize: 10, fontWeight: 600 }}>kcal</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -434,6 +577,76 @@ export default function MobileHomeScreen({
             </div>
           </div>
         )}
+      </div>
+
+      {/* ── Quick Fitness Tools & Apps Hub (1-Tap Access) ── */}
+      <div
+        className="mob-card"
+        style={{
+          background: dark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+          border: `1px solid ${dark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)"}`,
+          padding: "16px 18px",
+          margin: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ fontSize: 15 }}>⚡</span>
+            <span style={{ fontFamily: "var(--mobile-font-display)", fontSize: 14, fontWeight: 800, color: dark ? "#f8fafc" : "#0f172a" }}>
+              Fitness Tools & Apps
+            </span>
+          </div>
+          <span style={{ fontSize: 10.5, color: dark ? "#94a3b8" : "#64748b" }}>1-Tap Access</span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {[
+            { name: "Workout Planner", sub: "Custom routines", icon: "📋", color: "#3b82f6", path: "/workout-planner" },
+            { name: "Diet Plan", sub: "Macro programs", icon: "🍱", color: "#10b981", path: "/diet-plan" },
+            { name: "Body Fat Calc", sub: "Navy method", icon: "📊", color: "#a855f7", path: "/fat-calculator" },
+            { name: "Wellness Shop", sub: "Gear & nutrition", icon: "🛒", color: "#f59e0b", path: "/shop" },
+          ].map((tool) => (
+            <div
+              key={tool.name}
+              onClick={() => navigate(tool.path)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 12px",
+                borderRadius: 14,
+                background: dark ? "rgba(255, 255, 255, 0.025)" : "rgba(0, 0, 0, 0.015)",
+                border: `1px solid ${dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)"}`,
+                cursor: "pointer",
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  background: `${tool.color}15`,
+                  color: tool.color,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16,
+                  flexShrink: 0,
+                }}
+              >
+                {tool.icon}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontFamily: "var(--mobile-font-display)", fontSize: 12, fontWeight: 800, color: dark ? "#f8fafc" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {tool.name}
+                </div>
+                <div style={{ fontSize: 10, color: dark ? "#94a3b8" : "#64748b" }}>
+                  {tool.sub}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Active Habit Challenge (Only shown if genuinely active) ── */}

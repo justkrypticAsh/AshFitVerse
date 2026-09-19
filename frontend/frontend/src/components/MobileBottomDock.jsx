@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useTheme from "../hooks/usetheme";
 import useIsMobile from "../hooks/useIsMobile";
+import useCommunityUnread from "../hooks/useCommunityUnread";
 import { FONT } from "../theme";
 
 export default function MobileBottomDock() {
@@ -10,6 +11,7 @@ export default function MobileBottomDock() {
   const location = useLocation();
   const isMobile = useIsMobile(840);
   const { dark, T } = useTheme();
+  const { hasCommunityUpdate } = useCommunityUnread();
 
   // Hide dock on public and onboarding routes
   const publicRoutes = ["/", "/login", "/signup", "/onboarding"];
@@ -65,7 +67,7 @@ export default function MobileBottomDock() {
         right: 14,
         height: 60,
         borderRadius: 24,
-        zIndex: 9999,
+        zIndex: 990,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-around",
@@ -118,16 +120,33 @@ export default function MobileBottomDock() {
               outline: "none",
             }}
           >
-            <span
-              style={{
-                fontSize: 18,
-                lineHeight: 1,
-                transform: active ? "translateY(-1px) scale(1.08)" : "none",
-                transition: "transform 0.2s cubic-bezier(0.2, 0, 0, 1)",
-              }}
-            >
-              {tab.icon}
-            </span>
+            <div style={{ position: "relative", display: "inline-flex" }}>
+              <span
+                style={{
+                  fontSize: 18,
+                  lineHeight: 1,
+                  transform: active ? "translateY(-1px) scale(1.08)" : "none",
+                  transition: "transform 0.2s cubic-bezier(0.2, 0, 0, 1)",
+                  display: "block",
+                }}
+              >
+                {tab.icon}
+              </span>
+              {tab.id === "squad" && hasCommunityUpdate && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -5,
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: "#3b82f6",
+                    boxShadow: "0 0 6px rgba(59, 130, 246, 0.9)",
+                  }}
+                />
+              )}
+            </div>
             <span
               style={{
                 fontSize: 10,

@@ -155,6 +155,8 @@ export default function MobileAppShell({
           activeChallenges={activeChallenges}
           handleDashboardCheckIn={handleDashboardCheckIn}
           workoutPlan={workoutPlan}
+          mealGroups={mealGroups}
+          authUid={authUid}
           isFemale={isFemale}
           isMale={isMale}
           getCycleDay={getCycleDay}
@@ -168,6 +170,9 @@ export default function MobileAppShell({
           waterMl={waterMl}
         />
       </main>
+
+      {/* Real-time Incoming Message Toast */}
+      <CommunityNotificationToast toast={incomingMessageToast} onDismiss={dismissToast} />
 
       {/* ── Center Action Bottom Sheet ── */}
       <MobileActionSheet

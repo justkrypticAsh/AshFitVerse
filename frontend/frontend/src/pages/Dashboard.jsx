@@ -26,6 +26,8 @@ import {
 } from "../config/challengesConfig";
 import useIsMobile from "../hooks/useIsMobile";
 import MobileAppShell from "../mobile/MobileAppShell";
+import useCommunityUnread from "../hooks/useCommunityUnread";
+import CommunityNotificationToast from "../components/CommunityNotificationToast";
 
 // ─── Workout plans ────────────────────────────────────────────────────────────
 function getWorkouts(goal, equipment) {
@@ -127,6 +129,7 @@ const SLANGS = [
 export default function Dashboard() {
   const navigate  = useNavigate();
   const isMobile  = useIsMobile(840);
+  const { hasCommunityUpdate, incomingMessageToast, dismissToast } = useCommunityUnread(authUid);
   const { dark, toggleTheme, T } = useTheme();
   const { user, authUid, clearUser, loading, isMale, isFemale, bmi, calorieTarget, getCycleDay, getPhaseName, isPro, isAdmin, updateUser } = useUser();
   const { ready: logsReady, weeklyWeight, calData, todayCalories, todayBurned, todayNetCalories, todayMacros, mealGroups, streak: liveStreak, activeDates = [], isTodayActive = false, workouts, weights, todayWorkouts, todayMeals, meals } = useUserLogs(authUid);
@@ -286,10 +289,10 @@ export default function Dashboard() {
   const timeLabel  = now.toLocaleTimeString("en-IN", { hour:"numeric", minute:"2-digit", hour12:true });
   const goalLabel  = user.goal?.replace(/_/g," ") || "General fitness";
 
-  // Sidebar nav — "Community" → "FitVerse"
+  // Sidebar nav — "Community" → "FitVerse" (Real-time dynamic pulse dot, zero false badge)
   const NAV_MAIN = [
     { label:"Dashboard", icon:"⊞", path:null },
-    { label:"FitVerse",  icon:"◎", path:"/community", badge:"3" },
+    { label:"FitVerse",  icon:"◎", path:"/community", hasDot: hasCommunityUpdate },
     ...(isFemale?[{label:"Women's Health",icon:"♀",path:"/female-health",color:"#f472b6"}]:[]),
     ...(isMale  ?[{label:"Men's Health",  icon:"♂",path:"/male-health",  color:"#4f8ef7"}]:[]),
     ...(isAdmin ?[{label:"Admin Console", icon:"🛡️",path:"/admin", badge:"ADMIN", color:"#38bdf8"}]:[]),
@@ -548,6 +551,15 @@ export default function Dashboard() {
     .sb-nav-badge{
       padding:2px 7px;border-radius:99px;font-size:9.5px;font-weight:800;
       background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;
+    }
+    .sb-nav-dot{
+      width:8px;height:8px;border-radius:50%;background:#3b82f6;
+      box-shadow:0 0 10px rgba(59,130,246,0.8);display:inline-block;
+      margin-left:auto;animation:sbPulseDot 2s infinite ease-in-out;
+    }
+    @keyframes sbPulseDot{
+      0%,100%{opacity:1;transform:scale(1);}
+      50%{opacity:0.5;transform:scale(1.35);}
     }
 
     /* Tool item */
@@ -1254,6 +1266,9 @@ export default function Dashboard() {
         bmi={bmi}
         isPro={isPro}
         clearUser={clearUser}
+        hasCommunityUpdate={hasCommunityUpdate}
+        incomingMessageToast={incomingMessageToast}
+        dismissToast={dismissToast}
       />
     );
   }
@@ -1332,6 +1347,7 @@ export default function Dashboard() {
             >
               <span className="sb-nav-icon">{n.icon}</span>
               <span className="sb-nav-label">{n.label}</span>
+              {n.hasDot && <span className="sb-nav-dot" title="New activity in FitVerse" />}
               {n.badge && <span className="sb-nav-badge">{n.badge}</span>}
             </div>
           ))}
@@ -2503,6 +2519,9 @@ export default function Dashboard() {
         dark={dark}
         T={T}
       />
+
+      {/* Real-time Incoming Message Alert Toast */}
+      <CommunityNotificationToast toast={incomingMessageToast} onDismiss={dismissToast} />
     </>
   );
 }
