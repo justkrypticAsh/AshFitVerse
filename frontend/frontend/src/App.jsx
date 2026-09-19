@@ -59,6 +59,7 @@ import MentalHealth        from "./features/maleHealth/MentalHealth";
 import SexualWellness      from "./features/maleHealth/SexualWellness";
 import SleepTracker        from "./features/maleHealth/SleepTracker";
 import MaleShop   from "./features/shop/MaleShop";
+import ProductDetail from "./features/shop/ProductDetail";
 import RequirePlan from "./components/RequirePlan";
 import DonePopup from "./components/DonePopup";
 import MobileBottomDock from "./components/MobileBottomDock";
@@ -279,6 +280,12 @@ export default function App() {
         {/* ── Shop ── */}
         <Route path="/shop" element={
           <RequireOnboarding><Shop /></RequireOnboarding>
+        } />
+        <Route path="/shop/product/:id" element={
+          <RequireOnboarding><ProductDetail /></RequireOnboarding>
+        } />
+        <Route path="/product/:id" element={
+          <RequireOnboarding><ProductDetail /></RequireOnboarding>
         } />
 
         {/* ── Community ── */}

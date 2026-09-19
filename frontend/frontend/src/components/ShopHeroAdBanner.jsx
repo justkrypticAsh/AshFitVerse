@@ -1,17 +1,16 @@
-// src/components/ShopHeroAdBanner.jsx — Dynamic Sponsored eCommerce Ad Carousel
+// src/components/ShopHeroAdBanner.jsx — Dynamic Sponsored Editorial Ad Carousel (No Prices, Direct Product Routing)
 import React, { useState, useEffect, useRef } from "react";
-import { ExternalLink, Star, ChevronLeft, ChevronRight, Clock, ShieldCheck, Zap } from "lucide-react";
-import { buildAmazonAffiliateUrl } from "../config/affiliateConfig";
+import { useNavigate } from "react-router-dom";
+import { Star, ChevronLeft, ChevronRight, Sparkles, ShieldCheck, Zap, ArrowRight } from "lucide-react";
 import { FONT } from "../theme";
 
 export default function ShopHeroAdBanner({
   slides = [],
-  onOpenReview,
-  affiliateTag = "ashfitverse-21",
   dark = true,
   T = {},
   storeType = "common", // "common" | "male" | "female"
 }) {
+  const navigate = useNavigate();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const timerRef = useRef(null);
@@ -23,7 +22,7 @@ export default function ShopHeroAdBanner({
 
     timerRef.current = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % totalSlides);
-    }, 4500);
+    }, 5000);
 
     return () => clearInterval(timerRef.current);
   }, [totalSlides, isHovered]);
@@ -32,7 +31,6 @@ export default function ShopHeroAdBanner({
 
   const current = slides[currentIdx] || slides[0];
   if (!current) return null;
-  const affiliateUrl = buildAmazonAffiliateUrl(current.asin || current.link, affiliateTag);
 
   const handlePrev = (e) => {
     e.stopPropagation();
@@ -42,6 +40,12 @@ export default function ShopHeroAdBanner({
   const handleNext = (e) => {
     e.stopPropagation();
     setCurrentIdx((prev) => (prev + 1) % totalSlides);
+  };
+
+  const handleBannerClick = () => {
+    if (current.id) {
+      navigate(`/shop/product/${current.id}`);
+    }
   };
 
   // Color theme per store type
@@ -82,6 +86,7 @@ export default function ShopHeroAdBanner({
 
   return (
     <div
+      onClick={handleBannerClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -91,13 +96,14 @@ export default function ShopHeroAdBanner({
         background: currentTheme.gradient,
         border: `1px solid ${currentTheme.border}`,
         marginBottom: 28,
+        cursor: "pointer",
         boxShadow: dark
           ? "0 18px 45px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)"
           : "0 18px 40px -10px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)",
-        transition: "all 0.4s ease",
+        transition: "all 0.3s ease",
       }}
     >
-      {/* Dynamic Background Glow Effect */}
+      {/* Subtle Halo Spotlight Effect */}
       <div
         style={{
           position: "absolute",
@@ -120,23 +126,23 @@ export default function ShopHeroAdBanner({
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
-          padding: "24px 32px",
+          padding: "26px 34px",
           position: "relative",
           zIndex: 2,
           gap: 24,
-          minHeight: 240,
+          minHeight: 220,
         }}
       >
-        {/* Left Content Side */}
+        {/* Left Editorial Content Side */}
         <div style={{ flex: "1 1 440px", maxWidth: 640 }}>
-          {/* Top Ticker Badges */}
+          {/* Top Ticker Badges (No Price - Pure Brand & Category Spotlight) */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 5,
-                padding: "4px 10px",
+                padding: "4px 12px",
                 borderRadius: 99,
                 background: currentTheme.badgeBg,
                 color: currentTheme.badgeColor,
@@ -147,25 +153,8 @@ export default function ShopHeroAdBanner({
               }}
             >
               <Zap size={12} fill="currentColor" />
-              {current.adTag || "SPONSORED BRAND SPOTLIGHT"}
+              {current.adTag || "FEATURED ATHLETE CHOICE"}
             </span>
-
-            {current.discount && (
-              <span
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 99,
-                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
-                  color: "#ffffff",
-                  fontSize: 11,
-                  fontWeight: 900,
-                  letterSpacing: "0.04em",
-                  boxShadow: "0 2px 8px rgba(239,68,68,0.3)",
-                }}
-              >
-                🔥 {current.discount}
-              </span>
-            )}
 
             <span
               style={{
@@ -173,23 +162,25 @@ export default function ShopHeroAdBanner({
                 alignItems: "center",
                 gap: 4,
                 fontSize: 11,
-                fontWeight: 600,
-                color: T.textMuted || "#94a3b8",
+                fontWeight: 700,
+                color: "#10b981",
               }}
             >
-              <Clock size={11} /> Limited Time Prime Deal
+              <ShieldCheck size={13} /> 100% Verified Authentic
             </span>
           </div>
 
-          {/* Product Headline & Brand */}
-          <div style={{ fontSize: 13, fontWeight: 700, color: currentTheme.badgeColor, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+          {/* Brand Headline */}
+          <div style={{ fontSize: 13, fontWeight: 700, color: currentTheme.badgeColor, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
             {current.brand}
           </div>
+
+          {/* Product Name */}
           <h2
             style={{
               margin: 0,
               fontFamily: FONT.display,
-              fontSize: "clamp(20px, 3vw, 27px)",
+              fontSize: "clamp(20px, 3.2vw, 28px)",
               fontWeight: 900,
               lineHeight: 1.25,
               color: T.text,
@@ -202,10 +193,10 @@ export default function ShopHeroAdBanner({
 
           <p
             style={{
-              margin: "0 0 16px",
+              margin: "0 0 18px",
               fontSize: 13.5,
               color: T.textSub,
-              lineHeight: 1.5,
+              lineHeight: 1.55,
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
@@ -215,46 +206,13 @@ export default function ShopHeroAdBanner({
             {current.tagline || current.description}
           </p>
 
-          {/* Price & Rating Bar */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span style={{ fontSize: 26, fontWeight: 900, color: currentTheme.badgeColor }}>
-                {current.price}
-              </span>
-              {current.originalPrice && (
-                <span style={{ fontSize: 14, textDecoration: "line-through", color: T.textMuted, fontWeight: 600 }}>
-                  {current.originalPrice}
-                </span>
-              )}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "4px 10px",
-                borderRadius: 8,
-                background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-                fontSize: 12,
-                fontWeight: 700,
-                color: T.text,
-              }}
-            >
-              <Star size={13} fill="#eab308" color="#eab308" />
-              <span>{current.rating || 4.8}</span>
-              <span style={{ color: T.textMuted, fontWeight: 500 }}>
-                ({(current.reviews || 2400).toLocaleString()}+ athletes)
-              </span>
-            </div>
-          </div>
-
-          {/* CTA Action Buttons */}
+          {/* Action CTA Button */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <a
-              href={affiliateUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleBannerClick();
+              }}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -265,7 +223,8 @@ export default function ShopHeroAdBanner({
                 color: "#ffffff",
                 fontSize: 13.5,
                 fontWeight: 800,
-                textDecoration: "none",
+                border: "none",
+                cursor: "pointer",
                 boxShadow: currentTheme.btnShadow,
                 transition: "transform 0.2s ease, filter 0.2s ease",
               }}
@@ -278,68 +237,34 @@ export default function ShopHeroAdBanner({
                 e.currentTarget.style.filter = "none";
               }}
             >
-              <span>Claim Deal on Amazon</span>
-              <ExternalLink size={15} />
-            </a>
+              <span>Explore Details & Reviews</span>
+              <ArrowRight size={15} />
+            </button>
 
-            {onOpenReview && (
-              <button
-                onClick={() => onOpenReview(current)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "10px 18px",
-                  borderRadius: 14,
-                  background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
-                  border: `1px solid ${T.glassBorder}`,
-                  color: T.text,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  transition: "background 0.2s ease",
-                }}
-              >
-                <Star size={14} color="#f59e0b" />
-                <span>Read In-App Reviews</span>
-              </button>
-            )}
-
-            <div
-              style={{
-                fontSize: 11,
-                color: T.textMuted,
-                fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                marginLeft: "auto",
-              }}
-            >
-              <ShieldCheck size={12} color="#10b981" /> Verified Partner
-            </div>
+            <span style={{ fontSize: 11.5, color: T.textMuted, fontWeight: 600 }}>
+              Click banner to view packaging, specs & verified ratings
+            </span>
           </div>
         </div>
 
         {/* Right Product Image Spotlight Side */}
         <div
           style={{
-            flex: "0 0 240px",
+            flex: "0 0 220px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             position: "relative",
-            minHeight: 200,
+            minHeight: 190,
           }}
         >
-          {/* Subtle Halo Spotlight Behind Image */}
           <div
             style={{
               position: "absolute",
-              width: 190,
-              height: 190,
+              width: 180,
+              height: 180,
               borderRadius: "50%",
-              background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.04)",
+              background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
               filter: "blur(18px)",
               zIndex: 1,
             }}
@@ -349,8 +274,8 @@ export default function ShopHeroAdBanner({
             src={current.image}
             alt={current.name}
             style={{
-              maxHeight: 210,
-              maxWidth: 210,
+              maxHeight: 190,
+              maxWidth: 190,
               objectFit: "contain",
               position: "relative",
               zIndex: 2,
@@ -361,27 +286,6 @@ export default function ShopHeroAdBanner({
               e.currentTarget.style.display = "none";
             }}
           />
-
-          {/* Floating Discount Tag */}
-          {current.discount && (
-            <div
-              style={{
-                position: "absolute",
-                top: 6,
-                right: 6,
-                zIndex: 3,
-                padding: "5px 9px",
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #10b981, #059669)",
-                color: "#ffffff",
-                fontSize: 11,
-                fontWeight: 900,
-                boxShadow: "0 4px 12px rgba(16,185,129,0.35)",
-              }}
-            >
-              {current.discount}
-            </div>
-          )}
         </div>
       </div>
 
@@ -399,7 +303,7 @@ export default function ShopHeroAdBanner({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontWeight: 800, color: currentTheme.badgeColor }}>FEATURED OFFERS:</span>
+          <span style={{ fontWeight: 800, color: currentTheme.badgeColor }}>FEATURED SPOTLIGHT:</span>
           <span>Slide {currentIdx + 1} of {totalSlides}</span>
         </div>
 
@@ -408,7 +312,10 @@ export default function ShopHeroAdBanner({
           {slides.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrentIdx(i)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentIdx(i);
+              }}
               style={{
                 width: i === currentIdx ? 24 : 7,
                 height: 7,

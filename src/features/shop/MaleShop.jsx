@@ -7,9 +7,9 @@ import { generateCSS, FONT } from "../../theme";
 import { db } from "../../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { buildAmazonAffiliateUrl, getAffiliateTag } from "../../config/affiliateConfig";
-import ProductReviewsModal from "../../components/ProductReviewsModal";
 import AddAffiliateProductModal from "../../components/AddAffiliateProductModal";
 import ShopHeroAdBanner from "../../components/ShopHeroAdBanner";
+import { MALE_PRODUCTS, logUserOrder } from "./productCatalog";
 import {
   Star,
   Search,
@@ -25,484 +25,32 @@ import {
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────
-// CURATED MASTER MALE PERFORMANCE & WELLNESS PRODUCTS
+// SPONSORED PROMOTIONAL EDITORIAL SLIDES (NO PRICES, DIRECT PRODUCT LINK)
 // ─────────────────────────────────────────────────────────────
-const BASE_MALE_PRODUCTS = [
-  // ── TESTOSTERONE & VITALITY ──
+const MALE_HERO_SLIDES = [
   {
-    id: 101,
-    category: "testosterone",
+    id: "101",
     name: "Kapiva Himalayan Pure Shilajit Resin with 60% Fulvic Acid (20g Jar)",
     brand: "Kapiva",
     asin: "B091J3147K",
-    rating: 4.8,
-    reviews: 34000,
-    price: "₹999",
-    originalPrice: "₹1,499",
-    discount: "33% OFF",
     image: "https://m.media-amazon.com/images/I/71y8R1d1zDL._SL1500_.jpg",
-    tags: ["Gold Grade", "60% Fulvic Acid", "80+ Minerals", "Lab Tested"],
-    description: "Sourced from 18,000 ft Himalayan peaks. Clinically tested to boost natural free testosterone, stamina, and cellular ATP energy.",
-    badge: "#1 Best Seller",
-    badgeColor: "#f59e0b",
-  },
-  {
-    id: 102,
-    category: "testosterone",
-    name: "Himalaya Organic KSM-66 Ashwagandha 600mg (60 Veg Capsules)",
-    brand: "Himalaya",
-    asin: "B00063HCS2",
-    rating: 4.8,
-    reviews: 21500,
-    price: "₹549",
-    originalPrice: "₹799",
-    discount: "31% OFF",
-    image: "https://m.media-amazon.com/images/I/61k1e1d1zEL._SL1000_.jpg",
-    tags: ["KSM-66 Extract", "Lowers Cortisol 30%", "Boosts Total T 17%", "Root Only"],
-    description: "Full-spectrum root extract with 5% withanolides. Clinically proven to reduce stress cortisol by 30% and optimize serum testosterone levels.",
-    badge: "Clinical Tested",
-    badgeColor: "#10b981",
-  },
-  {
-    id: 103,
-    category: "testosterone",
-    name: "Momentous Tongkat Ali 400mg LJ100 Standardized Extract (60 Capsules)",
-    brand: "Momentous",
-    asin: "B0B8QF54N6",
-    rating: 4.8,
-    reviews: 8900,
-    price: "₹2,699",
-    originalPrice: "₹3,499",
-    discount: "23% OFF",
-    image: "https://m.media-amazon.com/images/I/61m1e1d1zFL._SL1500_.jpg",
-    tags: ["LJ100 Extract", "Frees Bound T", "Reduces SHBG", "Andrew Huberman Pick"],
-    description: "Patented LJ100 Tongkat Ali. Lowers Sex Hormone-Binding Globulin (SHBG) to unbind free circulating testosterone in active men.",
-    badge: "Free T Booster",
-    badgeColor: "#8b5cf6",
-  },
-  {
-    id: 104,
-    category: "testosterone",
-    name: "NOW Foods Boron 10mg Albion Bororganic Glycine (120 Veg Capsules)",
-    brand: "NOW Foods",
-    asin: "B00093D2BA",
-    rating: 4.7,
-    reviews: 9400,
-    price: "₹899",
-    originalPrice: "₹1,299",
-    discount: "31% OFF",
-    image: "https://m.media-amazon.com/images/I/61q1e1d1zIL._SL1200_.jpg",
-    tags: ["SHBG Reduction", "Free Testosterone", "Bone Density", "Joint Health"],
-    description: "Clinical studies demonstrate 10mg elemental boron reduces plasma estradiol and raises free testosterone significantly within 7 days.",
-    badge: "Fast Acting",
-    badgeColor: "#3b82f6",
-  },
-
-  // ── MUSCLE & PERFORMANCE ──
-  {
-    id: 105,
-    category: "muscle",
-    name: "MuscleBlaze Biozyme Whey Isolate (2kg / 4.4 lbs, Gourmet Chocolate)",
-    brand: "MuscleBlaze",
-    asin: "B07T48L8H3",
-    rating: 4.8,
-    reviews: 26000,
-    price: "₹5,299",
-    originalPrice: "₹6,999",
-    discount: "24% OFF",
-    image: "https://m.media-amazon.com/images/I/61kLg2eQZSL._SL1100_.jpg",
-    tags: ["27g Pure Isolate", "EAF Formula", "Informed-Choice UK", "Zero Sugar"],
-    description: "Informed-Choice certified isolate for elite muscular hypertrophy and zero bloat.",
-    badge: "Top Protein",
-    badgeColor: "#10b981",
-  },
-  {
-    id: 106,
-    category: "muscle",
-    name: "Optimum Nutrition Micronized Creatine Monohydrate 250g",
-    brand: "Optimum Nutrition",
-    asin: "B002DYIZEO",
-    rating: 4.8,
-    reviews: 32000,
-    price: "₹999",
-    originalPrice: "₹1,399",
-    discount: "29% OFF",
-    image: "https://m.media-amazon.com/images/I/61m1N4Xp3tL._SL1500_.jpg",
-    tags: ["Pure Monohydrate", "Strength & Volume", "3g Per Serving"],
-    description: "Supports ATP recycling and maximal muscular contraction during heavy sets.",
-    badge: "#1 Strength",
-    badgeColor: "#f59e0b",
-  },
-  {
-    id: 107,
-    category: "muscle",
-    name: "Nutricost Pure L-Citrulline Powder 500g (Nitric Oxide & Pump)",
-    brand: "Nutricost",
-    asin: "B01MY0E2L1",
-    rating: 4.8,
-    reviews: 8200,
-    price: "₹1,899",
-    originalPrice: "₹2,499",
-    discount: "24% OFF",
-    image: "https://m.media-amazon.com/images/I/61s1e1d1zKL._SL1200_.jpg",
-    tags: ["Pure L-Citrulline", "Nitric Oxide", "Erectile Quality", "Muscle Pump"],
-    description: "Boosts blood arginine and nitric oxide production. Delivers skin-splitting pumps in the gym and supports optimal vascular erectile health.",
-    badge: "Blood Flow",
-    badgeColor: "#f43f5e",
-  },
-
-  // ── SEXUAL WELLNESS ──
-  {
-    id: 108,
-    category: "sexual",
-    name: "Durex Naturals Pure Water-Based Intimate Moisture Lubricant (100ml)",
-    brand: "Durex",
-    asin: "B0798CJPGL",
-    rating: 4.7,
-    reviews: 14600,
-    price: "₹425",
-    originalPrice: "₹599",
-    discount: "29% OFF",
-    image: "https://m.media-amazon.com/images/I/61t1e1d1zLL._SL1000_.jpg",
-    tags: ["100% Natural Ingredients", "pH-Balanced", "Condom Safe", "Non-Sticky"],
-    description: "Free from artificial fragrances and parabens. Formulated with prebiotics to support natural microbiome balance.",
-    badge: "Body Safe",
-    badgeColor: "#06b6d4",
-  },
-  {
-    id: 109,
-    category: "sexual",
-    name: "Manforce Staylong Delay Gel / Spray for Men (Lidocaine 10% Formula)",
-    brand: "Manforce",
-    asin: "B01LXU8C6X",
-    rating: 4.5,
-    reviews: 11200,
-    price: "₹399",
-    originalPrice: "₹549",
-    discount: "27% OFF",
-    image: "https://m.media-amazon.com/images/I/61u1e1d1zML._SL1000_.jpg",
-    tags: ["Delay Ejaculation", "Fast Acting", "Non-Transferable", "Dermatologist Tested"],
-    description: "Clinically formulated desensitizing topical spray. Extends intimate stamina and control without numbing your partner.",
-    badge: "Endurance",
-    badgeColor: "#f43f5e",
-  },
-  {
-    id: 110,
-    category: "sexual",
-    name: "Swanson Premium Maca Root 500mg Extract (100 Capsules)",
-    brand: "Swanson",
-    asin: "B0017OB75U",
-    rating: 4.6,
-    reviews: 9800,
-    price: "₹799",
-    originalPrice: "₹1,099",
-    discount: "27% OFF",
-    image: "https://m.media-amazon.com/images/I/61n1e1d1zGL._SL1000_.jpg",
-    tags: ["Peruvian Superfood", "Libido Enhancement", "Sperm Motility", "Non-Hormonal"],
-    description: "Peruvian adaptogen used for centuries to elevate sexual desire, semen volume, and psychological vitality without androgenic interference.",
-    badge: "Libido Pick",
-    badgeColor: "#8b5cf6",
-  },
-
-  // ── RECOVERY & SLEEP ──
-  {
-    id: 111,
-    category: "recovery",
-    name: "Optimum Nutrition ZMA Zinc Magnesium Vitamin B6 (90 Capsules)",
-    brand: "Optimum Nutrition",
-    asin: "B000GIQS3S",
-    rating: 4.7,
-    reviews: 18500,
-    price: "₹1,499",
-    originalPrice: "₹1,999",
-    discount: "25% OFF",
-    image: "https://m.media-amazon.com/images/I/61p1e1d1zHL._SL1200_.jpg",
-    tags: ["30mg Zinc", "450mg Magnesium", "Deep REM Sleep", "Nocturnal T Release"],
-    description: "Standardized clinical ZMA blend. Supports nocturnal anabolic hormone secretion and enhances deep non-REM restorative sleep.",
-    badge: "Sleep & T",
-    badgeColor: "#8b5cf6",
-  },
-  {
-    id: 112,
-    category: "recovery",
-    name: "Doctor's Best High Absorption CoQ10 with BioPerine 100mg (120 Softgels)",
-    brand: "Doctor's Best",
-    asin: "B0019GW3G8",
-    rating: 4.8,
-    reviews: 24000,
-    price: "₹1,899",
-    originalPrice: "₹2,499",
-    discount: "24% OFF",
-    image: "https://m.media-amazon.com/images/I/61r1e1d1zJL._SL1200_.jpg",
-    tags: ["BioPerine Enhanced", "Cardiovascular Output", "Mitochondrial Energy", "Sperm Count"],
-    description: "Enhances cardiac pumping efficiency and mitochondrial ATP production. Clinically shown to improve male sperm concentration and motility.",
-    badge: "Mitochondrial",
-    badgeColor: "#10b981",
-  },
-
-  // ── GROOMING & GEAR ──
-  {
-    id: 113,
-    category: "grooming",
-    name: "Beardo Godfather Beard Growth Oil & Softener Blend (30ml)",
-    brand: "Beardo",
-    asin: "B01C2M9J70",
-    rating: 4.6,
-    reviews: 31000,
-    price: "₹349",
-    originalPrice: "₹450",
-    discount: "22% OFF",
-    image: "https://m.media-amazon.com/images/I/61v1e1d1zNL._SL1000_.jpg",
-    tags: ["Argan & Almond Oil", "Stimulates Follicles", "Zero Greasiness", "No Itch"],
-    description: "Non-greasy nourishing beard oil enriched with Vitamin E. Soothes itchy beard stubble and thickens patchy facial hair growth.",
-    badge: "Men's Care",
-    badgeColor: "#f59e0b",
-  },
-  {
-    id: 114,
-    category: "gear",
-    name: "RDX Heavy Duty Padded Cotton Weightlifting Wrist Straps (Pair)",
-    brand: "RDX",
-    asin: "B004X6J2VO",
-    rating: 4.8,
-    reviews: 14500,
-    price: "₹699",
-    originalPrice: "₹999",
-    discount: "30% OFF",
-    image: "https://m.media-amazon.com/images/I/71w1e1d1zOL._SL1500_.jpg",
-    tags: ["Neoprene Wrist Padding", "Non-Slip Grip", "Deadlifts & Shrugs", "Steel Bar Fit"],
-    description: "Durable reinforced cotton webbing with 5mm neoprene wrist padding. Prevents grip slippage during heavy 200kg+ deadlift sets.",
-    badge: "Grip King",
-    badgeColor: "#f43f5e",
-  },
-  {
-    id: 115,
-    category: "gear",
-    name: "SBD Heavy-Duty Neoprene 7mm Knee Sleeves (Competition Level Support)",
-    brand: "SBD",
-    asin: "B01N0PZ6Z6",
-    rating: 4.9,
-    reviews: 6200,
-    price: "₹6,499",
-    originalPrice: "₹8,499",
-    discount: "24% OFF",
-    image: "https://m.media-amazon.com/images/I/61x1e1d1zPL._SL1200_.jpg",
-    tags: ["7mm High Grade Neoprene", "IPF Approved", "Heavy Squatting", "Patella Warmth"],
-    description: "The gold standard knee sleeves for powerlifters and heavy squatters. Delivers immense rebound warmth, patella tracking, and joint stabilization.",
-    badge: "IPF Legal",
-    badgeColor: "#3b82f6",
-  },
-  {
-    id: 15,
-    category: "testosterone",
-    name: "TrueBasics KSM-66 Ashwagandha with Korean Ginseng & Vitamin D3 (60 Veg Capsules)",
-    brand: "TrueBasics",
-    asin: "B084DV1635",
-    rating: 4.7,
-    reviews: 16800,
-    price: "₹999",
-    originalPrice: "₹1,499",
-    discount: "33% OFF",
-    image: "https://m.media-amazon.com/images/I/61c1e1d1zWL._SL1200_.jpg",
-    tags: ["KSM-66 Full Spectrum", "Korean Ginseng", "Cortisol Blocker", "Stress Relief"],
-    description: "Standardized 5% withanolides reduce evening salivary cortisol, facilitating deep REM sleep and natural morning testosterone surges.",
-    badge: "Vitality Formula",
-    badgeColor: "#3b82f6",
-  },
-  {
-    id: 16,
-    category: "testosterone",
-    name: "Rasayanam Pure Himalayan Shilajit (30g Semi-Liquid Resin with Wooden Spoon)",
-    brand: "Rasayanam",
-    asin: "B093C4C6N2",
-    rating: 4.8,
-    reviews: 24500,
-    price: "₹1,399",
-    originalPrice: "₹1,999",
-    discount: "30% OFF",
-    image: "https://m.media-amazon.com/images/I/71b1e1d1zXL._SL1500_.jpg",
-    tags: ["75%+ Fulvic Acid", "Sourced from 18,000 ft", "Lab Tested NABL", "Endurance"],
-    description: "Purified via traditional Surya Tapi ayurvedic methodology. Rich in fulvic acid and 84+ ionic trace minerals that optimize cellular ATP output.",
-    badge: "Gold Standard Resin",
-    badgeColor: "#f59e0b",
-  },
-  {
-    id: 17,
-    category: "sexual",
-    name: "Carbamide Forte L-Arginine 1000mg Nitric Oxide Precursor (120 Tablets)",
-    brand: "Carbamide Forte",
-    asin: "B07W8414T7",
-    rating: 4.6,
-    reviews: 19200,
-    price: "₹599",
-    originalPrice: "₹900",
-    discount: "33% OFF",
-    image: "https://m.media-amazon.com/images/I/71a1e1d1zYL._SL1500_.jpg",
-    tags: ["1000mg Free Form", "Nitric Oxide Booster", "Vasodilation", "Vascularity & Drive"],
-    description: "Direct precursor to endothelial nitric oxide. Dilates arterial walls, enhancing peripheral blood circulation, athletic pump, and male performance.",
-    badge: "Nitric Oxide Pump",
-    badgeColor: "#ef4444",
-  },
-  {
-    id: 18,
-    category: "testosterone",
-    name: "Himalaya Gokshura (Tribulus Terrestris 60 Tablets for Male Stamina & Kidney Support)",
-    brand: "Himalaya",
-    asin: "B00822YA96",
-    rating: 4.6,
-    reviews: 31000,
-    price: "₹249",
-    originalPrice: "₹350",
-    discount: "29% OFF",
-    image: "https://m.media-amazon.com/images/I/61z1e1d1zZL._SL1000_.jpg",
-    tags: ["Pure Gokshura", "Saponin Rich", "Urinary Tract Support", "Ayurvedic Vigor"],
-    description: "Ancient Rasayana herb known for supporting libido, uro-genital tract health, and vigorous athletic recovery without artificial stimulants.",
-    badge: "Ayurvedic Classic",
-    badgeColor: "#10b981",
-  },
-  {
-    id: 19,
-    category: "grooming",
-    name: "Man Matters 5% Minoxidil Topical Solution with Finasteride for Hair Regrowth (60ml)",
-    brand: "Man Matters",
-    asin: "B08NTR5W4X",
-    rating: 4.6,
-    reviews: 22000,
-    price: "₹799",
-    originalPrice: "₹1,199",
-    discount: "33% OFF",
-    image: "https://m.media-amazon.com/images/I/61y1e1d1z0L._SL1200_.jpg",
-    tags: ["5% Minoxidil", "Alcohol Free Base", "Follicle Reactivation", "DHT Blocker"],
-    description: "Clinically proven formula that reactivates dormant hair follicles and widens micro-vessels in the scalp, reversing male pattern thinning.",
-    badge: "Hair Rescue",
-    badgeColor: "#06b6d4",
-  },
-  {
-    id: 20,
-    category: "grooming",
-    name: "Beardo Dark Fantasy Beard Growth Oil with Sesame & Rose Oil (50ml)",
-    brand: "Beardo",
-    asin: "B01L1EZC4Q",
-    rating: 4.5,
-    reviews: 29000,
-    price: "₹399",
-    originalPrice: "₹750",
-    discount: "47% OFF",
-    image: "https://m.media-amazon.com/images/I/71x1e1d1z1L._SL1500_.jpg",
-    tags: ["Natural Sesame Oil", "Non-Greasy", "Beard Softener", "Patchy Beard Relief"],
-    description: "Enriched with natural botanical extracts to moisturize underlying skin, tame unruly bristles, and stimulate patchy facial hair growth.",
-    badge: "Beard Master",
-    badgeColor: "#f59e0b",
-  },
-  {
-    id: 21,
-    category: "testosterone",
-    name: "MuscleBlaze TestoCore Testosterone Booster with Fenugreek & Safed Musli (60 Tabs)",
-    brand: "MuscleBlaze",
-    asin: "B08GCSX3G8",
-    rating: 4.6,
-    reviews: 17500,
-    price: "₹1,199",
-    originalPrice: "₹1,799",
-    discount: "33% OFF",
-    image: "https://m.media-amazon.com/images/I/71w1e1d1z2L._SL1500_.jpg",
-    tags: ["Testofen Fenugreek", "Safed Musli", "Kaunch Beej", "D-Aspartic Acid"],
-    description: "Synergistic botanical and mineral matrix engineered to support free testosterone indices and combat workout lethargy.",
-    badge: "Hardcore Blend",
-    badgeColor: "#ef4444",
-  },
-  {
-    id: 22,
-    category: "testosterone",
-    name: "Nutrabay Pure Maca Root Extract 500mg High Potency (60 Vegan Capsules)",
-    brand: "Nutrabay",
-    asin: "B08P1Q1T2K",
-    rating: 4.6,
-    reviews: 11400,
-    price: "₹549",
-    originalPrice: "₹899",
-    discount: "39% OFF",
-    image: "https://m.media-amazon.com/images/I/61v1e1d1z3L._SL1200_.jpg",
-    tags: ["Andean Maca Root", "Adaptogenic Stamina", "Zero Additives", "Daily Vitality"],
-    description: "Peruvian superfood adaptogen that supports endocrine homeostasis, physical energy levels, and mood resilience.",
-    badge: "Adaptogen Pick",
-    badgeColor: "#10b981",
-  },
-  {
-    id: 23,
-    category: "gear",
-    name: "Boldfit Compression Gym Shorts & Athletic Supporter with Moisture Wicking",
-    brand: "Boldfit",
-    asin: "B08F2H57KP",
-    rating: 4.6,
-    reviews: 18500,
-    price: "₹499",
-    originalPrice: "₹999",
-    discount: "50% OFF",
-    image: "https://m.media-amazon.com/images/I/71u1e1d1z4L._SL1500_.jpg",
-    tags: ["4-Way Stretch Lycra", "Groin Protection Pocket", "Anti-Chafing", "Ergonomic Fit"],
-    description: "Provides firm compression to quads and groin area during heavy squats and high-impact sprints, drastically reducing chafing and groin strains.",
-    badge: "Training Armor",
-    badgeColor: "#3b82f6",
-  },
-  {
-    id: 24,
-    category: "grooming",
-    name: "Ustraa Hair Growth Vitalizer with Redensyl, Saw Palmetto & Biotin (100ml)",
-    brand: "Ustraa",
-    asin: "B073PWG3C5",
-    rating: 4.5,
-    reviews: 14800,
-    price: "₹649",
-    originalPrice: "₹999",
-    discount: "35% OFF",
-    image: "https://m.media-amazon.com/images/I/61t1e1d1z5L._SL1200_.jpg",
-    tags: ["Redensyl Active", "Saw Palmetto DHT Shield", "Biotin + Wheat Germ", "Non-Sticky"],
-    description: "Formulated specifically for men struggling with hairline recession. Saw Palmetto blocks 5-alpha reductase while Redensyl re-energizes stem cells.",
-    badge: "Scalp Defense",
-    badgeColor: "#64748b",
-  },
-];
-
-const MALE_HERO_SLIDES = [
-  {
-    id: "m-hero-1",
-    name: "Kapiva Himalayan Pure Shilajit Gold Resin with 24K Gold Dust (20g)",
-    brand: "Kapiva",
-    asin: "B09G3F3Q8X",
-    rating: 4.8,
-    reviews: 38200,
-    price: "₹1,499",
-    originalPrice: "₹1,999",
-    discount: "25% OFF",
-    image: "https://m.media-amazon.com/images/I/71c6t1a6M3L._SL1500_.jpg",
-    tagline: "Sourced from 18,000 ft in the Himalayas. Infused with Swarna Bhasma (24K Gold), Ashwagandha, and Gokshura for maximum stamina & natural testosterone.",
+    tagline: "Sourced from 18,000 ft Himalayan peaks. Clinically tested to boost natural free testosterone, stamina, and cellular ATP energy.",
     adTag: "🔥 TOP MEN'S BESTSELLER",
   },
   {
-    id: "m-hero-2",
-    name: "Momentous Huberman Lab Tongkat Ali 400mg Pure Root Extract (60 Capsules)",
+    id: "103",
+    name: "Momentous Tongkat Ali 400mg LJ100 Standardized Extract (60 Capsules)",
     brand: "Momentous",
-    asin: "B0B6Q7Z8F1",
-    rating: 4.9,
-    reviews: 9400,
-    price: "₹2,899",
-    originalPrice: "₹3,599",
-    discount: "20% OFF",
-    image: "https://m.media-amazon.com/images/I/61N7W7BqN1L._SL1500_.jpg",
-    tagline: "Endorsed by neuroscientist Dr. Andrew Huberman. Unbinds SHBG, liberating bioavailable free testosterone for aggressive gym drive and recovery.",
+    asin: "B0B8QF54N6",
+    image: "https://m.media-amazon.com/images/I/61m1e1d1zFL._SL1500_.jpg",
+    tagline: "Unbinds SHBG, liberating bioavailable free testosterone for aggressive gym drive, strength, and recovery.",
     adTag: "⚡ ELITE TESTOSTERONE SUPPORT",
   },
   {
-    id: "m-hero-3",
+    id: "121",
     name: "SBD Powerlifting 10mm Competition Lever Belt (English Bridle Leather)",
     brand: "SBD Apparel",
     asin: "B08M3XKGKZ",
-    rating: 4.9,
-    reviews: 4900,
-    price: "₹18,999",
-    originalPrice: "₹22,999",
-    discount: "18% OFF",
     image: "https://m.media-amazon.com/images/I/61L1e1d1zOL._SL1200_.jpg",
     tagline: "Patented gliding lever technology. Unmatched lumbar support and intra-abdominal stability for 250kg+ squats and deadlifts.",
     adTag: "🏆 WORLD CHAMPION GEAR",
@@ -531,9 +79,6 @@ export default function MaleShop() {
   const [sort, setSort] = useState("popular");
   const [wishlist, setWishlist] = useState([]);
   const [dynamicProducts, setDynamicProducts] = useState([]);
-
-  // Modals state
-  const [selectedReviewProduct, setSelectedReviewProduct] = useState(null);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
 
   useEffect(() => {
@@ -547,10 +92,17 @@ export default function MaleShop() {
       const unsub = onSnapshot(
         q,
         (snap) => {
-          const custom = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-          setDynamicProducts(custom);
+          const list = snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+            rating: d.data().rating || 4.8,
+            reviews: d.data().reviews || 100,
+          }));
+          setDynamicProducts(list);
         },
-        (err) => console.warn("Male shop dynamic sync warning:", err)
+        (err) => {
+          console.warn("Firestore dynamic male products sync:", err);
+        }
       );
       return () => unsub();
     } catch {}
@@ -561,7 +113,7 @@ export default function MaleShop() {
   };
 
   const allProducts = useMemo(() => {
-    return [...dynamicProducts, ...BASE_MALE_PRODUCTS];
+    return [...dynamicProducts, ...MALE_PRODUCTS];
   }, [dynamicProducts]);
 
   const filtered = useMemo(() => {
@@ -575,8 +127,6 @@ export default function MaleShop() {
           p.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase()))
       )
       .sort((a, b) => {
-        if (sort === "rating") return (b.rating || 0) - (a.rating || 0);
-        if (sort === "reviews") return (b.reviews || 0) - (a.reviews || 0);
         if (sort === "price-low") {
           const pA = Number(String(a.price).replace(/[^0-9]/g, "")) || 0;
           const pB = Number(String(b.price).replace(/[^0-9]/g, "")) || 0;
@@ -587,7 +137,7 @@ export default function MaleShop() {
           const pB = Number(String(b.price).replace(/[^0-9]/g, "")) || 0;
           return pB - pA;
         }
-        return (b.reviews || 0) - (a.reviews || 0);
+        return 0;
       });
   }, [allProducts, category, search, sort]);
 
@@ -597,12 +147,9 @@ export default function MaleShop() {
     .m-shop-root{min-height:100vh;background:${T.bg};color:${T.text};font-family:${FONT.body};opacity:${mounted ? 1 : 0};transition:opacity 0.6s ease;position:relative;overflow-x:hidden;}
     .m-shop-header{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:64px;position:sticky;top:0;z-index:50;border-bottom:1px solid ${T.glassBorder};background:${dark ? "rgba(8,9,13,0.92)" : "rgba(255,255,255,0.92)"};backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);}
     .m-shop-brand{font-family:${FONT.display};font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;}
-    .m-shop-switcher{display:flex;align-items:center;gap:6px;background:${dark ? "rgba(255,255,255,0.05)" : "#f1f5f9"};padding:4px;border-radius:14px;border:1px solid ${T.glassBorder};}
-    .m-shop-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:none;background:transparent;color:${dark ? T.textSub : "#64748b"};font-size:12.5px;font-weight:750;cursor:pointer;transition:all 0.16s ease;}
-    .m-shop-pill.active{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;box-shadow:0 2px 10px rgba(59,130,246,0.35);}
     .m-shop-main{max-width:1200px;margin:0 auto;padding:24px 24px 80px;}
-    .m-shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;}
-    .m-shop-card{border-radius:20px;overflow:hidden;background:${T.glass};border:1px solid ${T.glassBorder};display:flex;flex-direction:column;transition:all 0.24s cubic-bezier(0.16,1,0.3,1);position:relative;}
+    .m-shop-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;}
+    .m-shop-card{border-radius:20px;overflow:hidden;background:${T.glass};border:1px solid ${T.glassBorder};display:flex;flex-direction:column;transition:all 0.24s cubic-bezier(0.16,1,0.3,1);position:relative;cursor:pointer;}
     .m-shop-card:hover{transform:translateY(-4px);border-color:${T.glassBorderHover};box-shadow:0 16px 40px rgba(0,0,0,${dark ? "0.45" : "0.08"});}
     .m-shop-img-box{position:relative;width:100%;height:190px;background:${dark ? "rgba(255,255,255,0.02)" : "#ffffff"};display:flex;align-items:center;justify-content:center;overflow:hidden;padding:12px;box-sizing:border-box;}
     .m-shop-img-box img{max-width:100%;max-height:100%;object-fit:contain;transition:transform 0.3s ease;}
@@ -611,12 +158,11 @@ export default function MaleShop() {
     .m-shop-buy-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
     @media(max-width:768px){
       .m-shop-header{padding:0 14px;height:56px;}
-      .m-shop-switcher{overflow-x:auto;scrollbar-width:none;}
-      .m-shop-grid{grid-template-columns:1fr 1fr;gap:12px;}
+      .m-shop-card-grid{grid-template-columns:1fr 1fr;gap:12px;}
       .m-shop-img-box{height:140px;}
     }
     @media(max-width:480px){
-      .m-shop-grid{grid-template-columns:1fr;}
+      .m-shop-card-grid{grid-template-columns:1fr;}
     }
   `;
 
@@ -628,7 +174,7 @@ export default function MaleShop() {
       <header className="m-shop-header">
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/male-health")}
             style={{
               padding: "7px 12px",
               borderRadius: 10,
@@ -644,39 +190,15 @@ export default function MaleShop() {
             }}
           >
             <ArrowLeft size={14} />
-            <span>Dashboard</span>
+            <span>Men's Health Hub</span>
           </button>
 
-          <div className="m-shop-brand" onClick={() => navigate("/dashboard")}>
+          <div className="m-shop-brand" onClick={() => navigate("/male-health")}>
             <span>⚡</span>
             <span>
               Men's<span>Shop</span>
             </span>
           </div>
-        </div>
-
-        {/* Unified 3-Shop Switcher */}
-        <div className="m-shop-switcher">
-          <button
-            className="m-shop-pill"
-            onClick={() => navigate("/shop")}
-            title="Open All Fitness Shop"
-          >
-            <span>🛒</span>
-            <span>All Fitness</span>
-          </button>
-          <button className="m-shop-pill active">
-            <span>⚡</span>
-            <span>Men's Shop</span>
-          </button>
-          <button
-            className="m-shop-pill"
-            onClick={() => navigate("/female-shop")}
-            title="Open Women's Health & PCOS Shop"
-          >
-            <span>🌸</span>
-            <span>Women's Shop</span>
-          </button>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -699,7 +221,7 @@ export default function MaleShop() {
               title="Admin Only: Add new men's affiliate product"
             >
               <Plus size={14} strokeWidth={2.5} />
-              <span>Add Men's Item</span>
+              <span>Add Item</span>
             </button>
           )}
 
@@ -728,14 +250,13 @@ export default function MaleShop() {
         {/* Dynamic Sponsored Hero Deal Carousel */}
         <ShopHeroAdBanner
           slides={MALE_HERO_SLIDES}
-          onOpenReview={(prod) => setSelectedReviewProduct(prod)}
-          affiliateTag="ashfitverse-21"
+          affiliateTag={affiliateTag}
           dark={dark}
           T={T}
           storeType="male"
         />
 
-        {/* Men's Trust Badges Strip */}
+        {/* Trust Badges Strip */}
         <div
           style={{
             display: "grid",
@@ -745,22 +266,21 @@ export default function MaleShop() {
           }}
         >
           {[
-            { icon: "⚡", title: "Clinically Formulated", desc: "Standardized herbal extracts & high bioavailability" },
-            { icon: "🛡️", title: "100% Genuine Potency", desc: "NABL lab certified for heavy metals & purity" },
-            { icon: "⭐", title: "Men's Athlete Reviews", desc: "Real workout & hormone recovery ratings" },
-            { icon: "📦", title: "Discreet Prime Packaging", desc: "Delivered securely to your doorstep" },
-          ].map((b, idx) => (
+            { icon: "⚡", title: "Peak Testosterone Formulations", desc: "Clinically validated botanicals for male endocrine health" },
+            { icon: "🛡️", title: "100% Lab Tested Purity", desc: "Gold grade Shilajit, Tongkat Ali & heavy metal screened" },
+            { icon: "⭐", title: "Men's Community Ratings", desc: "Authentic in-app verified strength & stamina reviews" },
+            { icon: "🚚", title: "Discreet Prime Delivery", desc: "Fast packaging dispatched straight from Amazon India" },
+          ].map((b, i) => (
             <div
-              key={idx}
+              key={i}
               style={{
+                padding: "12px 16px",
+                borderRadius: 14,
+                background: dark ? "rgba(255,255,255,0.02)" : "#ffffff",
+                border: `1px solid ${T.glassBorder}`,
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                padding: "12px 16px",
-                borderRadius: 14,
-                background: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
-                border: `1px solid ${T.glassBorder}`,
-                boxShadow: dark ? "0 4px 12px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
               }}
             >
               <span style={{ fontSize: 22 }}>{b.icon}</span>
@@ -772,10 +292,28 @@ export default function MaleShop() {
           ))}
         </div>
 
-        {/* Filters & Search Row */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          {/* Category tabs */}
-          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+        {/* ── Filter & Search Control Bar ── */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 14,
+            marginBottom: 20,
+          }}
+        >
+          {/* Category Tabs */}
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              overflowX: "auto",
+              paddingBottom: 4,
+              scrollbarWidth: "none",
+              maxWidth: "100%",
+            }}
+          >
             {MALE_CATEGORIES.map((c) => {
               const active = category === c.id;
               return (
@@ -785,18 +323,21 @@ export default function MaleShop() {
                   style={{
                     padding: "8px 14px",
                     borderRadius: 12,
-                    border: active ? "1.5px solid #3b82f6" : `1px solid ${T.glassBorder}`,
+                    border: active ? "none" : `1px solid ${T.glassBorder}`,
                     background: active
-                      ? (dark ? "rgba(59, 130, 246, 0.18)" : "rgba(59, 130, 246, 0.1)")
-                      : dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
-                    color: active ? "#3b82f6" : T.textSub,
+                      ? "linear-gradient(135deg, #3b82f6, #1d4ed8)"
+                      : dark
+                      ? "rgba(255,255,255,0.04)"
+                      : "#ffffff",
+                    color: active ? "#ffffff" : T.textSub,
                     fontSize: 12.5,
-                    fontWeight: active ? 800 : 600,
+                    fontWeight: 750,
                     cursor: "pointer",
+                    whiteSpace: "nowrap",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 6,
-                    whiteSpace: "nowrap",
+                    boxShadow: active ? "0 2px 8px rgba(59,130,246,0.3)" : "none",
                     transition: "all 0.16s ease",
                   }}
                 >
@@ -807,25 +348,39 @@ export default function MaleShop() {
             })}
           </div>
 
-          {/* Search & Sort */}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginLeft: "auto" }}>
-            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-              <Search size={14} style={{ position: "absolute", left: 12, color: T.textMuted, pointerEvents: "none" }} />
+          {/* Search Input & Sort Selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <Search
+                size={14}
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  color: T.textMuted,
+                  pointerEvents: "none",
+                }}
+              />
               <input
                 type="text"
-                placeholder="Search shilajit, tongkat ali..."
+                placeholder="Search shilajit, tongs, belt..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
                   height: 38,
-                  padding: "0 14px 0 34px",
-                  borderRadius: 11,
+                  padding: "0 12px 0 34px",
+                  borderRadius: 12,
                   border: `1px solid ${T.glassBorder}`,
                   background: dark ? "rgba(255,255,255,0.04)" : "#ffffff",
                   color: T.text,
                   fontSize: 12.5,
                   outline: "none",
-                  width: 190,
+                  width: 210,
                 }}
               />
             </div>
@@ -835,42 +390,54 @@ export default function MaleShop() {
               onChange={(e) => setSort(e.target.value)}
               style={{
                 height: 38,
-                padding: "0 10px",
-                borderRadius: 11,
+                padding: "0 12px",
+                borderRadius: 12,
                 border: `1px solid ${T.glassBorder}`,
                 background: dark ? "rgba(255,255,255,0.04)" : "#ffffff",
                 color: T.text,
-                fontSize: 12,
+                fontSize: 12.5,
                 outline: "none",
                 cursor: "pointer",
               }}
             >
-              <option value="popular">Most Popular</option>
-              <option value="rating">Highest Rated</option>
-              <option value="reviews">Most Reviews</option>
+              <option value="popular">Curated Popular</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
             </select>
           </div>
         </div>
 
-        {/* Product Cards Grid */}
+        {/* ── Product Card Grid ── */}
         {filtered.length === 0 ? (
-          <div style={{ padding: "60px 20px", textAlign: "center", borderRadius: 20, background: T.glass, border: `1px solid ${T.glassBorder}` }}>
-            <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
+          <div
+            style={{
+              padding: "60px 20px",
+              textAlign: "center",
+              borderRadius: 20,
+              background: dark ? "rgba(255,255,255,0.02)" : "#f8fafc",
+              border: `1px solid ${T.glassBorder}`,
+              marginTop: 20,
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>No products found</div>
-            <div style={{ fontSize: 12.5, color: T.textSub, marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: T.textMuted, marginTop: 4 }}>
               Try adjusting your search or category filter.
             </div>
           </div>
         ) : (
-          <div className="m-shop-grid">
+          <div className="m-shop-card-grid">
             {filtered.map((p) => {
               const affiliateUrl = buildAmazonAffiliateUrl(p.asin || p.href || p.name);
               const isWished = wishlist.includes(p.id);
 
               return (
-                <div key={p.id} className="m-shop-card">
+                <div
+                  key={p.id}
+                  className="m-shop-card"
+                  onClick={() => navigate(`/shop/product/${p.id}`)}
+                  title="Click to view full specifications, photos & in-app reviews"
+                >
                   {/* Image Container with Badges */}
                   <div className="m-shop-img-box">
                     <img
@@ -880,7 +447,7 @@ export default function MaleShop() {
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src =
-                          "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&q=80";
+                          "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&q=80";
                       }}
                     />
 
@@ -924,7 +491,10 @@ export default function MaleShop() {
                     )}
 
                     <button
-                      onClick={() => toggleWishlist(p.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(p.id);
+                      }}
                       style={{
                         position: "absolute",
                         top: 8,
@@ -981,7 +551,7 @@ export default function MaleShop() {
                         overflow: "hidden",
                       }}
                     >
-                      {p.description || p.desc}
+                      {p.description}
                     </div>
 
                     {/* Tags */}
@@ -1005,31 +575,30 @@ export default function MaleShop() {
                       </div>
                     )}
 
-                    {/* In-App Review Row */}
+                    {/* In-App Reviews Trigger */}
                     <div
-                      onClick={() => setSelectedReviewProduct(p)}
-                      title="Read community reviews and post yours"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/shop/product/${p.id}#reviews-section`);
+                      }}
+                      title="Read authentic athlete reviews & post yours"
                       style={{
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
                         marginBottom: 12,
                         cursor: "pointer",
-                        padding: "5px 8px",
+                        padding: "6px 9px",
                         borderRadius: 8,
                         background: dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
                         border: `1px solid ${T.glassBorder}`,
+                        transition: "all 0.16s ease",
                       }}
                     >
-                      <div style={{ color: "#f59e0b", fontSize: 12, display: "flex", gap: 1 }}>
-                        {"★".repeat(Math.round(Number(p.rating) || 5))}
+                      <div style={{ color: "#f59e0b", display: "flex", alignItems: "center", gap: 3 }}>
+                        <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                        <span style={{ fontSize: 11.5, fontWeight: 800 }}>In-App Reviews</span>
                       </div>
-                      <span style={{ fontSize: 11.5, fontWeight: 800, color: T.text }}>
-                        {p.rating}
-                      </span>
-                      <span style={{ fontSize: 10.5, color: T.textMuted }}>
-                        ({p.reviews?.toLocaleString?.() || p.reviews})
-                      </span>
                       <span
                         style={{
                           marginLeft: "auto",
@@ -1042,7 +611,7 @@ export default function MaleShop() {
                         }}
                       >
                         <MessageSquare size={11} />
-                        <span>Reviews</span>
+                        <span>View / Rate →</span>
                       </span>
                     </div>
 
@@ -1066,6 +635,10 @@ export default function MaleShop() {
                       href={affiliateUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        logUserOrder(p, user);
+                      }}
                       style={{ textDecoration: "none" }}
                     >
                       <button className="m-shop-buy-btn">
@@ -1094,30 +667,18 @@ export default function MaleShop() {
             textAlign: "center",
           }}
         >
-          <strong style={{ color: T.textSub }}>Amazon Associate Disclosure:</strong> AshFitVerse is a participant in the Amazon Services LLC Associates Program. When you purchase through our links, we may earn an affiliate commission at no extra cost to you. All product recommendations are independently vetted and selected for quality and athletic performance.
+          <strong style={{ color: T.textSub }}>Amazon Associate Disclosure:</strong> AshFitVerse is a participant in the Amazon Services LLC Associates Program. When you purchase through our links, we earn an affiliate commission at zero extra cost to you. All product recommendations are independently vetted and selected for quality and athletic performance.
         </div>
       </main>
 
-      {/* ── Modals ── */}
-      <ProductReviewsModal
-        isOpen={Boolean(selectedReviewProduct)}
-        onClose={() => setSelectedReviewProduct(null)}
-        product={selectedReviewProduct}
-        user={user}
-        dark={dark}
-        T={T}
-      />
-
-      <AddAffiliateProductModal
-        isOpen={showAddProductModal}
-        onClose={() => setShowAddProductModal(false)}
-        defaultShop="male"
-        onProductAdded={(newP) => {
-          setDynamicProducts((prev) => [newP, ...prev]);
-        }}
-        dark={dark}
-        T={T}
-      />
+      {/* Admin Add Product Modal */}
+      {showAddProductModal && (
+        <AddAffiliateProductModal
+          isOpen={showAddProductModal}
+          onClose={() => setShowAddProductModal(false)}
+          defaultShop="male"
+        />
+      )}
     </div>
   );
 }

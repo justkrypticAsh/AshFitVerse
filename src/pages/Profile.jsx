@@ -6,6 +6,7 @@ import useUser from "../hooks/useUser";
 import { todayKey, upsertDated } from "../lib/userLogs";
 import { showDonePopup } from "../components/DonePopup";
 import { generateCSS, FONT } from "../theme";
+import { getUserOrders } from "../features/shop/productCatalog";
 
 const GOALS = [
   { id:"muscle",    label:"Muscle Gain",    icon:"💪" },
@@ -43,8 +44,18 @@ export default function Profile() {
   const [saved,     setSaved]     = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [form,      setForm]      = useState({});
+  const [orders,    setOrders]    = useState([]);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    setOrders(getUserOrders());
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "orders") {
+      setOrders(getUserOrders());
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (user) setForm({ ...user });
@@ -368,6 +379,7 @@ export default function Profile() {
             {[
               { id:"profile",  label:"Profile & Bio" },
               { id:"fitness",  label:"Health Metrics" },
+              { id:"orders",   label:"📦 My Orders" },
               { id:"settings", label:"Settings" },
             ].map(t => (
               <button key={t.id} className={`tab-btn ${activeTab===t.id?"act":""}`} onClick={() => setActiveTab(t.id)}>
@@ -485,6 +497,114 @@ export default function Profile() {
                   <button className="save-btn" onClick={save} disabled={saving}>{saving?"Saving…":"Save Changes"}</button>
                 </div>
               )}
+            </div>
+          )}
+
+
+          {/* ── MY ORDERS TAB ── */}
+          {activeTab === "orders" && (
+            <div className="gl panel">
+              <div className="sect">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+                  <div>
+                    <div className="sect-title" style={{ marginBottom: 2 }}>📦 My Orders & Purchase History</div>
+                    <div style={{ fontSize: 12, color: T.textMuted }}>
+                      Products you ordered or purchased via Amazon Prime through AshFitVerse
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 800, padding: "4px 10px", borderRadius: 99, background: T.accentSoft, color: T.accent }}>
+                    {orders.length} Item{orders.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                {orders.length === 0 ? (
+                  <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 16, background: dark ? "rgba(255,255,255,0.02)" : "#f8fafc", border: `1px solid ${T.glassBorder}` }}>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}>🛍️</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>No orders tracked yet</div>
+                    <div style={{ fontSize: 12.5, color: T.textMuted, maxWidth: 420, margin: "6px auto 18px", lineHeight: 1.5 }}>
+                      When you click "Buy on Amazon" for any product across our shops, it will be automatically recorded here for instant re-ordering and authentic review publishing!
+                    </div>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                      <button className="q-btn" onClick={() => navigate("/shop")}>
+                        <span>🛒</span> Common Shop
+                      </button>
+                      <button className="q-btn" onClick={() => navigate("/male-health")}>
+                        <span>⚡</span> Men's Hub
+                      </button>
+                      <button className="q-btn" onClick={() => navigate("/female-health")}>
+                        <span>🌸</span> Women's Hub
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {orders.map((o, idx) => (
+                      <div
+                        key={o.orderId || idx}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "14px 16px",
+                          borderRadius: 16,
+                          background: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                          border: `1px solid ${T.glassBorder}`,
+                          gap: 14,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 260px" }}>
+                          <img
+                            src={o.image || "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=100&q=80"}
+                            alt={o.name}
+                            style={{
+                              width: 54,
+                              height: 54,
+                              borderRadius: 12,
+                              objectFit: "contain",
+                              background: dark ? "rgba(255,255,255,0.05)" : "#f1f5f9",
+                              padding: 4,
+                            }}
+                          />
+                          <div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase" }}>
+                              {o.brand}
+                            </div>
+                            <div style={{ fontSize: 13.5, fontWeight: 800, color: T.text, lineHeight: 1.3, margin: "2px 0 4px" }}>
+                              {o.name}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: T.textMuted }}>
+                              <span style={{ fontWeight: 800, color: "#10b981" }}>{o.price}</span>
+                              <span>•</span>
+                              <span>{o.timestamp ? new Date(o.timestamp).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : "Recently"}</span>
+                              <span>•</span>
+                              <span style={{ color: "#3b82f6", fontWeight: 700 }}>🚚 Amazon Prime</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+                          <button
+                            className="q-btn"
+                            onClick={() => navigate(`/shop/product/${o.productId}#reviews-section`)}
+                            title="Write a verified in-app review"
+                            style={{ padding: "7px 12px", fontSize: 12 }}
+                          >
+                            <span>⭐</span> Write Review
+                          </button>
+                          <button
+                            className="q-btn"
+                            onClick={() => navigate(`/shop/product/${o.productId}`)}
+                            style={{ padding: "7px 12px", fontSize: 12, background: T.accentSoft, color: T.accent }}
+                          >
+                            <span>📦</span> Buy Again ↗
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
