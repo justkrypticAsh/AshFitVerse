@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   Heart,
   ShoppingCart,
+  ShoppingBag,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
