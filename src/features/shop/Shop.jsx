@@ -68,7 +68,7 @@ const HERO_SLIDES = [
     featuredProduct: COMMON_PRODUCTS.find((p) => p.id === "4") || COMMON_PRODUCTS[3],
   },
   {
-    id: "10",
+    id: "13",
     tagline: "COMPETITION LIFTING ARSENAL",
     title: "HEAVY DUTY POWERLIFTING GEAR",
     subtitle: "10mm Leather Lever Belts, Wrist Wraps & Shakers",
@@ -77,7 +77,7 @@ const HERO_SLIDES = [
     accent: "#10b981",
     badge: "🏆 POWERLIFTING GEAR",
     targetCategory: "gear",
-    featuredProduct: COMMON_PRODUCTS.find((p) => p.id === "10") || COMMON_PRODUCTS[9],
+    featuredProduct: COMMON_PRODUCTS.find((p) => p.id === "13") || COMMON_PRODUCTS[12],
   },
   {
     id: "24",
@@ -121,7 +121,7 @@ const COACH_STACKS = [
     discountBadge: "SAVE ₹751 BUNDLE DEAL",
     items: [
       { id: "7", name: "MuscleBlaze Pre-Workout 200", img: "/products/7.jpg" },
-      { id: "10", name: "USI 10mm Leather Lever Belt", img: "/products/10.jpg" },
+      { id: "13", name: "Harbinger 4-Inch Padded Leather Belt", img: "/products/13.jpg" },
       { id: "25", name: "Boldfit Heavy Wrist Wraps", img: "/products/25.jpg" },
     ],
   },
@@ -289,15 +289,16 @@ export default function Shop() {
     setTimeout(() => setAddedToast(""), 3500);
   };
 
-  // Navigates directly to Chat with multi-contact sharing state
+  // Navigates directly to Community Messages with multi-contact sharing state
   const handleShareProductToChat = (e, product) => {
     e.stopPropagation();
     const productUrl = `${window.location.origin}/shop/product/${product.id}?tag=${affiliateTag}`;
     const prefill = `🔥 Check out this fitness essential on AshFitVerse Store!\n\n📦 ${product.name}\n💰 Price: ${product.price} (M.R.P: ${product.originalPrice})\n⭐ Verified Athlete Rating: 4.8★\n🔗 Direct Link: ${productUrl}`;
-    navigate("/chat", {
+    navigate("/community?tab=messages", {
       state: {
         shareProduct: product,
         prefillMessage: prefill,
+        isShareMode: true,
       },
     });
   };
@@ -1344,14 +1345,14 @@ export default function Shop() {
             <span>450 FitCoins</span>
           </div>
 
-          {/* Chat & Share Shortcut */}
+          {/* Community Messages Shortcut */}
           <button
             className="nav-action-btn"
-            onClick={() => navigate("/chat")}
-            title="Open FitVerse Direct Messaging & Gym Groups"
+            onClick={() => navigate("/community?tab=messages")}
+            title="Open FitVerse Direct Messaging & Gym Buddies"
           >
             <Send size={15} color="#38bdf8" />
-            <span>Chat & Share</span>
+            <span>Community Messages</span>
           </button>
 
           {/* FitBag Cart */}
@@ -1374,30 +1375,14 @@ export default function Shop() {
         </div>
       </header>
 
-      {/* ── Store Department Switcher Ribbon ── */}
+      {/* ── Official Store Trust & Delivery Banner ── */}
       <div className="store-tabs-ribbon">
-        <div className="dept-tabs-group">
-          <button
-            className={`dept-tab-btn ${!deptParam ? "active" : ""}`}
-            onClick={() => navigate("/shop")}
-          >
-            <span>🌐 Common Pro Shop</span>
-          </button>
-          <button
-            className={`dept-tab-btn ${deptParam === "male" ? "active" : ""}`}
-            onClick={() => navigate("/male-shop")}
-          >
-            <span>⚡ Men's Elite Shop</span>
-          </button>
-          <button
-            className={`dept-tab-btn ${deptParam === "female" ? "active" : ""}`}
-            onClick={() => navigate("/female-shop")}
-          >
-            <span>🌸 Women's Wellness</span>
-          </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, fontSize: 13, color: dark ? "#38bdf8" : "#0284c7" }}>
+          <ShoppingBag size={17} />
+          <span>OFFICIAL ASHFITVERSE PRO STORE • 100% AUTHENTIC GUARANTEED</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: dark ? "#94a3b8" : "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
             <ShieldCheck size={15} color="#10b981" />
             <span>Anti-Doping & Purity Tested</span>
@@ -1600,7 +1585,7 @@ export default function Shop() {
                     onClick={(e) => {
                       e.stopPropagation();
                       const prefill = `🔥 Check out Coach Ashish's Signature Stack: ${stack.title}!\n\n✨ Included: ${stack.tagline}\n💰 Bundle Deal: ${stack.bundlePrice} (${stack.discountBadge})\n⚡ Scientific Synergy: ${stack.synergyScore}\n🔗 View on AshFitVerse Store: ${window.location.origin}/shop`;
-                      navigate("/chat", {
+                      navigate("/community?tab=messages", {
                         state: {
                           shareProduct: {
                             id: stack.id,
@@ -1612,12 +1597,13 @@ export default function Shop() {
                             localImage: stack.items[0].img,
                           },
                           prefillMessage: prefill,
+                          isShareMode: true,
                         },
                       });
                     }}
                   >
                     <Send size={13} />
-                    <span>Share to Chat</span>
+                    <span>Share to Gym Buddies</span>
                   </button>
                 </div>
               </div>
@@ -2033,11 +2019,10 @@ export default function Shop() {
           </div>
 
           <div>
-            <div className="footer-col-title">DEPARTMENTS</div>
-            <a href="/shop" className="footer-link">Common Pro Shop</a>
-            <a href="/male-shop" className="footer-link">Men's Elite Shop</a>
-            <a href="/female-shop" className="footer-link">Women's Wellness Shop</a>
-            <a href="/chat" className="footer-link">FitVerse Chat & Share</a>
+            <div className="footer-col-title">STORE & COMMUNITY</div>
+            <a href="/shop" className="footer-link">Official Fitness Store</a>
+            <a href="/community?tab=messages" className="footer-link">Athlete Direct Messages</a>
+            <a href="/community" className="footer-link">Community Feed</a>
           </div>
 
           <div>

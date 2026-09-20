@@ -169,11 +169,12 @@ export default function ProductDetail() {
 
   const handleShareToChat = () => {
     const productUrl = `${window.location.origin}/shop/product/${product?.id || id}?tag=${affiliateTag}`;
-    const prefill = `🔥 Check out this fitness gear on AshFitVerse Store!\n\n📦 ${product?.name}\n💰 Price: ${product?.price}\n⭐ Verified Athlete Rating: 4.8★\n🔗 Direct Link: ${productUrl}`;
-    navigate("/chat", {
+    const prefill = `🔥 Check out this verified athletic gear on AshFitVerse Store!\n\n📦 ${product?.name}\n💰 Price: ${product?.price}\n⭐ Verified Athlete Rating: 4.8★\n🔗 Direct Link: ${productUrl}`;
+    navigate("/community?tab=messages", {
       state: {
         shareProduct: product,
         prefillMessage: prefill,
+        isShareMode: true,
       },
     });
   };

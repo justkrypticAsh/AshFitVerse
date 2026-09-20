@@ -1,6 +1,7 @@
 // src/features/community/Community.jsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { getAffiliateTag } from "../../config/affiliateConfig";
 import useTheme from "../../hooks/usetheme";
 import useUser from "../../hooks/useUser";
 import { generateCSS, FONT } from "../../theme";
@@ -243,6 +244,7 @@ function Avatar({ src, name, size = 40, onClick }) {
 // ── Main Community Component ────────────────────────────────────────────────
 export default function Community() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { dark, toggleTheme, T } = useTheme();
   const { user, updateUser } = useUser();
@@ -263,6 +265,13 @@ export default function Community() {
   const [activeDMUser, setActiveDMUser] = useState(null);
   const [dmMessages, setDmMessages] = useState([]);
   const [dmMsg, setDmMsg] = useState("");
+
+  // Product Direct Sharing to Messages State
+  const [shareData, setShareData] = useState(null); // { product, prefillMessage }
+  const [selectedShareRecipients, setSelectedShareRecipients] = useState([]); // array of targetUid
+  const [shareSending, setShareSending] = useState(false);
+  const [shareSuccessToast, setShareSuccessToast] = useState(null);
+  const [showAllMembersForShare, setShowAllMembersForShare] = useState(false);
 
   // Post & Modals State
   const [showPostCreator, setShowPostCreator] = useState(false);
@@ -391,6 +400,17 @@ export default function Community() {
       setActiveTab(tabParam);
     }
 
+    // Check if entered with share state from shop
+    if (location.state?.isShareMode && location.state?.shareProduct) {
+      setShareData({
+        product: location.state.shareProduct,
+        prefillMessage: location.state.prefillMessage || "",
+      });
+      setActiveTab("messages");
+      setActiveDM(null);
+      setSelectedShareRecipients([]);
+    }
+
     const targetDm = searchParams.get("dm");
     if (targetDm) {
       setActiveTab("messages");
@@ -408,7 +428,7 @@ export default function Community() {
       document.removeEventListener("visibilitychange", vis);
       window.removeEventListener("beforeunload", off);
     };
-  }, [myUid, searchParams]);
+  }, [myUid, searchParams, location.state]);
 
   // Subscribe to Posts
   useEffect(() => {
@@ -506,6 +526,8 @@ export default function Community() {
               const otherUid = membersArr.find((u) => u !== myUid);
               let otherUser = { uid: otherUid, name: "Athlete", avatar: null, online: false };
               if (otherUid) {
+                const found = members.find((m) => m.uid === otherUid);
+                if (found) otherUser = { ...otherUser, ...found };
                 try {
                   const s = await getDoc(doc(db, "users", otherUid));
                   if (s.exists()) otherUser = { uid: otherUid, ...s.data() };
@@ -530,7 +552,7 @@ export default function Community() {
         console.warn("Conv subscription error:", err);
       }
     );
-  }, [myUid]);
+  }, [myUid, members]);
 
   // Active DM Messages Listener
   useEffect(() => {
@@ -573,7 +595,7 @@ export default function Community() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [dmMessages]);
 
-  // ── Open DM Handler (Fully bug-fixed & paywall removed) ─────────────────────
+  // ── Open DM Handler (Guarantees conversation doc exists with members) ───────
   const openDMWithUser = async (targetUid) => {
     if (!targetUid || targetUid === myUid) return;
     const convId = getConvId(myUid, targetUid);
@@ -597,21 +619,20 @@ export default function Community() {
 
     try {
       const convRef = doc(db, "conversations", convId);
-      const snap = await getDoc(convRef);
-      if (!snap.exists()) {
-        await setDoc(convRef, {
+      await setDoc(
+        convRef,
+        {
           members: [myUid, targetUid],
-          lastMessage: "",
           lastMessageAt: serverTimestamp(),
-          unreadBy: [],
-        });
-      }
+        },
+        { merge: true }
+      );
     } catch (err) {
       console.warn("Conv set error:", err);
     }
   };
 
-  // ── Send DM Handler ────────────────────────────────────────────────────────
+  // ── Send DM Handler (Uses setDoc with merge to ensure doc persistence) ────────
   const sendDM = async () => {
     if (!dmMsg.trim() || !activeDM || !myUid) return;
     const text = dmMsg.trim();
@@ -636,17 +657,103 @@ export default function Community() {
         createdAt: serverTimestamp(),
       });
 
+      const recipientUid = activeDMUser?.uid;
       const updates = {
+        members: [myUid, recipientUid].filter(Boolean),
         lastMessage: text,
         lastMessageAt: serverTimestamp(),
       };
-      if (activeDMUser?.uid) {
-        updates.unreadBy = arrayUnion(activeDMUser.uid);
-        notifyMessage({ recipientUid: activeDMUser.uid, sender: user, messageText: text, convId: activeDM });
+      if (recipientUid) {
+        updates.unreadBy = arrayUnion(recipientUid);
+        notifyMessage({ recipientUid, sender: user, messageText: text, convId: activeDM });
       }
-      await updateDoc(doc(db, "conversations", activeDM), updates).catch(() => {});
+      await setDoc(doc(db, "conversations", activeDM), updates, { merge: true });
     } catch (e) {
       console.warn("Send DM error, cached locally:", e);
+    }
+  };
+
+  // ── Product Direct Sharing Handlers ─────────────────────────────────────────
+  const toggleShareRecipient = (targetUid) => {
+    setSelectedShareRecipients((prev) =>
+      prev.includes(targetUid) ? prev.filter((id) => id !== targetUid) : [...prev, targetUid]
+    );
+  };
+
+  const selectAllShareRecipients = (allUids) => {
+    if (selectedShareRecipients.length === allUids.length) {
+      setSelectedShareRecipients([]);
+    } else {
+      setSelectedShareRecipients([...allUids]);
+    }
+  };
+
+  const sendBatchProductShare = async () => {
+    if (!shareData || selectedShareRecipients.length === 0 || !myUid) return;
+    setShareSending(true);
+    const { product, prefillMessage } = shareData;
+    const affiliateTag = getAffiliateTag();
+    let sentCount = 0;
+    let lastTargetUid = null;
+
+    for (const targetUid of selectedShareRecipients) {
+      try {
+        const convId = getConvId(myUid, targetUid);
+        const convRef = doc(db, "conversations", convId);
+
+        // 1. Add message with product details & rich productCard
+        await addDoc(collection(db, "conversations", convId, "messages"), {
+          text: prefillMessage,
+          senderUid: myUid,
+          senderName: user?.name || "Athlete",
+          senderAvatar: user?.avatar || null,
+          createdAt: serverTimestamp(),
+          productCard: {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            originalPrice: product.originalPrice || "",
+            image: product.image || product.localImage,
+            affiliateUrl: `${window.location.origin}/shop/product/${product.id}?tag=${affiliateTag}`,
+          },
+        });
+
+        // 2. Guarantee conversation document exists & updates with members
+        await setDoc(
+          convRef,
+          {
+            members: [myUid, targetUid],
+            lastMessage: `🔥 Shared product: ${product.name}`,
+            lastMessageAt: serverTimestamp(),
+            unreadBy: arrayUnion(targetUid),
+          },
+          { merge: true }
+        );
+
+        // 3. Trigger recipient notification
+        notifyMessage({
+          recipientUid: targetUid,
+          sender: user,
+          messageText: `🔥 Shared product: ${product.name}`,
+          convId,
+        });
+
+        sentCount++;
+        lastTargetUid = targetUid;
+      } catch (err) {
+        console.warn("Failed to share product with", targetUid, err);
+      }
+    }
+
+    setShareSending(false);
+    setShareSuccessToast(`🚀 Product successfully shared with ${sentCount} athlete${sentCount > 1 ? "s" : ""}!`);
+    setTimeout(() => setShareSuccessToast(null), 4500);
+    setShareData(null);
+    setSelectedShareRecipients([]);
+
+    // If sent to a single recipient, open their chat directly
+    if (sentCount === 1 && lastTargetUid) {
+      openDMWithUser(lastTargetUid);
     }
   };
 
@@ -2584,74 +2691,384 @@ export default function Community() {
                       </button>
                     </div>
 
-                    {convList.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "40px 20px", color: T.textMuted }}>
-                        <div style={{ fontSize: 36, marginBottom: 8 }}>💬</div>
-                        <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 800, color: T.text }}>
-                          No messages yet
+                    {/* Direct Product Share Banner */}
+                    {shareData && (
+                      <div
+                        style={{
+                          marginBottom: 20,
+                          padding: 16,
+                          borderRadius: 16,
+                          background: dark
+                            ? "linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(16, 185, 129, 0.08))"
+                            : "linear-gradient(135deg, #e0f2fe, #dcfce7)",
+                          border: `1.5px solid ${dark ? "rgba(56, 189, 248, 0.35)" : "#bae6fd"}`,
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <img
+                              src={shareData.product.image || shareData.product.localImage}
+                              alt={shareData.product.name}
+                              style={{
+                                width: 50,
+                                height: 50,
+                                objectFit: "contain",
+                                borderRadius: 10,
+                                background: "#ffffff",
+                                padding: 4,
+                                border: "1px solid rgba(255,255,255,0.2)",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              }}
+                            />
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", color: "#38bdf8", letterSpacing: 0.5 }}>
+                                Direct Product Share Mode
+                              </div>
+                              <div style={{ fontFamily: FONT.display, fontSize: 14, fontWeight: 800, color: T.text, lineHeight: 1.2 }}>
+                                {shareData.product.name}
+                              </div>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: "#10b981", marginTop: 2 }}>
+                                {shareData.product.price}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShareData(null);
+                              setSelectedShareRecipients([]);
+                            }}
+                            style={{
+                              background: dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
+                              border: "none",
+                              color: T.text,
+                              fontSize: 14,
+                              cursor: "pointer",
+                              padding: "4px 8px",
+                              borderRadius: 6,
+                              lineHeight: 1,
+                              fontWeight: 700,
+                            }}
+                            title="Cancel Share"
+                          >
+                            ✕ Cancel
+                          </button>
                         </div>
-                        <div style={{ fontSize: 13, marginTop: 4, marginBottom: 16 }}>
-                          Connect with trainers, accountability partners, and friends!
-                        </div>
-                        <button
-                          className="cm-create-post-btn"
-                          style={{ margin: "0 auto" }}
-                          onClick={() => setActiveTab("members")}
-                        >
-                          Find Athletes to Chat With →
-                        </button>
-                      </div>
-                    ) : (
-                      convList.map((c) => (
+
+                        {/* Pre-Typed Message Preview */}
                         <div
-                          key={c.convId}
-                          onClick={() => {
-                            setActiveDMUser(c.otherUser);
-                            setActiveDM(c.convId);
-                          }}
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: "12px 14px",
-                            borderRadius: 14,
-                            background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                            background: dark ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.75)",
+                            padding: "10px 14px",
+                            borderRadius: 10,
+                            fontSize: 12,
+                            color: T.textSub,
+                            whiteSpace: "pre-wrap",
+                            maxHeight: 70,
+                            overflowY: "auto",
+                            marginBottom: 14,
                             border: `1px solid ${T.glassBorder}`,
-                            marginBottom: 8,
-                            cursor: "pointer",
-                            transition: "all 0.16s ease",
                           }}
                         >
-                          <div style={{ position: "relative" }}>
-                            <Avatar src={c.otherUser.avatar} name={c.otherUser.name} size={42} />
-                            {c.otherUser.online && (
+                          {shareData.prefillMessage}
+                        </div>
+
+                        {/* Actions: Select All & Broadcast Send Button */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                          <button
+                            onClick={() => {
+                              const allPossibleUids = (convList.length > 0
+                                ? convList.map((c) => c.otherUser.uid).filter(Boolean)
+                                : members.map((m) => m.uid).filter((id) => id && id !== myUid)
+                              );
+                              selectAllShareRecipients(allPossibleUids);
+                            }}
+                            style={{
+                              background: "transparent",
+                              border: `1px solid ${T.glassBorder}`,
+                              borderRadius: 8,
+                              padding: "6px 14px",
+                              color: T.text,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {selectedShareRecipients.length > 0 ? "Deselect All" : "Select All Active Chats"}
+                          </button>
+
+                          <button
+                            disabled={selectedShareRecipients.length === 0 || shareSending}
+                            onClick={sendBatchProductShare}
+                            style={{
+                              background: selectedShareRecipients.length > 0
+                                ? "linear-gradient(135deg, #0284c7, #0ea5e9)"
+                                : (dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"),
+                              color: selectedShareRecipients.length > 0 ? "#ffffff" : T.textMuted,
+                              border: "none",
+                              borderRadius: 10,
+                              padding: "8px 20px",
+                              fontSize: 13,
+                              fontWeight: 800,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              cursor: selectedShareRecipients.length > 0 && !shareSending ? "pointer" : "not-allowed",
+                              boxShadow: selectedShareRecipients.length > 0 ? "0 4px 14px rgba(14, 165, 233, 0.4)" : "none",
+                              transition: "all 0.16s ease",
+                            }}
+                          >
+                            <Send size={14} />
+                            <span>
+                              {shareSending
+                                ? "Sending..."
+                                : selectedShareRecipients.length > 0
+                                ? `Send to ${selectedShareRecipients.length} Selected Athlete${selectedShareRecipients.length > 1 ? "s" : ""}`
+                                : "Select recipients below"}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {convList.length === 0 ? (
+                      shareData ? (
+                        <div>
+                          <div style={{ fontSize: 13, color: T.textSub, marginBottom: 12 }}>
+                            You don't have active chats yet. Choose athletes from the community below to share this product with:
+                          </div>
+                          {members.filter((m) => m.uid && m.uid !== myUid).map((m) => {
+                            const isSelected = selectedShareRecipients.includes(m.uid);
+                            return (
                               <div
+                                key={m.uid}
+                                onClick={() => toggleShareRecipient(m.uid)}
                                 style={{
-                                  position: "absolute",
-                                  bottom: 0,
-                                  right: 0,
-                                  width: 10,
-                                  height: 10,
-                                  borderRadius: "50%",
-                                  background: "#22c55e",
-                                  border: `2px solid ${T.bg}`,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 12,
+                                  padding: "10px 14px",
+                                  borderRadius: 14,
+                                  background: isSelected
+                                    ? (dark ? "rgba(56, 189, 248, 0.15)" : "#e0f2fe")
+                                    : (dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)"),
+                                  border: isSelected ? "1.5px solid #38bdf8" : `1px solid ${T.glassBorder}`,
+                                  marginBottom: 8,
+                                  cursor: "pointer",
+                                  transition: "all 0.15s ease",
                                 }}
-                              />
+                              >
+                                <div
+                                  style={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: 6,
+                                    border: isSelected ? "2px solid #0284c7" : `2px solid ${T.glassBorder}`,
+                                    background: isSelected ? "#0284c7" : "transparent",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {isSelected && <Check size={14} color="#ffffff" strokeWidth={3} />}
+                                </div>
+                                <Avatar src={m.avatar} name={m.name} size={40} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontFamily: FONT.display, fontSize: 14, fontWeight: 800, color: T.text }}>
+                                    {m.name || "Athlete"}
+                                  </div>
+                                  <div style={{ fontSize: 12, color: T.textMuted }}>
+                                    {m.bio || m.role || "Community Athlete"}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: "center", padding: "40px 20px", color: T.textMuted }}>
+                          <div style={{ fontSize: 36, marginBottom: 8 }}>💬</div>
+                          <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 800, color: T.text }}>
+                            No messages yet
+                          </div>
+                          <div style={{ fontSize: 13, marginTop: 4, marginBottom: 16 }}>
+                            Connect with trainers, accountability partners, and friends!
+                          </div>
+                          <button
+                            className="cm-create-post-btn"
+                            style={{ margin: "0 auto" }}
+                            onClick={() => setActiveTab("members")}
+                          >
+                            Find Athletes to Chat With →
+                          </button>
+                        </div>
+                      )
+                    ) : (
+                      <>
+                        {convList.map((c) => {
+                          const isSelected = selectedShareRecipients.includes(c.otherUser.uid);
+                          return (
+                            <div
+                              key={c.convId}
+                              onClick={() => {
+                                if (shareData) {
+                                  toggleShareRecipient(c.otherUser.uid);
+                                } else {
+                                  setActiveDMUser(c.otherUser);
+                                  setActiveDM(c.convId);
+                                }
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "12px 14px",
+                                borderRadius: 14,
+                                background: isSelected
+                                  ? (dark ? "rgba(56, 189, 248, 0.15)" : "#e0f2fe")
+                                  : (dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)"),
+                                border: isSelected
+                                  ? "1.5px solid #38bdf8"
+                                  : `1px solid ${T.glassBorder}`,
+                                marginBottom: 8,
+                                cursor: "pointer",
+                                transition: "all 0.16s ease",
+                              }}
+                            >
+                              {/* Interactive Checkbox in Share Mode */}
+                              {shareData && (
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleShareRecipient(c.otherUser.uid);
+                                  }}
+                                  style={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: 6,
+                                    border: isSelected ? "2px solid #0284c7" : `2px solid ${T.glassBorder}`,
+                                    background: isSelected ? "#0284c7" : "transparent",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: "pointer",
+                                    flexShrink: 0,
+                                    transition: "all 0.15s ease",
+                                  }}
+                                >
+                                  {isSelected && <Check size={14} color="#ffffff" strokeWidth={3} />}
+                                </div>
+                              )}
+
+                              <div style={{ position: "relative" }}>
+                                <Avatar src={c.otherUser.avatar} name={c.otherUser.name} size={42} />
+                                {c.otherUser.online && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      bottom: 0,
+                                      right: 0,
+                                      width: 10,
+                                      height: 10,
+                                      borderRadius: "50%",
+                                      background: "#22c55e",
+                                      border: `2px solid ${T.bg}`,
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontFamily: FONT.display, fontSize: 15, fontWeight: 800, color: T.text }}>
+                                  {c.otherUser.name || "Athlete"}
+                                </div>
+                                <div style={{ fontSize: 12.5, color: T.textSub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {c.lastMsg || "Tap to chat…"}
+                                </div>
+                              </div>
+                              <div style={{ fontSize: 11, color: T.textMuted }}>
+                                {timeAgo(c.lastAt)}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Expandable options to share with other community athletes */}
+                        {shareData && (
+                          <div style={{ marginTop: 14 }}>
+                            <button
+                              onClick={() => setShowAllMembersForShare((p) => !p)}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#38bdf8",
+                                fontSize: 13,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                padding: "6px 0",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <span>{showAllMembersForShare ? "▼ Hide other community athletes" : "▶ + Select other community athletes"}</span>
+                            </button>
+                            {showAllMembersForShare && (
+                              <div style={{ marginTop: 10 }}>
+                                {members
+                                  .filter((m) => m.uid && m.uid !== myUid && !convList.some((c) => c.otherUser.uid === m.uid))
+                                  .map((m) => {
+                                    const isSelected = selectedShareRecipients.includes(m.uid);
+                                    return (
+                                      <div
+                                        key={m.uid}
+                                        onClick={() => toggleShareRecipient(m.uid)}
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 12,
+                                          padding: "10px 14px",
+                                          borderRadius: 14,
+                                          background: isSelected
+                                            ? (dark ? "rgba(56, 189, 248, 0.15)" : "#e0f2fe")
+                                            : (dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)"),
+                                          border: isSelected ? "1.5px solid #38bdf8" : `1px solid ${T.glassBorder}`,
+                                          marginBottom: 8,
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            width: 22,
+                                            height: 22,
+                                            borderRadius: 6,
+                                            border: isSelected ? "2px solid #0284c7" : `2px solid ${T.glassBorder}`,
+                                            background: isSelected ? "#0284c7" : "transparent",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          {isSelected && <Check size={14} color="#ffffff" strokeWidth={3} />}
+                                        </div>
+                                        <Avatar src={m.avatar} name={m.name} size={40} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{ fontFamily: FONT.display, fontSize: 14, fontWeight: 800, color: T.text }}>
+                                            {m.name || "Athlete"}
+                                          </div>
+                                          <div style={{ fontSize: 12, color: T.textMuted }}>
+                                            {m.bio || m.role || "Community Athlete"}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
                             )}
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontFamily: FONT.display, fontSize: 15, fontWeight: 800, color: T.text }}>
-                              {c.otherUser.name || "Athlete"}
-                            </div>
-                            <div style={{ fontSize: 12.5, color: T.textSub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {c.lastMsg || "Tap to chat…"}
-                            </div>
-                          </div>
-                          <div style={{ fontSize: 11, color: T.textMuted }}>
-                            {timeAgo(c.lastAt)}
-                          </div>
-                        </div>
-                      ))
+                        )}
+                      </>
                     )}
                   </div>
                 ) : (
@@ -2717,7 +3134,55 @@ export default function Community() {
                               }}
                             >
                               <div className={isMe ? "msg-bubble-me" : "msg-bubble-them"}>
-                                {m.text}
+                                {m.productCard && (
+                                  <div
+                                    style={{
+                                      background: dark ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.85)",
+                                      borderRadius: 12,
+                                      padding: 10,
+                                      marginBottom: 8,
+                                      border: `1px solid ${dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"}`,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 12,
+                                      maxWidth: 320,
+                                    }}
+                                  >
+                                    {m.productCard.image && (
+                                      <img
+                                        src={m.productCard.image}
+                                        alt={m.productCard.name}
+                                        style={{ width: 46, height: 46, objectFit: "contain", borderRadius: 8, background: "#ffffff", padding: 3 }}
+                                      />
+                                    )}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 13, fontWeight: 800, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {m.productCard.name}
+                                      </div>
+                                      <div style={{ fontSize: 12, color: "#10b981", fontWeight: 800, marginTop: 2 }}>
+                                        {m.productCard.price}
+                                      </div>
+                                    </div>
+                                    <a
+                                      href={m.productCard.affiliateUrl || `/shop/product/${m.productCard.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{
+                                        padding: "5px 12px",
+                                        background: "#0284c7",
+                                        color: "#ffffff",
+                                        borderRadius: 8,
+                                        fontSize: 11,
+                                        fontWeight: 800,
+                                        textDecoration: "none",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      View ↗
+                                    </a>
+                                  </div>
+                                )}
+                                <div style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>
                               </div>
                               <span style={{ fontSize: 10, color: T.textMuted, marginTop: 2, padding: "0 4px" }}>
                                 {timeAgo(m.createdAt)}
@@ -3771,6 +4236,31 @@ export default function Community() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Product Direct Share Success Toast */}
+        {shareSuccessToast && (
+          <div
+            style={{
+              position: "fixed",
+              top: 24,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 9999,
+              background: "#10b981",
+              color: "#ffffff",
+              padding: "12px 24px",
+              borderRadius: 14,
+              fontWeight: 800,
+              fontSize: 14,
+              boxShadow: "0 10px 30px rgba(16, 185, 129, 0.45)",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <span>{shareSuccessToast}</span>
           </div>
         )}
 
