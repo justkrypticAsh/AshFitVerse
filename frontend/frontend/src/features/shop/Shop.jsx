@@ -16,8 +16,6 @@ import {
   ArrowLeft,
   Heart,
   ShoppingCart,
-  MapPin,
-  Menu,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -33,29 +31,37 @@ import {
   Layers,
   Percent,
   CheckCircle2,
+  SlidersHorizontal,
+  ArrowUpRight,
+  PackageCheck,
+  Truck,
+  Coins,
+  Share2,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────
-// PANORAMIC PRO ATHLETE HERO SLIDES
+// PRO ATHLETE HERO SLIDES (ASHFITVERSE SIGNATURE SERIES)
 // ─────────────────────────────────────────────────────────────
 const HERO_SLIDES = [
   {
     id: "1",
-    title: "GRAND FITNESS FESTIVAL",
-    subtitle: "Up to 55% OFF on 100% Authentic Whey & Isolate",
-    description: "Labdoor Certified • Anti-Doping Tested • Guaranteed Same-Day / Next-Day Delivery with Amazon Prime",
-    bgGradient: "linear-gradient(135deg, #0b0f19 0%, #1e1b4b 50%, #172554 100%)",
+    tagline: "COACH ASHISH'S VERIFIED PERFORMANCE",
+    title: "ELITE SPORTS NUTRITION & GEAR",
+    subtitle: "Up to 55% OFF on 100% Authentic Whey, Creatine & Power Gear",
+    description: "Every batch verified for zero banned substances. Delivered directly with Amazon Prime speed & authenticity.",
+    bgGradient: "linear-gradient(135deg, #070b14 0%, #172554 50%, #1e1b4b 100%)",
     accent: "#f59e0b",
-    badge: "🔥 PRIME ATHLETE DEALS",
+    badge: "🔥 ASHFITVERSE VERIFIED",
     targetCategory: "protein",
     featuredProduct: COMMON_PRODUCTS.find((p) => p.id === "1") || COMMON_PRODUCTS[0],
   },
   {
     id: "4",
+    tagline: "CLINICAL ATP & STRENGTH PROTOCOL",
     title: "EXPLOSIVE STRENGTH & POWER DAYS",
-    subtitle: "German Creapure Creatine & High-Stim Pre-Workouts",
-    description: "Max out intramuscular phosphocreatine ATP and shatter deadlift & squat PRs with pure clinical formulations",
-    bgGradient: "linear-gradient(135deg, #0f172a 0%, #311042 50%, #431407 100%)",
+    subtitle: "German Creapure Creatine & High-Stim Nitric Pre-Workouts",
+    description: "Saturate intramuscular phosphocreatine reserves and shatter squat, bench & deadlift PR plateaus.",
+    bgGradient: "linear-gradient(135deg, #090e1a 0%, #2e1065 50%, #431407 100%)",
     accent: "#38bdf8",
     badge: "⚡ PEAK ATP POWER",
     targetCategory: "creatine",
@@ -63,9 +69,10 @@ const HERO_SLIDES = [
   },
   {
     id: "10",
-    title: "HEAVY DUTY PRO GYM GEAR",
+    tagline: "COMPETITION LIFTING ARSENAL",
+    title: "HEAVY DUTY POWERLIFTING GEAR",
     subtitle: "10mm Leather Lever Belts, Wrist Wraps & Shakers",
-    description: "Competition-grade spinal stabilization and joint wraps trusted by competitive powerlifters and athletes",
+    description: "Rigid intra-abdominal spinal stabilization and joint protection trusted by elite strength athletes.",
     bgGradient: "linear-gradient(135deg, #022c22 0%, #064e3b 50%, #0f172a 100%)",
     accent: "#10b981",
     badge: "🏆 POWERLIFTING GEAR",
@@ -74,12 +81,13 @@ const HERO_SLIDES = [
   },
   {
     id: "24",
-    title: "DAILY HEALTH, OMEGAS & RECOVERY",
+    tagline: "LONGEVITY, HORMONES & RECOVERY",
+    title: "VITALITY & RESTORATIVE RECOVERY",
     subtitle: "Triple Strength Omega-3, KSM-66 Ashwagandha & Vitamins",
-    description: "Fortify cardiovascular endurance, lubricate articular cartilage, and optimize deep REM restorative sleep",
+    description: "Fortify cardiovascular endurance, lubricate articular cartilage, and promote deep restorative REM sleep.",
     bgGradient: "linear-gradient(135deg, #451a03 0%, #78350f 50%, #1e293b 100%)",
     accent: "#fb923c",
-    badge: "🌿 LONGEVITY & VITALITY",
+    badge: "🌿 RECOVERY & LONGEVITY",
     targetCategory: "vitamins",
     featuredProduct: COMMON_PRODUCTS.find((p) => p.id === "24") || COMMON_PRODUCTS[4],
   },
@@ -89,57 +97,57 @@ const HERO_SLIDES = [
 const COACH_STACKS = [
   {
     id: "stack-hypertrophy",
-    title: "The Ultimate Hypertrophy & Muscle Growth Stack",
-    tagline: "24g Whey Isolate + 3g Micronized Creapure + Shaker",
+    title: "The Ultimate Hypertrophy Mass Monster Stack",
+    tagline: "24g Whey Isolate + 3g German Creapure + BlenderBottle Pro",
     goal: "hypertrophy",
     synergyScore: "99.8% Synergy",
     bundlePrice: "₹5,247",
     regularPrice: "₹6,098",
     discountBadge: "SAVE ₹851 BUNDLE DEAL",
     items: [
-      { id: "1", name: "ON Gold Standard Whey 2 lbs", img: "https://m.media-amazon.com/images/I/71rYnIdVEqL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/1.jpg" },
-      { id: "4", name: "German Creapure Creatine 250g", img: "https://m.media-amazon.com/images/I/61A69Friz+L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/4.jpg" },
-      { id: "18", name: "BlenderBottle Pro Series 820ml", img: "https://m.media-amazon.com/images/I/71JlXDV-nPL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/18.jpg" },
+      { id: "1", name: "ON Gold Standard Whey 2 lbs", img: "/products/1.jpg" },
+      { id: "4", name: "German Creapure Creatine 250g", img: "/products/4.jpg" },
+      { id: "18", name: "BlenderBottle Pro Series 820ml", img: "/products/18.jpg" },
     ],
   },
   {
     id: "stack-pr-hunter",
     title: "Explosive PR Hunter & Nitric Pump Stack",
-    tagline: "High-Stim Caffeine C4 + L-Citrulline + USI Lever Belt",
+    tagline: "MuscleBlaze Pre-Workout 200 + USI Lever Belt + Boldfit Wraps",
     goal: "strength",
     synergyScore: "98.9% Synergy",
     bundlePrice: "₹4,847",
     regularPrice: "₹5,598",
     discountBadge: "SAVE ₹751 BUNDLE DEAL",
     items: [
-      { id: "7", name: "Cellucor C4 Pre-Workout", img: "https://m.media-amazon.com/images/I/61CGhaCb55L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/7.jpg" },
-      { id: "10", name: "USI Universal Leather Lever Belt", img: "https://m.media-amazon.com/images/I/71j+4jDZTeL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/10.jpg" },
-      { id: "14", name: "Boldfit Heavy Wrist Wraps", img: "https://m.media-amazon.com/images/I/61VMKkVBwqL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/14.jpg" },
+      { id: "7", name: "MuscleBlaze Pre-Workout 200", img: "/products/7.jpg" },
+      { id: "10", name: "USI 10mm Leather Lever Belt", img: "/products/10.jpg" },
+      { id: "25", name: "Boldfit Heavy Wrist Wraps", img: "/products/25.jpg" },
     ],
   },
   {
     id: "stack-longevity",
     title: "Daily Longevity & Joint Armor Stack",
-    tagline: "Triple Omega-3 (560mg EPA/400mg DHA) + Vit C + Multivitamin",
+    tagline: "TrueBasics Triple Omega-3 + Fast&Up Vit C + HK Multivitamin",
     goal: "longevity",
     synergyScore: "99.2% Synergy",
     bundlePrice: "₹1,899",
     regularPrice: "₹2,499",
     discountBadge: "SAVE ₹600 BUNDLE DEAL",
     items: [
-      { id: "24", name: "TrueBasics Triple Omega-3", img: "https://m.media-amazon.com/images/I/61WBl1SBy+L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/24.jpg" },
-      { id: "23", name: "Fast&Up Charge Vitamin C 1000mg", img: "https://m.media-amazon.com/images/I/61q1SGIQ2fL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/23.jpg" },
-      { id: "6", name: "HK Vitals Multivitamin + Zinc", img: "https://m.media-amazon.com/images/I/71pYCanoMhL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/6.jpg" },
+      { id: "24", name: "TrueBasics Triple Omega-3", img: "/products/24.jpg" },
+      { id: "23", name: "Fast&Up Charge Vitamin C 1000mg", img: "/products/23.jpg" },
+      { id: "11", name: "HK Vitals Multivitamin + Zinc", img: "/products/11.jpg" },
     ],
   },
 ];
 
 const SEARCH_CATEGORIES = [
-  { id: "all", label: "All Categories" },
+  { id: "all", label: "All Gear & Nutrition" },
   { id: "protein", label: "Whey & Protein" },
   { id: "creatine", label: "Creatine & Strength" },
   { id: "preworkout", label: "Pre-Workout" },
-  { id: "vitamins", label: "Vitamins & Recovery" },
+  { id: "vitamins", label: "Vitamins & Longevity" },
   { id: "gear", label: "Gym Gear & Belts" },
 ];
 
@@ -173,7 +181,6 @@ export default function Shop() {
   const [timeLeft, setTimeLeft] = useState({ hours: 4, minutes: 18, seconds: 24 });
 
   const dealsScrollRef = useRef(null);
-  const bestSellersScrollRef = useRef(null);
   const heroTimerRef = useRef(null);
 
   // Sync products depending on department
@@ -201,7 +208,7 @@ export default function Shop() {
     if (isHoveringHero) return;
     heroTimerRef.current = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5500);
+    }, 6000);
     return () => clearInterval(heroTimerRef.current);
   }, [isHoveringHero]);
 
@@ -263,16 +270,12 @@ export default function Shop() {
       });
   }, [allProducts, category, goalFilter, search, sort]);
 
-  // Lightning Deals & Best Sellers subsets
+  // Lightning Deals subset
   const lightningDeals = useMemo(() => {
     return allProducts.slice(0, 10).map((p, idx) => ({
       ...p,
       claimedPercent: 62 + ((idx * 7) % 32),
     }));
-  }, [allProducts]);
-
-  const bestSellers = useMemo(() => {
-    return allProducts.slice(0, 12);
   }, [allProducts]);
 
   const toggleWishlist = (id) => {
@@ -282,7 +285,7 @@ export default function Shop() {
   const handleAddToCart = (e, product) => {
     e.stopPropagation();
     setCartCount((prev) => prev + 1);
-    setAddedToast(`Added "${product.name.slice(0, 24)}..." to Cart!`);
+    setAddedToast(`Added "${product.name.slice(0, 24)}..." to FitBag!`);
     setTimeout(() => setAddedToast(""), 3500);
   };
 
@@ -299,683 +302,985 @@ export default function Shop() {
     });
   };
 
-  const handleScroll = (ref, dir) => {
-    if (ref.current) {
-      const scrollAmount = dir === "left" ? -400 : 400;
-      ref.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // 4-Quadrant Card Grid Data
-  const quadrantData = [
-    {
-      title: "Up to 40% off | Top Whey & Protein Brands",
-      categoryTarget: "protein",
-      items: [
-        { name: "ON Gold Whey", img: "https://m.media-amazon.com/images/I/71rYnIdVEqL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/1.jpg", id: "1" },
-        { name: "MB Biozyme", img: "https://m.media-amazon.com/images/I/71s0HTuXpuL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/2.jpg", id: "2" },
-        { name: "Dymatize ISO", img: "https://m.media-amazon.com/images/I/41Yv+JFOarL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/3.jpg", id: "3" },
-        { name: "Avvatar Whey", img: "https://m.media-amazon.com/images/I/41E3fWK+ebL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/19.jpg", id: "19" },
-      ],
-      linkText: "See all Protein offers",
-    },
-    {
-      title: "Explosive Strength | Creatine & Pre-Workouts",
-      categoryTarget: "creatine",
-      items: [
-        { name: "Wellcore Creatine", img: "https://m.media-amazon.com/images/I/61A69Friz+L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/21.jpg", id: "21" },
-        { name: "ON Creatine", img: "https://m.media-amazon.com/images/I/61A69Friz+L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/4.jpg", id: "4" },
-        { name: "Cellucor C4", img: "https://m.media-amazon.com/images/I/61CGhaCb55L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/7.jpg", id: "7" },
-        { name: "MB Pre-Workout", img: "https://m.media-amazon.com/images/I/61CGhaCb55L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/8.jpg", id: "8" },
-      ],
-      linkText: "Explore strength boosters",
-    },
-    {
-      title: "Vitamins, Fish Oil & Daily Recovery",
-      categoryTarget: "vitamins",
-      items: [
-        { name: "TrueBasics Omega", img: "https://m.media-amazon.com/images/I/61WBl1SBy+L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/24.jpg", id: "24" },
-        { name: "Fast&Up Charge", img: "https://m.media-amazon.com/images/I/61q1SGIQ2fL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/23.jpg", id: "23" },
-        { name: "MB Fish Oil", img: "https://m.media-amazon.com/images/I/61A69Friz+L._AC_UL800_FMwebp_QL65_.jpg", local: "/products/5.jpg", id: "5" },
-        { name: "HK Multivitamin", img: "https://m.media-amazon.com/images/I/71pYCanoMhL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/6.jpg", id: "6" },
-      ],
-      linkText: "See wellness & recovery",
-    },
-    {
-      title: "Pro Gym Gear, Belts & Accessories",
-      categoryTarget: "gear",
-      items: [
-        { name: "USI Leather Belt", img: "https://m.media-amazon.com/images/I/71j+4jDZTeL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/10.jpg", id: "10" },
-        { name: "Boldfit Wraps", img: "https://m.media-amazon.com/images/I/61VMKkVBwqL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/14.jpg", id: "14" },
-        { name: "BlenderBottle", img: "https://m.media-amazon.com/images/I/71JlXDV-nPL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/18.jpg", id: "18" },
-        { name: "Kobo Dumbbells", img: "https://m.media-amazon.com/images/I/71i9edMVSBL._AC_UL800_FMwebp_QL65_.jpg", local: "/products/12.jpg", id: "12" },
-      ],
-      linkText: "Shop gym equipment",
-    },
-  ];
-
-  const currentSlide = HERO_SLIDES[activeSlide] || HERO_SLIDES[0];
-
-  const css = `
+  const css =
+    generateCSS(T, dark) +
+    `
+    /* ── ASHFITVERSE STORE CYBER-ATHLETIC DESIGN SYSTEM ── */
     .fitverse-shop-root {
+      background: ${dark ? "#070b14" : "#f8fafc"};
+      color: ${T.text};
       min-height: 100vh;
-      background: ${dark ? "#090d16" : "#f1f5f9"};
-      color: ${dark ? "#f8fafc" : "#0f172a"};
       font-family: ${FONT.body};
-      opacity: ${mounted ? 1 : 0};
-      transition: opacity 0.4s ease;
-      position: relative;
-      overflow-x: hidden;
+      padding-bottom: 80px;
     }
 
-    /* ── AshFitVerse Nav Header ── */
-    .amz-nav-top {
-      background: ${dark ? "#0c111c" : "#1e293b"};
-      height: 64px;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 16px;
-      color: #ffffff;
+    /* ── Top Navigation Bar ── */
+    .pro-navbar {
       position: sticky;
       top: 0;
       z-index: 100;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(20px);
-    }
-    .amz-logo-box {
-      cursor: pointer;
+      background: ${dark ? "rgba(8, 12, 22, 0.92)" : "rgba(255, 255, 255, 0.94)"};
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"};
+      padding: 12px 24px;
       display: flex;
-      flex-direction: column;
-      padding: 4px 8px;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      transition: all 0.15s;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, ${dark ? "0.4" : "0.04"});
     }
-    .amz-logo-box:hover {
-      border-color: rgba(245, 158, 11, 0.5);
-      background: rgba(255,255,255,0.04);
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
     }
-    .amz-logo-text {
+    .brand-icon-pod {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    }
+    .brand-title {
       font-family: ${FONT.display};
       font-size: 20px;
       font-weight: 900;
       letter-spacing: -0.5px;
-      line-height: 1;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-    }
-    .amz-logo-accent {
-      color: #f59e0b;
-      margin-left: 3px;
-    }
-    .amz-smile-curve {
-      height: 3px;
-      width: 80px;
-      background: linear-gradient(90deg, #f59e0b, #ea580c);
-      border-radius: 99px;
-      margin-top: 3px;
-      box-shadow: 0 1px 6px rgba(245, 158, 11, 0.4);
-    }
-    .amz-deliver-box {
+      color: ${dark ? "#ffffff" : "#0f172a"};
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 10px;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s;
     }
-    .amz-deliver-box:hover {
-      border-color: rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.04);
-    }
-    .amz-del-small {
-      font-size: 11px;
-      color: #94a3b8;
-      line-height: 1.1;
-    }
-    .amz-del-bold {
-      font-size: 13px;
-      font-weight: 750;
-      color: #ffffff;
-      line-height: 1.2;
+    .brand-pill {
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: 0.5px;
+      background: ${dark ? "rgba(245, 158, 11, 0.15)" : "#fef3c7"};
+      color: #f59e0b;
+      padding: 3px 8px;
+      border-radius: 99px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
-    /* ── Search Bar ── */
-    .amz-search-container {
-      flex: 1;
-      max-width: 820px;
-      height: 42px;
-      display: flex;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: #ffffff;
-      transition: all 0.2s;
-    }
-    .amz-search-container:focus-within {
-      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
-      border-color: #f59e0b;
-    }
-    .amz-cat-btn {
-      background: #f8fafc;
-      border: none;
-      color: #0f172a;
-      padding: 0 14px;
-      font-size: 12.5px;
-      font-weight: 700;
+    /* ── Store Switcher Tabs in Subnav ── */
+    .store-tabs-ribbon {
+      background: ${dark ? "#0b101d" : "#ffffff"};
+      border-bottom: 1px solid ${dark ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0"};
+      padding: 8px 24px;
       display: flex;
       align-items: center;
-      gap: 5px;
+      justify-content: space-between;
+      overflow-x: auto;
+      scrollbar-width: none;
+      gap: 12px;
+    }
+    .store-tabs-ribbon::-webkit-scrollbar { display: none; }
+
+    .dept-tabs-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dept-tab-btn {
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 12.5px;
+      font-weight: 750;
       cursor: pointer;
-      border-right: 1px solid #e2e8f0;
-      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s ease;
+      border: 1px solid transparent;
+      background: transparent;
+      color: ${dark ? "#94a3b8" : "#64748b"};
+      text-decoration: none;
     }
-    .amz-cat-btn:hover {
-      background: #f1f5f9;
+    .dept-tab-btn:hover {
+      color: ${dark ? "#ffffff" : "#0f172a"};
+      background: ${dark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9"};
     }
-    .amz-search-input {
+    .dept-tab-btn.active {
+      background: ${dark ? "rgba(245, 158, 11, 0.14)" : "#fef3c7"};
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #f59e0b;
+      font-weight: 850;
+    }
+
+    /* ── Futuristic Search Box ── */
+    .pro-search-box {
+      flex: 1;
+      max-width: 640px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      background: ${dark ? "rgba(255, 255, 255, 0.04)" : "#ffffff"};
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1"};
+      border-radius: 12px;
+      padding: 0 4px 0 14px;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .pro-search-box:focus-within {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+    }
+    .pro-search-input {
       flex: 1;
       border: none;
       outline: none;
-      padding: 0 14px;
-      font-size: 13.5px;
-      color: #0f172a;
       background: transparent;
+      color: ${dark ? "#ffffff" : "#0f172a"};
+      font-size: 13.5px;
+      font-weight: 500;
     }
-    .amz-search-btn {
-      width: 48px;
+    .pro-search-input::placeholder {
+      color: ${dark ? "#64748b" : "#94a3b8"};
+    }
+    .pro-search-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
       background: linear-gradient(135deg, #f59e0b, #d97706);
       border: none;
-      cursor: pointer;
+      color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: filter 0.15s;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .pro-search-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* ── Header Badges & Actions ── */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .fitcoin-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      background: ${dark ? "rgba(245, 158, 11, 0.12)" : "#fffbeb"};
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #f59e0b;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .nav-action-btn {
+      padding: 7px 14px;
+      border-radius: 10px;
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0"};
+      background: ${dark ? "rgba(255, 255, 255, 0.04)" : "#ffffff"};
+      color: ${dark ? "#e2e8f0" : "#334155"};
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s;
+    }
+    .nav-action-btn:hover {
+      background: ${dark ? "rgba(255, 255, 255, 0.09)" : "#f1f5f9"};
+      color: ${dark ? "#ffffff" : "#0f172a"};
+    }
+    .cart-btn {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      border: none;
       color: #ffffff;
     }
-    .amz-search-btn:hover {
+    .cart-btn:hover {
       filter: brightness(1.1);
     }
 
-    /* ── Subnav Ribbon ── */
-    .amz-nav-sub {
-      background: ${dark ? "#0f1626" : "#0f172a"};
-      height: 42px;
-      display: flex;
-      align-items: center;
+    /* ── Cinematic Hero Carousel ── */
+    .hero-container {
+      max-width: 1400px;
+      margin: 24px auto;
       padding: 0 20px;
-      gap: 16px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #cbd5e1;
-      overflow-x: auto;
-      scrollbar-width: none;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .amz-nav-sub::-webkit-scrollbar {
-      display: none;
-    }
-    .amz-sub-link {
-      cursor: pointer;
-      white-space: nowrap;
-      padding: 6px 10px;
-      border-radius: 6px;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .amz-sub-link:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.08);
-    }
-    .amz-sub-link.active {
-      color: #f59e0b;
-      font-weight: 800;
-      background: rgba(245,158,11,0.12);
-    }
-
-    /* ── Panoramic Hero Banner ── */
-    .amz-hero-wrapper {
       position: relative;
-      width: 100%;
-      height: 380px;
+    }
+    .hero-card {
+      border-radius: 24px;
       overflow: hidden;
-    }
-    .amz-hero-slide {
-      position: absolute;
-      inset: 0;
-      transition: opacity 0.6s ease-in-out;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 30px 60px 140px;
-      box-sizing: border-box;
-    }
-    .amz-hero-fade {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 200px;
-      background: linear-gradient(
-        to bottom,
-        transparent 0%,
-        ${dark ? "rgba(9,13,22,0.7)" : "rgba(241,245,249,0.7)"} 50%,
-        ${dark ? "#090d16" : "#f1f5f9"} 100%
-      );
-      pointer-events: none;
-      z-index: 10;
-    }
-    .amz-hero-arrow {
-      position: absolute;
-      top: 130px;
-      width: 44px;
-      height: 56px;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 15;
-      color: #ffffff;
-      transition: background 0.2s;
-    }
-    .amz-hero-arrow:hover {
-      background: rgba(245, 158, 11, 0.8);
-    }
-    .amz-hero-arrow.left { left: 20px; }
-    .amz-hero-arrow.right { right: 20px; }
-
-    /* ── 4-Quadrant Card Grid ── */
-    .amz-quadrant-grid {
-      max-width: 1440px;
-      margin: -130px auto 36px;
-      padding: 0 20px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
+      min-height: 380px;
       position: relative;
-      z-index: 20;
-    }
-    .amz-quad-card {
-      background: ${dark ? "rgba(17, 24, 39, 0.95)" : "#ffffff"};
-      border-radius: 16px;
-      padding: 20px 18px 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,${dark ? "0.5" : "0.08"});
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border: 1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"};
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      align-items: center;
+      padding: 40px 60px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, ${dark ? "0.6" : "0.15"});
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.4s ease;
     }
-    .amz-quad-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(245, 158, 11, 0.4);
-      box-shadow: 0 16px 40px rgba(0,0,0,${dark ? "0.6" : "0.14"});
+    .hero-content {
+      max-width: 680px;
+      z-index: 2;
     }
-    .amz-quad-title {
-      font-size: 17px;
-      font-weight: 800;
-      color: ${dark ? "#ffffff" : "#0f172a"};
-      margin-bottom: 14px;
-      line-height: 1.25;
+    .hero-tagline {
+      font-size: 11.5px;
+      font-weight: 850;
+      letter-spacing: 1.5px;
+      color: #f59e0b;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hero-title {
       font-family: ${FONT.display};
+      font-size: 38px;
+      font-weight: 900;
+      line-height: 1.15;
+      color: #ffffff;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
     }
-    .amz-quad-subgrid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .hero-subtitle {
+      font-size: 18px;
+      font-weight: 750;
+      color: #f8fafc;
+      margin-bottom: 10px;
+    }
+    .hero-desc {
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
     }
-    .amz-quad-item {
+    .hero-btn-primary {
+      padding: 12px 24px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 850;
+      border: none;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+      transition: transform 0.15s;
+    }
+    .hero-btn-primary:hover {
+      transform: translateY(-2px);
+    }
+    .hero-btn-secondary {
+      padding: 12px 20px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .hero-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Hero Featured Showcase Pod */
+    .hero-featured-pod {
+      margin-left: auto;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 20px;
+      width: 280px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 8px;
-      border-radius: 10px;
-      background: ${dark ? "rgba(255,255,255,0.03)" : "#f8fafc"};
-      border: 1px solid ${dark ? "rgba(255,255,255,0.05)" : "#f1f5f9"};
-      transition: background 0.15s;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
     }
-    .amz-quad-item:hover {
-      background: ${dark ? "rgba(255,255,255,0.08)" : "#edf2f7"};
-    }
-    .amz-quad-img {
-      width: 86px;
-      height: 86px;
+    .hero-product-img {
+      width: 170px;
+      height: 170px;
       object-fit: contain;
-      margin-bottom: 6px;
-      transition: transform 0.2s;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5));
+      margin-bottom: 12px;
+      transition: transform 0.3s ease;
     }
-    .amz-quad-item:hover .amz-quad-img {
-      transform: scale(1.08);
+    .hero-featured-pod:hover .hero-product-img {
+      transform: scale(1.08) translateY(-4px);
     }
-    .amz-quad-lbl {
+
+    /* Hero Carousel Indicators */
+    .hero-dots {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 5;
+    }
+    .hero-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .hero-dot.active {
+      width: 28px;
+      background: #f59e0b;
+    }
+
+    /* ── Coach Ashish's Signature Stacks Section ── */
+    .stacks-section {
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .section-header-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .section-title {
+      font-family: ${FONT.display};
+      font-size: 24px;
+      font-weight: 900;
+      color: ${dark ? "#ffffff" : "#0f172a"};
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-subtitle {
+      font-size: 13px;
+      color: ${dark ? "#94a3b8" : "#64748b"};
+      margin-top: 2px;
+    }
+
+    .stacks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .stack-card {
+      background: ${dark ? "rgba(15, 23, 42, 0.85)" : "#ffffff"};
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"};
+      border-radius: 20px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, ${dark ? "0.4" : "0.06"});
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+    .stack-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(245, 158, 11, 0.4);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, ${dark ? "0.6" : "0.12"});
+    }
+    .stack-synergy-pill {
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 850;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: ${dark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5"};
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+    .stack-title {
+      font-family: ${FONT.display};
+      font-size: 17px;
+      font-weight: 850;
+      color: ${dark ? "#ffffff" : "#0f172a"};
+      margin-bottom: 6px;
+    }
+    .stack-tagline {
+      font-size: 12.5px;
+      color: ${dark ? "#94a3b8" : "#64748b"};
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    /* Stack Items Trio with + Connector */
+    .stack-items-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: ${dark ? "rgba(255, 255, 255, 0.03)" : "#f8fafc"};
+      border-radius: 14px;
+      padding: 12px 8px;
+      margin-bottom: 18px;
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9"};
+    }
+    .stack-item-pod {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 75px;
+      text-align: center;
+    }
+    .stack-item-img-box {
+      width: 60px;
+      height: 60px;
+      background: #ffffff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .stack-item-img-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .stack-item-label {
+      font-size: 10.5px;
+      font-weight: 750;
       color: ${dark ? "#cbd5e1" : "#334155"};
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 100px;
+      max-width: 70px;
     }
-    .amz-quad-link {
-      font-size: 13px;
-      font-weight: 700;
-      color: #38bdf8;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: color 0.15s;
-    }
-    .amz-quad-link:hover {
+    .stack-plus-symbol {
       color: #f59e0b;
-      text-decoration: underline;
+      font-weight: 900;
+      font-size: 16px;
     }
 
-    /* ── Coach Ashish Stacks Strip ── */
-    .coach-stacks-section {
-      max-width: 1440px;
-      margin: 0 auto 36px;
-      padding: 0 20px;
-    }
-    .coach-stacks-card {
-      background: ${dark ? "linear-gradient(135deg, rgba(30,27,75,0.8), rgba(15,23,42,0.95))" : "#ffffff"};
-      border: 1px solid ${dark ? "rgba(245,158,11,0.3)" : "#fde68a"};
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,${dark ? "0.4" : "0.06"});
-    }
-
-    /* ── Deal Rails ── */
-    .amz-deal-shelf {
-      max-width: 1440px;
-      margin: 0 auto 36px;
-      padding: 22px;
-      background: ${dark ? "rgba(17, 24, 39, 0.95)" : "#ffffff"};
-      border-radius: 18px;
-      border: 1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"};
-      box-shadow: 0 4px 20px rgba(0,0,0,${dark ? "0.3" : "0.05"});
-    }
-    .amz-shelf-header {
+    .stack-pricing-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-      gap: 12px;
+      margin-bottom: 14px;
     }
-    .amz-shelf-title {
+    .stack-bundle-price {
       font-size: 20px;
-      font-weight: 800;
-      font-family: ${FONT.display};
-      color: ${dark ? "#ffffff" : "#0f172a"};
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      font-weight: 900;
+      color: #f59e0b;
     }
-    .amz-countdown-badge {
+    .stack-regular-price {
+      font-size: 13px;
+      text-decoration: line-through;
+      color: ${dark ? "#64748b" : "#94a3b8"};
+      margin-left: 6px;
+    }
+    .stack-save-pill {
+      font-size: 11px;
+      font-weight: 850;
+      padding: 3px 8px;
+      border-radius: 6px;
       background: #cc0c39;
       color: #ffffff;
-      font-size: 12px;
-      font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
     }
-    .amz-shelf-rail {
+
+    /* ── Flash Deals Rail ── */
+    .deals-strip-card {
+      max-width: 1400px;
+      margin: 0 auto 40px;
+      padding: 24px;
+      background: ${dark ? "rgba(15, 23, 42, 0.85)" : "#ffffff"};
+      border-radius: 22px;
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"};
+      box-shadow: 0 8px 30px rgba(0, 0, 0, ${dark ? "0.3" : "0.05"});
+    }
+    .deal-rail-wrapper {
       display: flex;
-      gap: 18px;
+      gap: 16px;
       overflow-x: auto;
       scroll-behavior: smooth;
       padding-bottom: 8px;
       scrollbar-width: none;
     }
-    .amz-shelf-rail::-webkit-scrollbar {
-      display: none;
-    }
-    .amz-deal-card {
-      flex: 0 0 230px;
-      background: ${dark ? "rgba(255,255,255,0.03)" : "#ffffff"};
-      border: 1px solid ${dark ? "rgba(255,255,255,0.06)" : "#f1f5f9"};
-      border-radius: 14px;
-      padding: 14px;
+    .deal-rail-wrapper::-webkit-scrollbar { display: none; }
+
+    .deal-card {
+      flex: 0 0 220px;
+      background: ${dark ? "rgba(255, 255, 255, 0.02)" : "#f8fafc"};
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9"};
+      border-radius: 16px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .amz-deal-card:hover {
-      box-shadow: 0 8px 24px rgba(0,0,0,${dark ? "0.4" : "0.1"});
+    .deal-card:hover {
       transform: translateY(-3px);
-      border-color: rgba(245,158,11,0.4);
+      border-color: rgba(245, 158, 11, 0.4);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, ${dark ? "0.4" : "0.08"});
     }
-    .amz-deal-img-box {
+    .deal-img-pod {
       width: 100%;
-      height: 160px;
+      height: 150px;
       background: #ffffff;
-      border-radius: 10px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 10px;
       margin-bottom: 10px;
     }
-    .amz-deal-img-box img {
+    .deal-img-pod img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      transition: transform 0.25s ease;
+      transition: transform 0.2s ease;
     }
-    .amz-deal-card:hover .amz-deal-img-box img {
+    .deal-card:hover .deal-img-pod img {
       transform: scale(1.06);
     }
 
-    /* ── Main Catalog Grid ── */
-    .amz-catalog-container {
-      max-width: 1440px;
+    /* ── Main Catalog Filter Bar ── */
+    .catalog-section {
+      max-width: 1400px;
       margin: 0 auto 60px;
       padding: 0 20px;
     }
-    .amz-filter-bar {
-      background: ${dark ? "rgba(17, 24, 39, 0.95)" : "#ffffff"};
-      border-radius: 16px;
-      padding: 16px 20px;
+    .filter-toolbar {
+      background: ${dark ? "rgba(15, 23, 42, 0.85)" : "#ffffff"};
+      border-radius: 18px;
+      padding: 14px 20px;
       margin-bottom: 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 14px;
-      border: 1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"};
+      gap: 12px;
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"};
+      box-shadow: 0 4px 16px rgba(0, 0, 0, ${dark ? "0.2" : "0.03"});
     }
-    .amz-pills-row {
+    .goal-pills-row {
       display: flex;
+      align-items: center;
       gap: 8px;
       overflow-x: auto;
       scrollbar-width: none;
     }
-    .amz-pill-btn {
+    .goal-pills-row::-webkit-scrollbar { display: none; }
+
+    .goal-pill-btn {
       padding: 8px 16px;
       border-radius: 99px;
-      border: 1px solid ${dark ? "rgba(255,255,255,0.15)" : "#d5d9d9"};
-      background: ${dark ? "rgba(255,255,255,0.04)" : "#ffffff"};
-      color: ${dark ? "#e2e8f0" : "#0f172a"};
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1"};
+      background: ${dark ? "rgba(255, 255, 255, 0.03)" : "#ffffff"};
+      color: ${dark ? "#cbd5e1" : "#334155"};
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 750;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.15s ease;
     }
-    .amz-pill-btn.active {
+    .goal-pill-btn:hover {
+      border-color: #f59e0b;
+      color: ${dark ? "#ffffff" : "#0f172a"};
+    }
+    .goal-pill-btn.active {
       background: linear-gradient(135deg, #f59e0b, #d97706);
       border-color: #f59e0b;
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(245,158,11,0.35);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
     }
-    .amz-product-grid {
+
+    /* ── Pro Athlete Product Cards Grid ── */
+    .pro-product-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-      gap: 22px;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 24px;
     }
-    .amz-prod-card {
-      background: ${dark ? "rgba(17, 24, 39, 0.95)" : "#ffffff"};
-      border: 1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"};
-      border-radius: 16px;
+    .pro-prod-card {
+      background: ${dark ? "rgba(15, 23, 42, 0.85)" : "#ffffff"};
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"};
+      border-radius: 20px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
       cursor: pointer;
       position: relative;
       transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, ${dark ? "0.3" : "0.04"});
     }
-    .amz-prod-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 14px 34px rgba(0,0,0,${dark ? "0.55" : "0.12"});
-      border-color: rgba(245, 158, 11, 0.5);
+    .pro-prod-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, ${dark ? "0.55" : "0.12"});
+      border-color: rgba(245, 158, 11, 0.45);
     }
-    .amz-prod-img-box {
+
+    /* Crisp Packaging Image Pod with 100% visibility guarantee */
+    .pro-img-showcase {
       width: 100%;
-      height: 220px;
+      height: 230px;
       background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 18px;
       position: relative;
       overflow: hidden;
     }
-    .amz-prod-img-box img {
+    .pro-img-showcase img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
       transition: transform 0.25s ease;
     }
-    .amz-prod-card:hover .amz-prod-img-box img {
-      transform: scale(1.06);
+    .pro-prod-card:hover .pro-img-showcase img {
+      transform: scale(1.07);
     }
-    .amz-prod-body {
-      padding: 16px;
+
+    .card-top-badges {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 2;
+    }
+    .purity-seal {
+      background: rgba(16, 185, 129, 0.95);
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 850;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+    }
+    .custom-badge {
+      font-size: 10.5px;
+      font-weight: 850;
+      padding: 3px 8px;
+      border-radius: 6px;
+      color: #ffffff;
+    }
+
+    .card-wishlist-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #64748b;
+      z-index: 3;
+      transition: transform 0.15s;
+    }
+    .card-wishlist-btn:hover {
+      transform: scale(1.1);
+      color: #ef4444;
+    }
+
+    .pro-card-body {
+      padding: 18px;
       display: flex;
       flex-direction: column;
       flex: 1;
     }
-
-    /* ── Action Buttons ── */
-    .amz-add-cart-btn {
-      height: 38px;
-      border-radius: 10px;
-      border: 1px solid #fcd200;
-      background: #ffd814;
-      color: #0f1111;
-      font-size: 13px;
+    .pro-brand-label {
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #f59e0b;
+      margin-bottom: 4px;
+    }
+    .pro-item-name {
+      font-size: 14.5px;
       font-weight: 750;
-      cursor: pointer;
+      color: ${dark ? "#ffffff" : "#0f172a"};
+      line-height: 1.35;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 39px;
+    }
+
+    .pro-rating-row {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 6px;
-      transition: background 0.15s;
+      margin-bottom: 12px;
     }
-    .amz-add-cart-btn:hover {
-      background: #f7ca00;
+    .rating-stars {
+      display: flex;
+      align-items: center;
+      gap: 2px;
     }
-    .amz-buy-now-btn {
-      height: 38px;
-      border-radius: 10px;
-      border: 1px solid #ff8f00;
-      background: #ffa41c;
-      color: #0f1111;
+    .rating-score {
       font-size: 13px;
+      font-weight: 800;
+      color: ${dark ? "#e2e8f0" : "#1e293b"};
+    }
+    .rating-count {
+      font-size: 12px;
+      color: ${dark ? "#64748b" : "#94a3b8"};
+    }
+
+    .pro-tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+    .pro-spec-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: ${dark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9"};
+      color: ${dark ? "#94a3b8" : "#475569"};
+    }
+
+    .pro-price-block {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+      margin-top: auto;
+    }
+    .pro-current-price {
+      font-size: 20px;
+      font-weight: 900;
+      color: ${dark ? "#ffffff" : "#0f172a"};
+    }
+    .pro-old-price {
+      font-size: 13px;
+      text-decoration: line-through;
+      color: ${dark ? "#64748b" : "#94a3b8"};
+    }
+    .pro-discount-tag {
+      font-size: 12px;
+      font-weight: 850;
+      color: #10b981;
+    }
+
+    .fitcoin-cashback-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
       font-weight: 750;
+      color: #f59e0b;
+      margin-bottom: 14px;
+    }
+
+    /* ── Action Buttons ── */
+    .pro-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .btn-buy-amazon {
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
       text-decoration: none;
-      transition: background 0.15s;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      transition: filter 0.15s;
     }
-    .amz-buy-now-btn:hover {
-      background: #fa8900;
+    .btn-buy-amazon:hover {
+      filter: brightness(1.1);
     }
-    .amz-chat-share-btn {
-      height: 34px;
-      border-radius: 8px;
-      border: 1px solid ${dark ? "rgba(56, 189, 248, 0.3)" : "#bae6fd"};
-      background: ${dark ? "rgba(56, 189, 248, 0.1)" : "#f0f9ff"};
-      color: #0284c7;
-      font-size: 12px;
+    .btn-add-fitbag {
+      height: 40px;
+      border-radius: 10px;
+      background: ${dark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9"};
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1"};
+      color: ${dark ? "#ffffff" : "#0f172a"};
+      font-size: 13px;
       font-weight: 750;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-add-fitbag:hover {
+      background: ${dark ? "rgba(255, 255, 255, 0.14)" : "#e2e8f0"};
+    }
+    .btn-share-chat {
+      height: 36px;
+      border-radius: 10px;
+      background: ${dark ? "rgba(56, 189, 248, 0.1)" : "#f0f9ff"};
+      border: 1px solid ${dark ? "rgba(56, 189, 248, 0.25)" : "#bae6fd"};
+      color: #0284c7;
+      font-size: 12.5px;
+      font-weight: 750;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       transition: all 0.15s;
       width: 100%;
-      margin-top: 8px;
     }
-    .amz-chat-share-btn:hover {
+    .btn-share-chat:hover {
       background: #0284c7;
       color: #ffffff;
     }
 
-    /* ── Footer ── */
-    .amz-back-to-top {
-      background: ${dark ? "#1e293b" : "#334155"};
-      color: #ffffff;
-      text-align: center;
-      padding: 14px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
+    /* ── Guarantee Pillars Strip ── */
+    .pillars-strip {
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 0 20px;
     }
-    .amz-footer-main {
-      background: ${dark ? "#0c111c" : "#1e293b"};
-      color: #ffffff;
-      padding: 40px 60px;
+    .pillars-grid {
+      background: ${dark ? "rgba(15, 23, 42, 0.85)" : "#ffffff"};
+      border-radius: 22px;
+      border: 1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"};
+      padding: 30px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
     }
-    .amz-footer-grid {
+    .pillar-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .pillar-icon-pod {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .pillar-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: ${dark ? "#ffffff" : "#0f172a"};
+      margin-bottom: 4px;
+    }
+    .pillar-desc {
+      font-size: 12.5px;
+      color: ${dark ? "#94a3b8" : "#64748b"};
+      line-height: 1.4;
+    }
+
+    /* ── Pro Store Footer ── */
+    .pro-footer {
+      background: ${dark ? "#040711" : "#0f172a"};
+      color: #ffffff;
+      padding: 50px 24px 30px;
+      border-top: 1px solid ${dark ? "rgba(255, 255, 255, 0.08)" : "transparent"};
+      margin-top: 60px;
+    }
+    .pro-footer-content {
       max-width: 1200px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: 2fr 1fr 1fr 1fr;
       gap: 40px;
+      margin-bottom: 40px;
+    }
+    .footer-col-title {
+      font-family: ${FONT.display};
+      font-size: 15px;
+      font-weight: 850;
+      color: #ffffff;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+    .footer-link {
+      color: #94a3b8;
+      font-size: 13.5px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: block;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-link:hover {
+      color: #f59e0b;
+    }
+    .footer-bottom-bar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #64748b;
+      font-size: 12.5px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
     @media (max-width: 1024px) {
-      .amz-quadrant-grid {
-        grid-template-columns: 1fr 1fr;
-        margin-top: -80px;
-      }
-      .amz-footer-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+      .stacks-grid { grid-template-columns: 1fr; }
+      .pillars-grid { grid-template-columns: 1fr 1fr; }
+      .pro-footer-content { grid-template-columns: 1fr 1fr; }
+      .hero-featured-pod { display: none; }
     }
     @media (max-width: 640px) {
-      .amz-nav-top { padding: 0 12px; }
-      .amz-hero-wrapper { height: 280px; }
-      .amz-hero-slide { padding: 20px 20px 80px; }
-      .amz-quadrant-grid { grid-template-columns: 1fr; margin-top: -30px; }
-      .amz-footer-grid { grid-template-columns: 1fr; }
+      .pro-navbar { padding: 10px 14px; flex-wrap: wrap; }
+      .pro-search-box { order: 3; width: 100%; max-width: 100%; margin-top: 8px; }
+      .hero-card { padding: 24px 20px; min-height: 320px; }
+      .hero-title { font-size: 26px; }
+      .hero-subtitle { font-size: 15px; }
+      .pillars-grid { grid-template-columns: 1fr; }
+      .pro-footer-content { grid-template-columns: 1fr; }
     }
   `;
 
@@ -983,1055 +1288,788 @@ export default function Shop() {
     <div className="fitverse-shop-root">
       <style>{css}</style>
 
-      {/* ── Top Header Navigation Bar ── */}
-      <header className="amz-nav-top">
-        {/* AshFitVerse Store Logo */}
-        <div className="amz-logo-box" onClick={() => navigate("/dashboard")}>
-          <div className="amz-logo-text">
-            <span>AshFitVerse</span>
-            <span className="amz-logo-accent">Store</span>
+      {/* ── Top Pro Navigation Bar ── */}
+      <header className="pro-navbar">
+        {/* Brand Identity */}
+        <div className="brand-cluster" onClick={() => navigate("/dashboard")}>
+          <div className="brand-icon-pod">
+            <Zap size={22} />
           </div>
-          <div className="amz-smile-curve" />
-        </div>
-
-        {/* Location Selector */}
-        <div
-          className="amz-deliver-box"
-          onClick={() => {
-            const pin = prompt("Enter your Delivery PIN code:", "110001");
-            if (pin) alert(`Delivery PIN updated to ${pin}. Showing fast Prime delivery options!`);
-          }}
-          title="Click to update delivery location"
-        >
-          <MapPin size={16} color="#f59e0b" style={{ marginTop: 2 }} />
           <div>
-            <div className="amz-del-small">Deliver to {user?.displayName?.split(" ")[0] || "Ashish"}</div>
-            <div className="amz-del-bold">New Delhi 110001</div>
+            <div className="brand-title">
+              <span>ASHFITVERSE</span>
+              <span style={{ color: "#f59e0b" }}>STORE</span>
+              <span className="brand-pill">PRO ATHLETE</span>
+            </div>
+            <div style={{ fontSize: 11, color: dark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
+              100% Labdoor Verified Nutrition & Gear
+            </div>
           </div>
         </div>
 
-        {/* Unified Search Bar */}
-        <div className="amz-search-container">
-          <div style={{ position: "relative" }}>
-            <button
-              className="amz-cat-btn"
-              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-              type="button"
-            >
-              <span>{SEARCH_CATEGORIES.find((c) => c.id === searchCategory)?.label || "All"}</span>
-              <ChevronDown size={12} />
-            </button>
-            {showCategoryDropdown && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: 42,
-                  left: 0,
-                  width: 175,
-                  background: "#ffffff",
-                  borderRadius: "0 0 8px 8px",
-                  boxShadow: "0 6px 20px rgba(0,0,0,0.25)",
-                  zIndex: 200,
-                  overflow: "hidden",
-                }}
-              >
-                {SEARCH_CATEGORIES.map((c) => (
-                  <div
-                    key={c.id}
-                    onClick={() => {
-                      setSearchCategory(c.id);
-                      setCategory(c.id);
-                      setShowCategoryDropdown(false);
-                    }}
-                    style={{
-                      padding: "9px 12px",
-                      fontSize: 12.5,
-                      fontWeight: searchCategory === c.id ? 800 : 550,
-                      color: "#0f172a",
-                      cursor: "pointer",
-                      background: searchCategory === c.id ? "#fef3c7" : "transparent",
-                    }}
-                  >
-                    {c.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
+        {/* Pro Search Box */}
+        <div className="pro-search-box">
           <input
             type="text"
-            className="amz-search-input"
-            placeholder="Search verified whey, creatine, gear, multivitamins..."
+            className="pro-search-input"
+            placeholder="Search authentic whey, creatine, power belts, omegas..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
-          <button
-            className="amz-search-btn"
-            title="Search store"
-            onClick={() => {
-              if (searchCategory !== "all") setCategory(searchCategory);
-            }}
-          >
-            <Search size={18} />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                cursor: "pointer",
+                padding: "0 8px",
+                fontSize: 14,
+              }}
+            >
+              ✕
+            </button>
+          )}
+          <button className="pro-search-btn" title="Search catalog">
+            <Search size={17} />
           </button>
         </div>
 
-        {/* FitVerse Chat Link */}
-        <div
-          className="amz-deliver-box"
-          onClick={() => navigate("/chat")}
-          title="Open FitVerse Direct Messaging & Gym Groups"
-        >
-          <Send size={16} color="#38bdf8" />
-          <div>
-            <div className="amz-del-small">FitVerse</div>
-            <div className="amz-del-bold">Chat & Buddies</div>
+        {/* Action Controls */}
+        <div className="header-actions">
+          {/* FitCoins Rewards */}
+          <div className="fitcoin-badge" title="Earn 5% to 10% FitCoins cashback on all verified gear">
+            <Coins size={15} />
+            <span>450 FitCoins</span>
           </div>
-        </div>
 
-        {/* Returns & Orders */}
-        <div className="amz-deliver-box" onClick={() => navigate("/profile?tab=orders")}>
-          <div>
-            <div className="amz-del-small">Returns</div>
-            <div className="amz-del-bold">& Orders</div>
-          </div>
-        </div>
-
-        {/* Cart */}
-        <div
-          className="amz-deliver-box"
-          onClick={() => alert(`🛒 You have ${cartCount} items ready for checkout with Prime delivery.`)}
-        >
-          <ShoppingCart size={22} color="#f59e0b" />
-          <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>({cartCount})</span>
-        </div>
-
-        {/* Admin Add Item */}
-        {isAdmin && (
+          {/* Chat & Share Shortcut */}
           <button
-            onClick={() => setShowAddProductModal(true)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              background: "#f59e0b",
-              border: "none",
-              color: "#0f172a",
-              fontSize: 12,
-              fontWeight: 800,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-            title="Admin: Add new product"
+            className="nav-action-btn"
+            onClick={() => navigate("/chat")}
+            title="Open FitVerse Direct Messaging & Gym Groups"
           >
-            <Plus size={14} strokeWidth={3} />
-            <span>Add Item</span>
+            <Send size={15} color="#38bdf8" />
+            <span>Chat & Share</span>
           </button>
-        )}
 
-        {/* Dark / Light Mode Toggle */}
-        <button
-          onClick={toggleTheme}
-          style={{
-            background: "rgba(255,255,255,0.1)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: 6,
-            color: "#ffffff",
-            width: 32,
-            height: 32,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-          title="Toggle Dark / Light mode"
-        >
-          {dark ? "🌙" : "☀️"}
-        </button>
+          {/* FitBag Cart */}
+          <button className="nav-action-btn cart-btn" onClick={() => alert(`FitBag: ${cartCount} items active. Ready to checkout!`)}>
+            <ShoppingCart size={16} />
+            <span>FitBag ({cartCount})</span>
+          </button>
+
+          {/* Admin Add Product */}
+          {isAdmin && (
+            <button
+              className="nav-action-btn"
+              style={{ borderColor: "#f59e0b", color: "#f59e0b" }}
+              onClick={() => setShowAddProductModal(true)}
+            >
+              <Plus size={15} />
+              <span>+ Add Product</span>
+            </button>
+          )}
+        </div>
       </header>
 
-      {/* ── Sub-Navigation Ribbon ── */}
-      <nav className="amz-nav-sub">
-        <div
-          className="amz-sub-link"
-          style={{ fontWeight: 800 }}
-          onClick={() => {
-            setCategory("all");
-            setGoalFilter("all");
-            setSearch("");
-          }}
-        >
-          <Menu size={16} />
-          <span>All Products</span>
-        </div>
-        <div
-          className={`amz-sub-link ${category === "all" ? "active" : ""}`}
-          onClick={() => setCategory("all")}
-        >
-          Today's Lightning Deals
-        </div>
-        <div
-          className={`amz-sub-link ${category === "protein" ? "active" : ""}`}
-          onClick={() => setCategory("protein")}
-        >
-          Whey & Protein
-        </div>
-        <div
-          className={`amz-sub-link ${category === "creatine" ? "active" : ""}`}
-          onClick={() => setCategory("creatine")}
-        >
-          Creatine Monohydrate
-        </div>
-        <div
-          className={`amz-sub-link ${category === "preworkout" ? "active" : ""}`}
-          onClick={() => setCategory("preworkout")}
-        >
-          Pre-Workouts
-        </div>
-        <div
-          className={`amz-sub-link ${category === "vitamins" ? "active" : ""}`}
-          onClick={() => setCategory("vitamins")}
-        >
-          Vitamins & Fish Oil
-        </div>
-        <div
-          className={`amz-sub-link ${category === "gear" ? "active" : ""}`}
-          onClick={() => setCategory("gear")}
-        >
-          Gym Gear & Belts
+      {/* ── Store Department Switcher Ribbon ── */}
+      <div className="store-tabs-ribbon">
+        <div className="dept-tabs-group">
+          <button
+            className={`dept-tab-btn ${!deptParam ? "active" : ""}`}
+            onClick={() => navigate("/shop")}
+          >
+            <span>🌐 Common Pro Shop</span>
+          </button>
+          <button
+            className={`dept-tab-btn ${deptParam === "male" ? "active" : ""}`}
+            onClick={() => navigate("/male-shop")}
+          >
+            <span>⚡ Men's Elite Shop</span>
+          </button>
+          <button
+            className={`dept-tab-btn ${deptParam === "female" ? "active" : ""}`}
+            onClick={() => navigate("/female-shop")}
+          >
+            <span>🌸 Women's Wellness</span>
+          </button>
         </div>
 
-        {/* Dedicated store links */}
-        <div
-          className="amz-sub-link"
-          style={{ color: "#38bdf8", fontWeight: 750 }}
-          onClick={() => navigate("/shop?dept=male")}
-        >
-          ⚡ Men's Performance
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: dark ? "#94a3b8" : "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
+            <ShieldCheck size={15} color="#10b981" />
+            <span>Anti-Doping & Purity Tested</span>
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: dark ? "#94a3b8" : "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
+            <Truck size={15} color="#38bdf8" />
+            <span>Amazon Prime 1-Day Fulfillment</span>
+          </div>
         </div>
-        <div
-          className="amz-sub-link"
-          style={{ color: "#f472b6", fontWeight: 750 }}
-          onClick={() => navigate("/shop?dept=female")}
-        >
-          🌸 Women's Wellness
-        </div>
+      </div>
 
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, color: "#f59e0b", fontSize: 12, fontWeight: 800 }}>
-          <span>✓prime</span>
-          <span style={{ color: "#ffffff", fontWeight: 550 }}>Free Next-Day Delivery across India</span>
-        </div>
-      </nav>
-
-      {/* Added Toast */}
+      {/* ── Toast Notification ── */}
       {addedToast && (
         <div
           style={{
             position: "fixed",
             bottom: 24,
             right: 24,
-            background: "#059669",
+            zIndex: 999,
+            background: "#10b981",
             color: "#ffffff",
             padding: "12px 20px",
-            borderRadius: 10,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-            zIndex: 999,
+            borderRadius: 12,
+            fontWeight: 800,
+            fontSize: 14,
+            boxShadow: "0 10px 30px rgba(16, 185, 129, 0.4)",
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            fontSize: 13,
-            fontWeight: 750,
+            gap: 8,
           }}
         >
-          <Check size={18} />
+          <CheckCircle2 size={18} />
           <span>{addedToast}</span>
         </div>
       )}
 
-      {/* ── Panoramic Hero Banner ── */}
-      <section
-        className="amz-hero-wrapper"
+      {/* ── Cinematic Hero Carousel ── */}
+      <div
+        className="hero-container"
         onMouseEnter={() => setIsHoveringHero(true)}
         onMouseLeave={() => setIsHoveringHero(false)}
       >
         {HERO_SLIDES.map((slide, idx) => {
-          const isActive = idx === activeSlide;
+          if (idx !== activeSlide) return null;
           return (
             <div
               key={slide.id}
-              className="amz-hero-slide"
-              style={{
-                background: slide.bgGradient,
-                opacity: isActive ? 1 : 0,
-                pointerEvents: isActive ? "auto" : "none",
-              }}
+              className="hero-card"
+              style={{ background: slide.bgGradient }}
             >
-              <div style={{ maxWidth: 650, zIndex: 5 }}>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "4px 12px",
-                    borderRadius: 6,
-                    background: "rgba(255,255,255,0.12)",
-                    backdropFilter: "blur(8px)",
-                    color: slide.accent,
-                    fontSize: 12,
-                    fontWeight: 800,
-                    marginBottom: 10,
-                  }}
-                >
-                  {slide.badge}
+              <div className="hero-content">
+                <div className="hero-tagline">
+                  <Sparkles size={14} color="#f59e0b" />
+                  <span>{slide.tagline}</span>
                 </div>
-                <h1
-                  style={{
-                    fontSize: "clamp(24px, 4vw, 36px)",
-                    fontWeight: 900,
-                    color: "#ffffff",
-                    lineHeight: 1.15,
-                    fontFamily: FONT.display,
-                    margin: "0 0 10px",
-                  }}
-                >
-                  {slide.title}
-                </h1>
-                <p style={{ fontSize: 16, fontWeight: 700, color: slide.accent, margin: "0 0 8px" }}>
-                  {slide.subtitle}
-                </p>
-                <p style={{ fontSize: 13, color: "#cbd5e1", margin: "0 0 18px", maxWidth: 520, lineHeight: 1.45 }}>
-                  {slide.description}
-                </p>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <h1 className="hero-title">{slide.title}</h1>
+                <div className="hero-subtitle">{slide.subtitle}</div>
+                <p className="hero-desc">{slide.description}</p>
+                <div className="hero-cta-group">
                   <button
-                    onClick={() => setCategory(slide.targetCategory)}
-                    style={{
-                      padding: "10px 22px",
-                      borderRadius: 10,
-                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                      border: "none",
-                      color: "#ffffff",
-                      fontSize: 13,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      boxShadow: "0 4px 14px rgba(245,158,11,0.35)",
+                    className="hero-btn-primary"
+                    onClick={() => {
+                      setCategory(slide.targetCategory);
+                      const el = document.getElementById("catalog-grid");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
                     }}
                   >
-                    Shop Verified Deals
+                    <span>Explore Collection</span>
+                    <ArrowUpRight size={16} />
                   </button>
                   <button
-                    onClick={() => navigate(`/shop/product/${slide.featuredProduct.id}`)}
-                    style={{
-                      padding: "10px 18px",
-                      borderRadius: 10,
-                      background: "rgba(255,255,255,0.15)",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      color: "#ffffff",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      backdropFilter: "blur(6px)",
+                    className="hero-btn-secondary"
+                    onClick={() => {
+                      if (slide.featuredProduct) {
+                        navigate(`/shop/product/${slide.featuredProduct.id}`);
+                      }
                     }}
                   >
-                    View Product Specs
+                    <span>View Featured Gear</span>
                   </button>
                 </div>
               </div>
 
-              {/* Real packaging image preview floating in hero */}
-              <div
-                style={{
-                  zIndex: 5,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#ffffff",
-                  padding: 16,
-                  borderRadius: 20,
-                  boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
-                  cursor: "pointer",
-                }}
-                onClick={() => navigate(`/shop/product/${slide.featuredProduct.id}`)}
-                title="Click to view packaging & specs"
-              >
-                <img
-                  src={slide.featuredProduct.image}
-                  alt={slide.featuredProduct.name}
-                  style={{
-                    width: 170,
-                    height: 170,
-                    objectFit: "contain",
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = slide.featuredProduct.localImage || "/products/1.jpg";
-                  }}
-                />
+              {/* Featured Showcase Pod */}
+              {slide.featuredProduct && (
+                <div
+                  className="hero-featured-pod"
+                  onClick={() => navigate(`/shop/product/${slide.featuredProduct.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div style={{ fontSize: 10.5, fontWeight: 850, color: "#f59e0b", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>
+                    {slide.badge}
+                  </div>
+                  <img
+                    src={slide.featuredProduct.localImage || slide.featuredProduct.image}
+                    alt={slide.featuredProduct.name}
+                    className="hero-product-img"
+                    onError={(e) => {
+                      if (e.target.src !== slide.featuredProduct.image) {
+                        e.target.src = slide.featuredProduct.image;
+                      }
+                    }}
+                  />
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffff", marginBottom: 4, lineHeight: 1.3 }}>
+                    {slide.featuredProduct.name.slice(0, 42)}...
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>
+                    {slide.featuredProduct.price}
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Indicators */}
+              <div className="hero-dots">
+                {HERO_SLIDES.map((_, dotIdx) => (
+                  <div
+                    key={dotIdx}
+                    className={`hero-dot ${dotIdx === activeSlide ? "active" : ""}`}
+                    onClick={() => setActiveSlide(dotIdx)}
+                  />
+                ))}
               </div>
             </div>
           );
         })}
+      </div>
 
-        {/* Bottom Fade */}
-        <div className="amz-hero-fade" />
-
-        {/* Navigation Chevrons */}
-        <button
-          className="amz-hero-arrow left"
-          onClick={() => setActiveSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
-        >
-          <ChevronLeft size={28} />
-        </button>
-        <button
-          className="amz-hero-arrow right"
-          onClick={() => setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
-        >
-          <ChevronRight size={28} />
-        </button>
-      </section>
-
-      {/* ── 4-Quadrant Card Grid (Floating on Hero) ── */}
-      <section className="amz-quadrant-grid">
-        {quadrantData.map((quad, qIdx) => (
-          <div key={qIdx} className="amz-quad-card">
-            <div>
-              <div className="amz-quad-title">{quad.title}</div>
-              <div className="amz-quad-subgrid">
-                {quad.items.map((item, iIdx) => (
-                  <div
-                    key={iIdx}
-                    className="amz-quad-item"
-                    onClick={() => navigate(`/shop/product/${item.id}`)}
-                    title={`View ${item.name}`}
-                  >
-                    <img
-                      src={item.img}
-                      alt={item.name}
-                      className="amz-quad-img"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = item.local || "/products/1.jpg";
-                      }}
-                    />
-                    <div className="amz-quad-lbl">{item.name}</div>
-                  </div>
-                ))}
-              </div>
+      {/* ── Coach Ashish's Signature Stacks (Innovation unique to AshFitVerse!) ── */}
+      <section className="stacks-section">
+        <div className="section-header-box">
+          <div>
+            <div className="section-title">
+              <Flame size={24} color="#f59e0b" />
+              <span>Coach Ashish's Signature Athlete Stacks</span>
             </div>
-            <div
-              className="amz-quad-link"
-              onClick={() => {
-                setCategory(quad.categoryTarget);
-                document.getElementById("catalog-section")?.scrollIntoView({ behavior: "smooth" });
-              }}
-            >
-              <span>{quad.linkText}</span>
-              <span>›</span>
+            <div className="section-subtitle">
+              Scientifically engineered multi-supplement synergies for maximum biological absorption and PR output.
             </div>
           </div>
-        ))}
-      </section>
-
-      {/* ── INNOVATION: Coach Ashish's Signature Athlete Stacks (Curated Bundles) ── */}
-      <section className="coach-stacks-section">
-        <div className="coach-stacks-card">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
-            <div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 6, background: "rgba(245,158,11,0.18)", color: "#f59e0b", fontSize: 11, fontWeight: 800 }}>
-                <Award size={14} />
-                <span>COACH ASHISH'S CURATED ATHLETE STACKS</span>
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 900, fontFamily: FONT.display, marginTop: 4, color: dark ? "#fff" : "#0f172a" }}>
-                Smart Fitness Stacks • Save up to ₹850
-              </div>
-            </div>
-            <div style={{ fontSize: 12, color: dark ? "#94a3b8" : "#64748b" }}>
-              Pre-calculated nutritional synergy for faster gains & explosive performance
-            </div>
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: "#f59e0b" }}>
+            ⚡ 1-Click Multi-Item Bundle Deals
           </div>
+        </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 }}>
-            {COACH_STACKS.map((stack) => (
-              <div
-                key={stack.id}
-                style={{
-                  borderRadius: 14,
-                  padding: 18,
-                  background: dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
-                  border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"}`,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 800, padding: "3px 8px", borderRadius: 4, background: "#cc0c39", color: "#fff" }}>
-                      {stack.discountBadge}
-                    </span>
-                    <span style={{ fontSize: 11, color: "#10b981", fontWeight: 800 }}>
-                      ⚡ {stack.synergyScore}
-                    </span>
-                  </div>
+        <div className="stacks-grid">
+          {COACH_STACKS.map((stack) => (
+            <div key={stack.id} className="stack-card">
+              <div>
+                <div className="stack-synergy-pill">
+                  <CheckCircle2 size={13} />
+                  <span>{stack.synergyScore}</span>
+                </div>
+                <div className="stack-title">{stack.title}</div>
+                <div className="stack-tagline">{stack.tagline}</div>
 
-                  <div style={{ fontSize: 15, fontWeight: 800, color: dark ? "#fff" : "#0f172a", marginBottom: 4 }}>
-                    {stack.title}
-                  </div>
-                  <div style={{ fontSize: 12, color: dark ? "#94a3b8" : "#64748b", marginBottom: 14 }}>
-                    {stack.tagline}
-                  </div>
-
-                  {/* Stack Items 3-in-a-row */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 0 16px" }}>
-                    {stack.items.map((it, idx) => (
-                      <React.Fragment key={it.id}>
-                        <div
-                          style={{
-                            width: 68,
-                            height: 68,
-                            borderRadius: 10,
-                            background: "#ffffff",
-                            padding: 6,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => navigate(`/shop/product/${it.id}`)}
-                          title={`View ${it.name}`}
-                        >
-                          <img
-                            src={it.img}
-                            alt=""
-                            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = it.local || "/products/1.jpg";
-                            }}
-                          />
+                {/* Visual Trio with + connectors */}
+                <div className="stack-items-row">
+                  {stack.items.map((item, idx) => (
+                    <React.Fragment key={item.id}>
+                      <div
+                        className="stack-item-pod"
+                        onClick={() => navigate(`/shop/product/${item.id}`)}
+                        style={{ cursor: "pointer" }}
+                        title={item.name}
+                      >
+                        <div className="stack-item-img-box">
+                          <img src={item.img} alt={item.name} />
                         </div>
-                        {idx < stack.items.length - 1 && (
-                          <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>+</span>
-                        )}
-                      </React.Fragment>
-                    ))}
+                        <div className="stack-item-label">{item.name}</div>
+                      </div>
+                      {idx < stack.items.length - 1 && <span className="stack-plus-symbol">+</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="stack-pricing-row">
+                  <div>
+                    <span className="stack-bundle-price">{stack.bundlePrice}</span>
+                    <span className="stack-regular-price">{stack.regularPrice}</span>
                   </div>
+                  <span className="stack-save-pill">{stack.discountBadge}</span>
                 </div>
 
-                {/* Stack Pricing & Actions */}
-                <div style={{ borderTop: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`, paddingTop: 12 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: dark ? "#fff" : "#0f172a" }}>
-                      {stack.bundlePrice}{" "}
-                      <span style={{ fontSize: 12, color: "#64748b", textDecoration: "line-through" }}>
-                        {stack.regularPrice}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: 11, color: "#10b981", fontWeight: 700 }}>Prime Next-Day Delivery</span>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button
-                      onClick={() => {
-                        setCartCount((prev) => prev + 3);
-                        setAddedToast(`Added all 3 items of "${stack.title}" to Cart!`);
-                        setTimeout(() => setAddedToast(""), 3500);
-                      }}
-                      className="amz-add-cart-btn"
-                    >
-                      <ShoppingCart size={13} />
-                      <span>Add Bundle</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        const prefill = `🔥 Coach Ashish's Signature Stack: "${stack.title}"\n💰 Bundle Price: ${stack.bundlePrice} (${stack.discountBadge})\n⚡ Nutritional Synergy: ${stack.synergyScore}\nCheck it out on AshFitVerse Store!`;
-                        navigate("/chat", {
-                          state: {
-                            shareProduct: {
-                              id: stack.items[0].id,
-                              name: stack.title,
-                              price: stack.bundlePrice,
-                              brand: "Coach Ashish Curated Stack",
-                              image: stack.items[0].img,
-                              localImage: stack.items[0].local,
-                            },
-                            prefillMessage: prefill,
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <button
+                    className="btn-buy-amazon"
+                    onClick={() => {
+                      const firstItem = COMMON_PRODUCTS.find((p) => p.id === stack.items[0].id) || COMMON_PRODUCTS[0];
+                      const affUrl = buildAmazonAffiliateUrl(firstItem.asin, affiliateTag);
+                      logUserOrder(firstItem, affiliateTag, user);
+                      window.open(affUrl, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    <span>⚡ Order Stack</span>
+                  </button>
+                  <button
+                    className="btn-share-chat"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const prefill = `🔥 Check out Coach Ashish's Signature Stack: ${stack.title}!\n\n✨ Included: ${stack.tagline}\n💰 Bundle Deal: ${stack.bundlePrice} (${stack.discountBadge})\n⚡ Scientific Synergy: ${stack.synergyScore}\n🔗 View on AshFitVerse Store: ${window.location.origin}/shop`;
+                      navigate("/chat", {
+                        state: {
+                          shareProduct: {
+                            id: stack.id,
+                            name: stack.title,
+                            brand: "Coach Ashish Curated",
+                            price: stack.bundlePrice,
+                            originalPrice: stack.regularPrice,
+                            image: stack.items[0].img,
+                            localImage: stack.items[0].img,
                           },
-                        });
-                      }}
-                      className="amz-buy-now-btn"
-                    >
-                      <Send size={13} />
-                      <span>Share Stack</span>
-                    </button>
-                  </div>
+                          prefillMessage: prefill,
+                        },
+                      });
+                    }}
+                  >
+                    <Send size={13} />
+                    <span>Share to Chat</span>
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Today's Lightning Deals Shelf ── */}
-      <section className="amz-deal-shelf">
-        <div className="amz-shelf-header">
-          <div className="amz-shelf-title">
-            <span>Today's Lightning Deals</span>
-            <div className="amz-countdown-badge">
-              <Clock size={13} />
-              <span>
-                Ends in {String(timeLeft.hours).padStart(2, "0")}h {String(timeLeft.minutes).padStart(2, "0")}m{" "}
-                {String(timeLeft.seconds).padStart(2, "0")}s
-              </span>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span
-              className="amz-quad-link"
-              onClick={() => {
-                setCategory("all");
-                document.getElementById("catalog-section")?.scrollIntoView({ behavior: "smooth" });
-              }}
-            >
-              See all deals ›
-            </span>
-            <div style={{ display: "flex", gap: 4 }}>
-              <button
-                onClick={() => handleScroll(dealsScrollRef, "left")}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
-                  border: `1px solid ${dark ? "rgba(255,255,255,0.15)" : "#ccc"}`,
-                  background: dark ? "rgba(255,255,255,0.05)" : "#f8fafc",
-                  color: dark ? "#fff" : "#000",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => handleScroll(dealsScrollRef, "right")}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
-                  border: `1px solid ${dark ? "rgba(255,255,255,0.15)" : "#ccc"}`,
-                  background: dark ? "rgba(255,255,255,0.05)" : "#f8fafc",
-                  color: dark ? "#fff" : "#000",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="amz-shelf-rail" ref={dealsScrollRef}>
-          {lightningDeals.map((prod) => (
-            <div
-              key={prod.id}
-              className="amz-deal-card"
-              onClick={() => navigate(`/shop/product/${prod.id}`)}
-              title={prod.name}
-            >
-              <div className="amz-deal-img-box">
-                <img
-                  src={prod.image}
-                  alt={prod.name}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = prod.localImage || "/products/1.jpg";
-                  }}
-                />
-              </div>
-              <div style={{ display: "inline-block", background: "#cc0c39", color: "#fff", fontSize: 11, fontWeight: 800, padding: "2px 6px", borderRadius: 3, width: "fit-content", marginBottom: 6 }}>
-                {prod.discount || "Up to 35% off"}
-              </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-                <span style={{ fontSize: 18, fontWeight: 900, color: dark ? "#ffffff" : "#0f172a" }}>{prod.price}</span>
-                <span style={{ fontSize: 12, color: "#64748b", textDecoration: "line-through" }}>{prod.originalPrice}</span>
-              </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: dark ? "#cbd5e1" : "#333",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  lineHeight: 1.3,
-                  minHeight: 31,
-                }}
-              >
-                {prod.name}
-              </div>
-              <div style={{ height: 5, background: "#e2e8f0", borderRadius: 99, overflow: "hidden", margin: "8px 0 4px" }}>
-                <div style={{ height: "100%", width: `${prod.claimedPercent}%`, background: "#f59e0b" }} />
-              </div>
-              <div style={{ fontSize: 10.5, color: "#f59e0b", fontWeight: 700 }}>
-                {prod.claimedPercent}% claimed
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Main Catalog Grid with AI Synergy Filter ── */}
-      <section className="amz-catalog-container" id="catalog-section">
-        {/* Category & Goal Filter Bar */}
-        <div className="amz-filter-bar">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
-            {/* Category Pills */}
-            <div className="amz-pills-row">
-              {[
-                { id: "all", label: "All Items", icon: "🛒" },
-                { id: "protein", label: "Whey & Protein", icon: "🥤" },
-                { id: "creatine", label: "Creatine & Strength", icon: "⚡" },
-                { id: "preworkout", label: "Pre-Workout", icon: "🔥" },
-                { id: "vitamins", label: "Vitamins & Recovery", icon: "💊" },
-                { id: "gear", label: "Gym Equipment", icon: "🏋️" },
-              ].map((p) => {
-                const active = category === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    className={`amz-pill-btn ${active ? "active" : ""}`}
-                    onClick={() => setCategory(p.id)}
-                  >
-                    <span style={{ marginRight: 4 }}>{p.icon}</span>
-                    <span>{p.label}</span>
-                  </button>
-                );
-              })}
+      {/* ── Lightning Deals Flash Rail ── */}
+      <section className="deals-strip-card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 20, fontWeight: 900, fontFamily: FONT.display, color: dark ? "#ffffff" : "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
+              <Zap size={20} color="#f59e0b" />
+              <span>Lightning Deals of the Day</span>
             </div>
-
-            {/* INNOVATION: Athlete Goal Synergy Filter */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingTop: 6, borderTop: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "#f1f5f9"}` }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase" }}>
-                FitVerse Goal Match:
+            <div
+              style={{
+                background: "#cc0c39",
+                color: "#ffffff",
+                fontSize: 12,
+                fontWeight: 800,
+                padding: "4px 10px",
+                borderRadius: 6,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <Clock size={13} />
+              <span>
+                ENDS IN {String(timeLeft.hours).padStart(2, "0")}h : {String(timeLeft.minutes).padStart(2, "0")}m :{" "}
+                {String(timeLeft.seconds).padStart(2, "0")}s
               </span>
-              {[
-                { id: "all", label: "All Goals" },
-                { id: "hypertrophy", label: "🎯 Hypertrophy (Muscle Gain)" },
-                { id: "strength", label: "⚡ Pure Strength & PRs" },
-                { id: "fatloss", label: "🔥 Fat Loss & Definition" },
-                { id: "longevity", label: "🌿 Longevity & Recovery" },
-              ].map((g) => {
-                const active = goalFilter === g.id;
-                return (
-                  <button
-                    key={g.id}
-                    onClick={() => setGoalFilter(g.id)}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 8,
-                      border: active ? "1px solid #38bdf8" : `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"}`,
-                      background: active ? "rgba(56,189,248,0.15)" : "transparent",
-                      color: active ? "#38bdf8" : dark ? "#94a3b8" : "#64748b",
-                      fontSize: 12,
-                      fontWeight: active ? 800 : 550,
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {g.label}
-                  </button>
-                );
-              })}
-
-              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12, color: dark ? "#94a3b8" : "#64748b" }}>Sort:</span>
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: 8,
-                    border: `1px solid ${dark ? "rgba(255,255,255,0.15)" : "#cbd5e1"}`,
-                    background: dark ? "rgba(255,255,255,0.05)" : "#ffffff",
-                    color: dark ? "#fff" : "#0f172a",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    outline: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  <option value="popular">Featured</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                </select>
-              </div>
             </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => dealsScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 8,
+                background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                border: "none",
+                cursor: "pointer",
+                color: T.text,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={() => dealsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 8,
+                background: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                border: "none",
+                cursor: "pointer",
+                color: T.text,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
         </div>
 
-        {/* Product Cards Feed */}
-        {filtered.length === 0 ? (
-          <div
-            style={{
-              padding: "60px 20px",
-              textAlign: "center",
-              background: dark ? "rgba(17, 24, 39, 0.95)" : "#ffffff",
-              borderRadius: 16,
-              border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"}`,
-            }}
-          >
-            <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>No matching fitness products found</div>
-            <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
-              Try adjusting your search or selecting "All Goals"
-            </div>
-          </div>
-        ) : (
-          <div className="amz-product-grid">
-            {filtered.map((p) => {
-              const affiliateUrl = buildAmazonAffiliateUrl(p.asin || p.href || p.name);
-              const isWished = wishlist.includes(p.id);
-
-              return (
-                <div
-                  key={p.id}
-                  className="amz-prod-card"
-                  onClick={() => navigate(`/shop/product/${p.id}`)}
-                  title="Click to view genuine reviews, nutrition facts & verified specs"
-                >
-                  {/* Image Container with Badges */}
-                  <div className="amz-prod-img-box">
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = p.localImage || "/products/1.jpg";
-                      }}
-                    />
-
-                    {p.badge && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 10,
-                          left: 10,
-                          padding: "3px 8px",
-                          borderRadius: 4,
-                          background: p.badgeColor || "#f59e0b",
-                          color: "#ffffff",
-                          fontSize: 10,
-                          fontWeight: 800,
-                          letterSpacing: "0.02em",
-                        }}
-                      >
-                        {p.badge}
-                      </div>
-                    )}
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWishlist(p.id);
-                      }}
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        border: "none",
-                        background: "rgba(255,255,255,0.9)",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 14,
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      {isWished ? "❤️" : "🤍"}
-                    </button>
+        <div className="deal-rail-wrapper" ref={dealsScrollRef}>
+          {lightningDeals.map((product) => {
+            const affUrl = buildAmazonAffiliateUrl(product.asin, affiliateTag);
+            return (
+              <div
+                key={product.id}
+                className="deal-card"
+                onClick={() => navigate(`/shop/product/${product.id}`)}
+              >
+                <div className="deal-img-pod">
+                  <img
+                    src={product.localImage || product.image}
+                    alt={product.name}
+                    onError={(e) => {
+                      if (e.target.src !== product.image) {
+                        e.target.src = product.image;
+                      }
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: 10.5, fontWeight: 850, color: "#f59e0b", textTransform: "uppercase", marginBottom: 3 }}>
+                  {product.brand}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 750, color: dark ? "#ffffff" : "#0f172a", marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {product.name}
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>{product.price}</span>
+                  <span style={{ fontSize: 11, textDecoration: "line-through", color: dark ? "#64748b" : "#94a3b8" }}>{product.originalPrice}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#10b981" }}>{product.discount}</span>
+                </div>
+                <div style={{ marginTop: "auto" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: dark ? "#94a3b8" : "#64748b", fontWeight: 700, marginBottom: 4 }}>
+                    <span>Claimed</span>
+                    <span style={{ color: "#f59e0b" }}>{product.claimedPercent}%</span>
                   </div>
-
-                  {/* Body Content */}
-                  <div className="amz-prod-body">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase" }}>
-                        {p.brand}
-                      </span>
-                      <span style={{ fontSize: 10.5, color: "#10b981", fontWeight: 800, display: "flex", alignItems: "center", gap: 3 }}>
-                        <span>🪙 +150 FitCoins</span>
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 13.5,
-                        fontWeight: 800,
-                        color: dark ? "#ffffff" : "#0f172a",
-                        lineHeight: 1.35,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        minHeight: 36,
-                        marginBottom: 6,
-                      }}
-                    >
-                      {p.name}
-                    </div>
-
-                    {/* Star Rating & Bought Count */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                      <div style={{ display: "flex", color: "#ffa41c", fontSize: 13 }}>
-                        {"★".repeat(4)}★
-                      </div>
-                      <span style={{ fontSize: 12, color: "#0284c7", fontWeight: 800 }}>
-                        4.8 ({Number(p.id) * 31 + 420})
-                      </span>
-                      <span style={{ fontSize: 11, color: "#64748b" }}>• 1K+ bought</span>
-                    </div>
-
-                    {/* Price Layout */}
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, color: "#cc0c39", fontWeight: 800 }}>
-                        {p.discount || "-22%"}
-                      </span>
-                      <span style={{ fontSize: 21, fontWeight: 900, color: dark ? "#ffffff" : "#0f172a" }}>
-                        {p.price}
-                      </span>
-                      <span style={{ fontSize: 12, color: "#64748b", textDecoration: "line-through" }}>
-                        M.R.P: {p.originalPrice}
-                      </span>
-                    </div>
-
-                    {/* Prime badge & delivery estimate */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 12 }}>
-                      <span style={{ color: "#007185", fontWeight: 900, fontStyle: "italic", fontSize: 13 }}>✓prime</span>
-                      <span style={{ fontSize: 11.5, color: dark ? "#94a3b8" : "#64748b" }}>
-                        Fastest delivery <b>Tomorrow, 2 PM</b>
-                      </span>
-                    </div>
-
-                    {/* Action CTA Buttons */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: "auto" }}>
-                      <button
-                        className="amz-add-cart-btn"
-                        onClick={(e) => handleAddToCart(e, p)}
-                        title="Add to local Cart"
-                      >
-                        <ShoppingCart size={13} />
-                        <span>Add to Cart</span>
-                      </button>
-
-                      <a
-                        href={affiliateUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="amz-buy-now-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          logUserOrder(user?.uid || "guest", p.id, {
-                            name: p.name,
-                            price: p.price,
-                            brand: p.brand,
-                            source: "amazon_affiliate_click",
-                          });
-                        }}
-                        title={`Buy on Amazon with affiliate tag ${affiliateTag}`}
-                      >
-                        <span>Buy on Amazon</span>
-                        <ExternalLink size={12} />
-                      </a>
-                    </div>
-
-                    {/* INNOVATION: Direct Share to FitVerse Chat (Multi-Recipient) */}
-                    <button
-                      className="amz-chat-share-btn"
-                      onClick={(e) => handleShareProductToChat(e, p)}
-                      title="Share with multiple gym buddies on FitVerse Chat"
-                    >
-                      <Send size={13} />
-                      <span>Share with Gym Buddies</span>
-                    </button>
+                  <div style={{ width: "100%", height: 5, background: dark ? "rgba(255,255,255,0.1)" : "#e2e8f0", borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{ width: `${product.claimedPercent}%`, height: "100%", background: "linear-gradient(90deg, #f59e0b, #ea580c)" }} />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer>
-        <div className="amz-back-to-top" onClick={scrollToTop}>
-          Back to top
-        </div>
-
-        <div className="amz-footer-main">
-          <div className="amz-footer-grid">
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>About AshFitVerse</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8, cursor: "pointer" }} onClick={() => navigate("/dashboard")}>
-                Athlete Dashboard
-              </div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8, cursor: "pointer" }} onClick={() => navigate("/community")}>
-                Community Transformations
-              </div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8, cursor: "pointer" }} onClick={() => navigate("/chat")}>
-                FitVerse Direct Chat
-              </div>
+      {/* ── Main Catalog Grid ── */}
+      <section className="catalog-section" id="catalog-grid">
+        <div className="section-header-box">
+          <div>
+            <div className="section-title">
+              <span>Verified Sports Nutrition & Athlete Gear</span>
+              <span style={{ fontSize: 13, fontWeight: 750, color: "#f59e0b", background: dark ? "rgba(245,158,11,0.15)" : "#fef3c7", padding: "3px 9px", borderRadius: 99 }}>
+                {filtered.length} Authentic Products
+              </span>
             </div>
-
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Connect & Training</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Instagram @AshFitVerse</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Coach Ashish YouTube Hub</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Powerlifting Workout Guides</div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Associate Program</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Official Amazon Associate Store</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Affiliate Tag: {affiliateTag}</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Brand Sponsorships</div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Guarantees & Support</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>100% Labdoor Purity Tested</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Amazon Easy Returns Guarantee</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>Anti-Counterfeit Protection</div>
+            <div className="section-subtitle">
+              Every single product listed features its original manufacturer packaging photo, verified ingredients, and direct Prime affiliate access.
             </div>
           </div>
         </div>
 
-        <div style={{ background: dark ? "#060911" : "#0f172a", textAlign: "center", padding: 22, color: "#94a3b8", fontSize: 12 }}>
-          © 2026 AshFitVerse.in • Empowering India's Health, Strength & Athletic Transformation
+        {/* Filter & Goal Matcher Toolbar */}
+        <div className="filter-toolbar">
+          <div className="goal-pills-row">
+            <button
+              className={`goal-pill-btn ${category === "all" && goalFilter === "all" ? "active" : ""}`}
+              onClick={() => {
+                setCategory("all");
+                setGoalFilter("all");
+              }}
+            >
+              🔥 All Gear & Nutrition
+            </button>
+            <button
+              className={`goal-pill-btn ${goalFilter === "hypertrophy" ? "active" : ""}`}
+              onClick={() => setGoalFilter(goalFilter === "hypertrophy" ? "all" : "hypertrophy")}
+            >
+              💪 Hypertrophy & Muscle
+            </button>
+            <button
+              className={`goal-pill-btn ${goalFilter === "strength" ? "active" : ""}`}
+              onClick={() => setGoalFilter(goalFilter === "strength" ? "all" : "strength")}
+            >
+              ⚡ Explosive PRs & Strength
+            </button>
+            <button
+              className={`goal-pill-btn ${goalFilter === "fatloss" ? "active" : ""}`}
+              onClick={() => setGoalFilter(goalFilter === "fatloss" ? "all" : "fatloss")}
+            >
+              🏃 Fat Loss & Cut
+            </button>
+            <button
+              className={`goal-pill-btn ${goalFilter === "longevity" ? "active" : ""}`}
+              onClick={() => setGoalFilter(goalFilter === "longevity" ? "all" : "longevity")}
+            >
+              🌿 Longevity & Recovery
+            </button>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: dark ? "#94a3b8" : "#64748b" }}>Sort by:</span>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              style={{
+                background: dark ? "rgba(255,255,255,0.06)" : "#ffffff",
+                color: T.text,
+                border: `1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"}`,
+                borderRadius: 8,
+                padding: "6px 12px",
+                fontSize: 12.5,
+                fontWeight: 700,
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              <option value="popular">Most Popular</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Product Cards Grid */}
+        <div className="pro-product-grid">
+          {filtered.map((product) => {
+            const affUrl = buildAmazonAffiliateUrl(product.asin, affiliateTag);
+            const isFav = wishlist.includes(product.id);
+
+            return (
+              <div
+                key={product.id}
+                className="pro-prod-card"
+                onClick={() => navigate(`/shop/product/${product.id}`)}
+              >
+                {/* Image Showcase Pod with 100% visibility guarantee */}
+                <div className="pro-img-showcase">
+                  <div className="card-top-badges">
+                    <span className="purity-seal">
+                      <ShieldCheck size={12} />
+                      <span>99.8% Purity</span>
+                    </span>
+                    {product.badge && (
+                      <span
+                        className="custom-badge"
+                        style={{ background: product.badgeColor || "#f59e0b" }}
+                      >
+                        {product.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    className="card-wishlist-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(product.id);
+                    }}
+                    title="Add to wishlist"
+                  >
+                    <Heart size={16} fill={isFav ? "#ef4444" : "none"} color={isFav ? "#ef4444" : "#64748b"} />
+                  </button>
+
+                  {/* Guaranteed Authentic Packaging Image */}
+                  <img
+                    src={product.localImage || product.image}
+                    alt={product.name}
+                    loading="lazy"
+                    onError={(e) => {
+                      if (e.target.src !== product.image) {
+                        e.target.src = product.image;
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Card Body */}
+                <div className="pro-card-body">
+                  <div className="pro-brand-label">{product.brand}</div>
+                  <div className="pro-item-name" title={product.name}>
+                    {product.name}
+                  </div>
+
+                  {/* Rating */}
+                  <div className="pro-rating-row">
+                    <div className="rating-stars">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          size={13}
+                          fill={i < 4 ? "#f59e0b" : "#f59e0b"}
+                          color="#f59e0b"
+                        />
+                      ))}
+                    </div>
+                    <span className="rating-score">4.8</span>
+                    <span className="rating-count">({product.reviews || "3,240"})</span>
+                  </div>
+
+                  {/* Feature Tags */}
+                  {product.tags && product.tags.length > 0 && (
+                    <div className="pro-tags-row">
+                      {product.tags.slice(0, 3).map((tag, tIdx) => (
+                        <span key={tIdx} className="pro-spec-tag">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Price & Discount */}
+                  <div className="pro-price-block">
+                    <span className="pro-current-price">{product.price}</span>
+                    {product.originalPrice && (
+                      <span className="pro-old-price">{product.originalPrice}</span>
+                    )}
+                    {product.discount && (
+                      <span className="pro-discount-tag">{product.discount}</span>
+                    )}
+                  </div>
+
+                  {/* FitCoins Cashback */}
+                  <div className="fitcoin-cashback-row">
+                    <Coins size={14} />
+                    <span>+150 FitCoins on Order</span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="pro-actions-grid">
+                    <button
+                      className="btn-buy-amazon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        logUserOrder(product, affiliateTag, user);
+                        window.open(affUrl, "_blank", "noopener,noreferrer");
+                      }}
+                      title="Buy directly on Amazon with Prime Delivery"
+                    >
+                      <span>Buy Amazon</span>
+                      <ExternalLink size={13} />
+                    </button>
+                    <button
+                      className="btn-add-fitbag"
+                      onClick={(e) => handleAddToCart(e, product)}
+                      title="Add to in-app FitBag"
+                    >
+                      <ShoppingCart size={14} />
+                      <span>+ FitBag</span>
+                    </button>
+                  </div>
+
+                  {/* Dedicated Share to Chat Button (Multi-Contact Broadcast) */}
+                  <button
+                    className="btn-share-chat"
+                    onClick={(e) => handleShareProductToChat(e, product)}
+                    title="Broadcast product to your FitVerse friends or gym group in 1-click"
+                  >
+                    <Send size={13} />
+                    <span>💬 Share to Gym Buddies</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── AshFitVerse Authenticity & Purity Guarantee Strip ── */}
+      <section className="pillars-strip">
+        <div className="pillars-grid">
+          <div className="pillar-box">
+            <div className="pillar-icon-pod" style={{ background: dark ? "rgba(16,185,129,0.15)" : "#ecfdf5", color: "#10b981" }}>
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <div className="pillar-title">100% Labdoor Certified</div>
+              <div className="pillar-desc">
+                Zero spiked heavy metals or banned compounds. Batch lab reports publicly verified.
+              </div>
+            </div>
+          </div>
+
+          <div className="pillar-box">
+            <div className="pillar-icon-pod" style={{ background: dark ? "rgba(56,189,248,0.15)" : "#f0f9ff", color: "#0284c7" }}>
+              <PackageCheck size={24} />
+            </div>
+            <div>
+              <div className="pillar-title">Factory Direct Sealed</div>
+              <div className="pillar-desc">
+                Tamper-evident holographic security seals direct from brand manufacturing facilities.
+              </div>
+            </div>
+          </div>
+
+          <div className="pillar-box">
+            <div className="pillar-icon-pod" style={{ background: dark ? "rgba(245,158,11,0.15)" : "#fef3c7", color: "#f59e0b" }}>
+              <Truck size={24} />
+            </div>
+            <div>
+              <div className="pillar-title">Prime 1-Day Dispatch</div>
+              <div className="pillar-desc">
+                Fulfilled via Amazon Prime high-speed logistics across all major Indian cities.
+              </div>
+            </div>
+          </div>
+
+          <div className="pillar-box">
+            <div className="pillar-icon-pod" style={{ background: dark ? "rgba(168,85,247,0.15)" : "#faf5ff", color: "#a855f7" }}>
+              <Coins size={24} />
+            </div>
+            <div>
+              <div className="pillar-title">10% FitCoins Back</div>
+              <div className="pillar-desc">
+                Earn reward tokens on every order to unlock Coach Ashish pro lifting programs.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pro Store Footer ── */}
+      <footer className="pro-footer">
+        <div className="pro-footer-content">
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <div className="brand-icon-pod" style={{ width: 34, height: 34 }}>
+                <Zap size={18} />
+              </div>
+              <span style={{ fontFamily: FONT.display, fontSize: 18, fontWeight: 900 }}>
+                ASHFITVERSE STORE
+              </span>
+            </div>
+            <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6, maxWidth: 360 }}>
+              The elite sports nutrition and athletic performance vault curated by Coach Ashish. Verified
+              supplements, competition power gear, and longevity protocols for serious athletes.
+            </p>
+          </div>
+
+          <div>
+            <div className="footer-col-title">DEPARTMENTS</div>
+            <a href="/shop" className="footer-link">Common Pro Shop</a>
+            <a href="/male-shop" className="footer-link">Men's Elite Shop</a>
+            <a href="/female-shop" className="footer-link">Women's Wellness Shop</a>
+            <a href="/chat" className="footer-link">FitVerse Chat & Share</a>
+          </div>
+
+          <div>
+            <div className="footer-col-title">FITNESS APPS</div>
+            <a href="/workouts" className="footer-link">Workout Planner & Logs</a>
+            <a href="/diet" className="footer-link">Macro & Diet Tracker</a>
+            <a href="/calculator/calories" className="footer-link">Calorie Calculator</a>
+            <a href="/community" className="footer-link">Athlete Community</a>
+          </div>
+
+          <div>
+            <div className="footer-col-title">VERIFICATION</div>
+            <div style={{ color: "#94a3b8", fontSize: 12.5, lineHeight: 1.6 }}>
+              Affiliate Associate ID: <strong style={{ color: "#f59e0b" }}>{affiliateTag}</strong>
+              <br />
+              All purchases fulfilled by Amazon India. Product trademarks belong to their respective manufacturers.
+            </div>
+          </div>
+        </div>
+
+        <div className="footer-bottom-bar">
+          <div>© {new Date().getFullYear()} AshFitVerse Pro Store. All rights reserved.</div>
+          <div>Built with passion for high-performance athletes across India 🇮🇳</div>
         </div>
       </footer>
 
-      {/* Admin Add Product Modal */}
+      {/* ── Admin Add Product Modal ── */}
       {showAddProductModal && (
         <AddAffiliateProductModal
+          isOpen={showAddProductModal}
           onClose={() => setShowAddProductModal(false)}
-          defaultShop={deptParam || "common"}
-          onProductAdded={(newProd) => {
-            setDynamicProducts((prev) => [newProd, ...prev]);
-            setShowAddProductModal(false);
-          }}
+          defaultShop="common"
         />
       )}
     </div>
