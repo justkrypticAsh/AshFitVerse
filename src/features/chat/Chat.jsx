@@ -5,7 +5,7 @@
 // All UI functional with mock data; ready for backend wiring
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useTheme from "../../hooks/usetheme";
 import { generateCSS, BG_IMAGES, FONT } from "../../theme";
 
@@ -177,6 +177,84 @@ export default function Chat() {
   const [typing, setTyping] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const location = useLocation();
+
+  // Multi-recipient Broadcast State
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [sharedProduct, setSharedProduct] = useState(null);
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [selectedRecipients, setSelectedRecipients] = useState([1, 2]);
+  const [broadcastToast, setBroadcastToast] = useState("");
+
+  useEffect(() => {
+    if (location.state?.shareProduct) {
+      const prod = location.state.shareProduct;
+      setSharedProduct(prod);
+      setBroadcastMessage(
+        location.state.prefillMessage ||
+          `🔥 Check out ${prod.name} on AshFitVerse Store (${prod.price}): ${window.location.origin}/shop/product/${prod.id}?tag=ashfitverse-21`
+      );
+      setShowBroadcastModal(true);
+      setSelectedRecipients([1, 2, 3]);
+    }
+  }, [location.state]);
+
+  const toggleRecipient = (cid) => {
+    setSelectedRecipients(prev =>
+      prev.includes(cid) ? prev.filter(id => id !== cid) : [...prev, cid]
+    );
+  };
+
+  const handleSelectAllRecipients = () => {
+    if (selectedRecipients.length === conversations.length) {
+      setSelectedRecipients([]);
+    } else {
+      setSelectedRecipients(conversations.map(c => c.id));
+    }
+  };
+
+  const handleBroadcastSend = () => {
+    if (selectedRecipients.length === 0 || !broadcastMessage.trim()) return;
+
+    const baseMsg = {
+      id: Date.now(),
+      senderId: "me",
+      text: broadcastMessage.trim(),
+      productCard: sharedProduct,
+      time: "Just now",
+      read: true,
+    };
+
+    setMessagesMap(prev => {
+      const next = { ...prev };
+      selectedRecipients.forEach((cid, idx) => {
+        next[cid] = [...(next[cid] || []), { ...baseMsg, id: Date.now() + idx }];
+      });
+      return next;
+    });
+
+    setConversations(prev =>
+      prev.map(c =>
+        selectedRecipients.includes(c.id)
+          ? {
+              ...c,
+              lastMessage: `📦 Shared ${sharedProduct?.name?.slice(0, 24) || "Product"}...`,
+              lastTime: "Just now",
+            }
+          : c
+      )
+    );
+
+    if (selectedRecipients.length > 0) {
+      setActiveId(selectedRecipients[0]);
+    }
+
+    const count = selectedRecipients.length;
+    setShowBroadcastModal(false);
+    setBroadcastToast(`✓ Product successfully shared with ${count} gym ${count === 1 ? "buddy" : "buddies"}!`);
+    setTimeout(() => setBroadcastToast(""), 4500);
+    window.history.replaceState({}, document.title);
+  };
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -1049,7 +1127,65 @@ export default function Chat() {
                                 {m.senderName || activeConvo.name}
                               </div>
                             )}
-                            <div className="ch-msg-bubble">{m.text}</div>
+                            <div className="ch-msg-bubble">
+                              <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{m.text}</div>
+                              {m.productCard && (
+                                <div
+                                  style={{
+                                    marginTop: 10,
+                                    background: isOwn ? "rgba(0,0,0,0.25)" : dark ? "rgba(255,255,255,0.08)" : "#f8fafc",
+                                    border: "1px solid rgba(255,255,255,0.18)",
+                                    borderRadius: 12,
+                                    padding: 10,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 12,
+                                    cursor: "pointer",
+                                    maxWidth: 320,
+                                  }}
+                                  onClick={() => navigate(`/shop/product/${m.productCard.id}`)}
+                                  title="Click to view product in AshFitVerse Store"
+                                >
+                                  <img
+                                    src={m.productCard.image || m.productCard.localImage || `/products/${m.productCard.id}.jpg`}
+                                    alt=""
+                                    style={{
+                                      width: 54,
+                                      height: 54,
+                                      objectFit: "contain",
+                                      borderRadius: 8,
+                                      background: "#ffffff",
+                                      padding: 4,
+                                      flexShrink: 0,
+                                    }}
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = m.productCard.localImage || `/products/${m.productCard.id}.jpg`;
+                                    }}
+                                  />
+                                  <div style={{ overflow: "hidden" }}>
+                                    <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 800, textTransform: "uppercase" }}>
+                                      {m.productCard.brand || "AshFitVerse Pro"}
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: 12.5,
+                                        fontWeight: 800,
+                                        color: isOwn ? "#ffffff" : dark ? "#ffffff" : "#0f172a",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                      }}
+                                    >
+                                      {m.productCard.name}
+                                    </div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#10b981", marginTop: 2 }}>
+                                      {m.productCard.price} • <span style={{ color: "#38bdf8", textDecoration: "underline" }}>View in Store ↗</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                             <div className="ch-msg-meta">
                               <span>{m.time}</span>
                               {isOwn && (
@@ -1112,6 +1248,323 @@ export default function Chat() {
           </div>
         </main>
       </div>
+
+      {/* Broadcast Success Toast */}
+      {broadcastToast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 28,
+            right: 28,
+            background: "#059669",
+            color: "#ffffff",
+            padding: "12px 22px",
+            borderRadius: 12,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 13.5,
+            fontWeight: 800,
+          }}
+        >
+          <span>✓</span>
+          <span>{broadcastToast}</span>
+        </div>
+      )}
+
+      {/* Multi-Contact Broadcast Share Modal */}
+      {showBroadcastModal && sharedProduct && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => setShowBroadcastModal(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 520,
+              background: dark ? "#111827" : "#ffffff",
+              borderRadius: 20,
+              border: `1px solid ${dark ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              maxHeight: "90vh",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#f1f5f9"}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20 }}>💬</span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: dark ? "#fff" : "#0f172a" }}>
+                    Share Product with Gym Buddies
+                  </div>
+                  <div style={{ fontSize: 11.5, color: dark ? "#94a3b8" : "#64748b" }}>
+                    Select multiple friends or training groups to broadcast simultaneously
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBroadcastModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: 20,
+                  color: dark ? "#94a3b8" : "#64748b",
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: 20, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Product Preview Card */}
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 14,
+                  background: dark ? "rgba(255,255,255,0.04)" : "#f8fafc",
+                  border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#e2e8f0"}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                }}
+              >
+                <img
+                  src={sharedProduct.image || sharedProduct.localImage || `/products/${sharedProduct.id}.jpg`}
+                  alt=""
+                  style={{
+                    width: 64,
+                    height: 64,
+                    objectFit: "contain",
+                    background: "#ffffff",
+                    borderRadius: 10,
+                    padding: 4,
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = sharedProduct.localImage || `/products/${sharedProduct.id}.jpg`;
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase" }}>
+                    {sharedProduct.brand}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: 800,
+                      color: dark ? "#ffffff" : "#0f172a",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {sharedProduct.name}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#10b981", marginTop: 2 }}>
+                    {sharedProduct.price}{" "}
+                    <span style={{ fontSize: 11, color: "#64748b", textDecoration: "line-through" }}>
+                      {sharedProduct.originalPrice}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: dark ? "#cbd5e1" : "#475569" }}>
+                  Message Preview (Editable):
+                </div>
+                <textarea
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    border: `1px solid ${dark ? "rgba(255,255,255,0.12)" : "#cbd5e1"}`,
+                    background: dark ? "rgba(0,0,0,0.3)" : "#ffffff",
+                    color: dark ? "#ffffff" : "#0f172a",
+                    fontSize: 12.5,
+                    outline: "none",
+                    resize: "vertical",
+                    fontFamily: "inherit",
+                  }}
+                />
+              </div>
+
+              {/* Multi-Contact Selector */}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: dark ? "#cbd5e1" : "#475569" }}>
+                    Select Recipients ({selectedRecipients.length} selected):
+                  </div>
+                  <button
+                    onClick={handleSelectAllRecipients}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      color: "#38bdf8",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {selectedRecipients.length === conversations.length ? "Deselect All" : "Select All"}
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    maxHeight: 180,
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    paddingRight: 4,
+                  }}
+                >
+                  {conversations.map((convo) => {
+                    const isSelected = selectedRecipients.includes(convo.id);
+                    return (
+                      <div
+                        key={convo.id}
+                        onClick={() => toggleRecipient(convo.id)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "8px 12px",
+                          borderRadius: 10,
+                          background: isSelected
+                            ? dark
+                              ? "rgba(59,130,246,0.18)"
+                              : "#eff6ff"
+                            : dark
+                            ? "rgba(255,255,255,0.03)"
+                            : "#f8fafc",
+                          border: `1px solid ${
+                            isSelected
+                              ? "#3b82f6"
+                              : dark
+                              ? "rgba(255,255,255,0.06)"
+                              : "#e2e8f0"
+                          }`,
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          style={{ cursor: "pointer", accentColor: "#3b82f6" }}
+                        />
+                        <img
+                          src={convo.avatar}
+                          alt=""
+                          style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: dark ? "#fff" : "#0f172a" }}>
+                            {convo.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: dark ? "#94a3b8" : "#64748b" }}>
+                            {convo.type === "group" ? `${convo.members} members` : convo.goal || "Athlete"}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <span style={{ fontSize: 13, color: "#3b82f6", fontWeight: 800 }}>✓</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div
+              style={{
+                padding: "14px 20px",
+                borderTop: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "#f1f5f9"}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 10,
+                background: dark ? "rgba(0,0,0,0.2)" : "#f8fafc",
+              }}
+            >
+              <button
+                onClick={() => setShowBroadcastModal(false)}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: 10,
+                  border: `1px solid ${dark ? "rgba(255,255,255,0.15)" : "#cbd5e1"}`,
+                  background: "transparent",
+                  color: dark ? "#cbd5e1" : "#475569",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBroadcastSend}
+                disabled={selectedRecipients.length === 0}
+                style={{
+                  padding: "9px 20px",
+                  borderRadius: 10,
+                  border: "none",
+                  background:
+                    selectedRecipients.length === 0
+                      ? "#64748b"
+                      : "linear-gradient(135deg, #3b82f6, #2563eb)",
+                  color: "#ffffff",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: selectedRecipients.length === 0 ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 14px rgba(59,130,246,0.35)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>Broadcast to {selectedRecipients.length} Contacts</span>
+                <span>🚀</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

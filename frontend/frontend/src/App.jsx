@@ -38,8 +38,9 @@ import DietPlan   from "./features/diet/DietPlan";
 // Shop
 import Shop from "./features/shop/Shop";
 
-// Community
+// Community & Chat
 import Community from "./features/Community/Community";
+import Chat from "./features/chat/Chat";
 
 // Female Health
 import FemaleHealthDashboard from "./features/femaleHealth/FemaleHealthDashboard";
@@ -288,9 +289,15 @@ export default function App() {
           <RequireOnboarding><ProductDetail /></RequireOnboarding>
         } />
 
-        {/* ── Community ── */}
+        {/* ── Community & Direct Chat ── */}
         <Route path="/community" element={
           <RequireOnboarding><Community /></RequireOnboarding>
+        } />
+        <Route path="/chat" element={
+          <RequireOnboarding><Chat /></RequireOnboarding>
+        } />
+        <Route path="/messages" element={
+          <RequireOnboarding><Chat /></RequireOnboarding>
         } />
 
         {/* ── Female Health ── */}

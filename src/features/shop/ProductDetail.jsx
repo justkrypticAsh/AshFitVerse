@@ -167,9 +167,15 @@ export default function ProductDetail() {
     }
   };
 
-  const handleShareToCommunity = () => {
-    const message = `Check out this fitness essential on AshFitVerse: ${product?.name} - ${window.location.href}`;
-    navigate(`/community?share=${encodeURIComponent(message)}`);
+  const handleShareToChat = () => {
+    const productUrl = `${window.location.origin}/shop/product/${product?.id || id}?tag=${affiliateTag}`;
+    const prefill = `🔥 Check out this fitness gear on AshFitVerse Store!\n\n📦 ${product?.name}\n💰 Price: ${product?.price}\n⭐ Verified Athlete Rating: 4.8★\n🔗 Direct Link: ${productUrl}`;
+    navigate("/chat", {
+      state: {
+        shareProduct: product,
+        prefillMessage: prefill,
+      },
+    });
   };
 
   const handleAddToCart = () => {
@@ -438,7 +444,8 @@ export default function ProductDetail() {
                 src={product.image}
                 alt={product.name}
                 onError={(e) => {
-                  e.currentTarget.src = "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&q=80";
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = product.localImage || `/products/${product.id || id}.jpg`;
                 }}
               />
             </div>
@@ -619,9 +626,9 @@ export default function ProductDetail() {
                 </button>
 
                 <button
-                  onClick={handleShareToCommunity}
+                  onClick={handleShareToChat}
                   className="pd-sec-btn"
-                  title="Share product with community"
+                  title="Share product with your FitVerse gym buddies"
                 >
                   <Send size={15} color="#3b82f6" />
                   <span>Share in Chat</span>
